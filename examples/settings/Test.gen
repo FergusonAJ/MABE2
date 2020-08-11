@@ -1,0 +1,17 @@
+Population main_pop;
+Population next_pop;
+
+CommandLine cl;
+Mutate mut;
+EvalTest eval_nk;
+SelectElite select_elite;
+SelectTournament select_tourny;
+GrowthPlacement place_next;
+GrowthPlacement place_inject;
+MovePopulation sync_gen;
+
+BitsOrg bits_org;
+
+@start() print("random_seed = ", random_seed, "\n");
+@start() inject("bits_org", 200);
+@update(1000) exit();

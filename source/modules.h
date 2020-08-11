@@ -11,6 +11,7 @@
 #include "evaluate/EvalCountBits.h"
 #include "evaluate/EvalMatchBits.h"
 #include "evaluate/EvalNK.h"
+#include "evaluate/EvalTest.h"
 
 // Interface Modules
 #include "interface/CommandLine.h"
