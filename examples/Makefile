@@ -1,4 +1,4 @@
-EMP_DIR := ../../Empirical/source
+EMP_DIR := /research/tools/clean/empirical/source
 MABE_DIR := ../source
 
 # Flags to use regardless of compiler
