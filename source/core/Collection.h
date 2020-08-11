@@ -145,7 +145,8 @@ namespace mabe {
         // If we're not taking the whole population, specify the positions to use.
         if (pop_info.full_pop == false) {
           ss << '[';
-          pop_info.pos_set.PrintAsRange(ss);
+          ss << "a range would go here";
+          //pop_info.pos_set.PrintAsRange(ss);
           ss << ']';
         }
       }
