@@ -304,6 +304,10 @@ namespace mabe {
       emp_assert(false, "Mutate() must be overridden for either Organism or OrganismManager module.");
       return 0;
     }
+    virtual size_t Mutate_Deterministic(Organism &, int i) const {
+      emp_assert(false, "Mutate_Deterministic() must be overridden for either Organism or OrganismManager module.");
+      return 0;
+    }
     virtual void Randomize(Organism &, emp::Random &) const {
       emp_assert(false, "Randomize() must be overridden for either Organism or OrganismManager module.");
     }

@@ -47,6 +47,13 @@ namespace mabe {
       }
       return 3;
     }
+    
+    size_t Mutate_Deterministic(int i) override {
+      if (bits.size() == 0) return 0;
+      emp_assert(i < bits.size());
+      bits[i] = bits[i]^1;
+      return 1;
+    }
 
     void Randomize(emp::Random & random) override {
       emp::RandomizeBitVector(bits, random, 0.5);

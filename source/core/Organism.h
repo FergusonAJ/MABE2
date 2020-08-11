@@ -88,6 +88,9 @@ namespace mabe {
     /// @note For evolution to function, we need to be able to mutate offspring.
     virtual size_t Mutate(emp::Random & random) { return manager.Mutate(*this, random); }
 
+    /// Modify this organism based on the given argument
+    virtual size_t Mutate_Deterministic(int i) { return manager.Mutate_Deterministic(*this, i); }
+    
     /// Produce an asexual offspring WITH MUTATIONS.  By default, use Clone() and then Mutate().
     virtual emp::Ptr<Organism> MakeOffspring(emp::Random & random) const {
       emp::Ptr<Organism> offspring = Clone();
