@@ -44,6 +44,10 @@ MovePopulation sync_gen {       // Move organisms from one populaiton to another
   to_pop = "main_pop";          // Population to move organisms into.
   reset_to = 1;                 // Should we erase organisms at the destination?
 }
+BitsOrg bits_org {              // Organism consisting of a series of N bits.
+  output_name = "bits";         // Name of variable to contain bit sequence.
+  N = 100;                      // Number of bits in organism
+}
 OneStepMutants mut_gen {
   source_pop = "main_pop";
   mutant_pop = "one_step_mutants";
@@ -51,9 +55,9 @@ OneStepMutants mut_gen {
   min_mutation_idx = 0;
   max_mutation_idx = 100;
 }
-BitsOrg bits_org {              // Organism consisting of a series of N bits.
-  output_name = "bits";         // Name of variable to contain bit sequence.
-  N = 100;                      // Number of bits in organism
+DumpPopulation dump_one_step{
+  pop = "one_step_mutants";
+  update_step = 10;
 }
 EmptyPopulation empty_one_step{
   pop = "one_step_mutants";

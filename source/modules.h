@@ -15,6 +15,7 @@
 
 // Interface Modules
 #include "interface/CommandLine.h"
+#include "interface/DumpPopulation.h"
 
 // Placement Modules
 #include "placement/GrowthPlacement.h"
