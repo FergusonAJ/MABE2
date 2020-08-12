@@ -35,4 +35,7 @@
 *.out
 *.app
 
+# Vim tmp files
+*.swp
+
 examples/NK
