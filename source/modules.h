@@ -26,6 +26,8 @@
 // Other schema
 #include "schema/MovePopulation.h"
 #include "schema/Mutate.h"
+#include "schema/OneStepMutants.h"
+#include "schema/EmptyPopulation.h"
 
 // Organism Types
 #include "orgs/BitsOrg.h"

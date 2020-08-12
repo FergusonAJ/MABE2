@@ -50,7 +50,8 @@ namespace mabe {
     
     size_t Mutate_Deterministic(int i) override {
       if (bits.size() == 0) return 0;
-      emp_assert(i < bits.size());
+      emp_assert(i >= 0);
+      emp_assert((size_t)i < bits.size());
       bits[i] = bits[i]^1;
       return 1;
     }
