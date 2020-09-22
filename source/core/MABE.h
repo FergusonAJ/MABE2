@@ -540,27 +540,50 @@ namespace mabe {
     /// Give birth to one or more offspring; return position of last placed.
     /// Triggers 'before repro' signal on parent (once) and 'offspring ready' on each offspring.
     /// Regular signal triggers occur in AddOrgAt.
-    OrgPosition DoBirth(const Organism & org, OrgPosition ppos,
-                        Population & target_pop, size_t copy_count=1) {
+    OrgPosition DoBirth(const Organism & org,
+                        OrgPosition ppos,
+                        Population & target_pop,
+                        size_t birth_count=1,
+                        bool do_mutations=true) {
       emp_assert(org.IsEmpty() == false);  // Empty cells cannot reproduce.
       before_repro_sig.Trigger(ppos);
-      OrgPosition pos;                                     // Position of each offspring placed.
-      for (size_t i = 0; i < copy_count; i++) {            // Loop through offspring, adding each
-        emp::Ptr<Organism> new_org = org.Clone();          // Clone org to put copy in population
+      OrgPosition pos;                                      // Position of each offspring placed.
+      emp::Ptr<Organism> new_org;
+      for (size_t i = 0; i < birth_count; i++) {            // Loop through offspring, adding each
+        new_org = do_mutations ? org.MakeOffspring(random) : org.Clone();
 
         // Alert modules that offspring is ready, then find its birth position.
         on_offspring_ready_sig.Trigger(*new_org, ppos, target_pop);
         pos = FindBirthPosition(*new_org, ppos, target_pop);
 
-        if (pos.IsValid()) AddOrgAt(new_org, pos, ppos);   // If placement pos is valid, do so!
-        else new_org.Delete();                             // Otherwise delete the organism.
+        // If this placement is valid, do so.  Otherwise delete the organism.
+        if (pos.IsValid()) AddOrgAt(new_org, pos, ppos);
+        else new_org.Delete();
       }
       return pos;
     }
 
+    OrgPosition DoBirth(const Organism & org,
+                        OrgPosition ppos,
+                        OrgPosition target_pos,
+                        bool do_mutations=true) {
+      emp_assert(org.IsEmpty() == false);  // Empty cells cannot reproduce.
+      emp_assert(target_pos.IsValid());    // Target positions must already be valid.
+
+      before_repro_sig.Trigger(ppos);
+      emp::Ptr<Organism> new_org = do_mutations ? org.MakeOffspring(random) : org.Clone();
+      on_offspring_ready_sig.Trigger(*new_org, ppos, target_pos.Pop());
+
+      AddOrgAt(new_org, target_pos, ppos);
+
+      return target_pos;
+    }
+
+
     /// A shortcut to DoBirth where only the parent position needs to be supplied.
-    OrgPosition Replicate(OrgPosition ppos, Population & target_pop, size_t copy_count=1) {
-      return DoBirth(*ppos, ppos, target_pop, copy_count);
+    OrgPosition Replicate(OrgPosition ppos, Population & target_pop,
+                          size_t birth_count=1, bool do_mutations=true) {
+      return DoBirth(*ppos, ppos, target_pop, birth_count, do_mutations);
     }
 
     /// Resize a population while clearing all of the organisms in it.
@@ -705,6 +728,74 @@ namespace mabe {
       return *cur_trait;
     }
 
+    using trait_fun_t = std::function<std::string(const Collection &)>;
+
+    /// Determine if a trait is of a numeric type that MABE supports.
+    bool IsNumericTypeID(emp::TypeID type_id) {
+      if (type_id == emp::GetTypeID<bool>()) return true;
+      if (type_id == emp::GetTypeID<double>()) return true;
+      if (type_id == emp::GetTypeID<int>()) return true;
+      if (type_id == emp::GetTypeID<size_t>()) return true;
+      return false;
+    }
+
+    // /// Generate a function that will find and return the minimum value of a trait as a string.
+    // trait_fun_t GetTraitFunction_Min(const std::string & trait_name) {
+    //   size_t trait_id = org_data_map.GetID(trait_name);      
+    //   emp::TypeID trait_type = org_data_map.GetType(trait_id);
+
+    //   if (trait_type == emp::GetTypeID<int>()) {
+    //     return [trait_id](const Collection & collect){
+    //       return std::string("Error: non-numeric trait.");
+    //     };
+    //   }
+
+    //   return [trait_id](const Collection &){ return std::string("Error: non-numeric trait."); };
+    // }
+
+    // /// Generate a function -- after knowing a trait name and type -- that will take a collection
+    // /// and return the current value of this trait as a string.
+    // template <typename T>
+    // trait_fun_t GetTraitFunction(size_t trait_id, const std::string & fun_name) {
+    //   // The remainder indicates how to aggregate the trait.
+    //   if (fun_name == "min") {
+    //     return GetTraitFunction_Min(name);
+    //   }
+
+    //   // If we made it past the 'if' statements, we don't know this aggregation type.
+    //   AddError("Unknown trait aggregation mode '", trait_input, "' for trait '", name, "'.");
+
+    //   return [](const Collection &){ return std::string("Error! Unknown trait function"); };
+    // }
+
+    // /// Parse a descriptor to Generate a function that will take a collection and return the
+    // /// current value of this trait as a string.
+    // trait_fun_t ParseTraitFunction(std::string trait_input) {
+    //   // The trait input has two components: the trait name and the trait type (min, max, ave)
+
+    //   // Everything before the first colon is the trait name.
+    //   std::string trait_name = emp::string_pop(trait_input,':');
+    //   size_t trait_id = org_data_map.GetId(trait_name);      
+
+    //   if (type_id == emp::GetTypeID<bool>()) {
+    //     return GetTraitFunction<bool>(trait_id, trait_input);
+    //   }
+    //   if (type_id == emp::GetTypeID<double>()) {
+    //     return GetTraitFunction<double>(trait_id, trait_input);
+    //   }
+    //   if (type_id == emp::GetTypeID<int>()) {
+    //     return GetTraitFunction<int>(trait_id, trait_input);
+    //   }
+    //   if (type_id == emp::GetTypeID<size_t>()) {
+    //     return GetTraitFunction<size_t>(trait_id, trait_input);
+    //   }
+
+
+    //   // If we made it past the 'if' statements, we don't know this aggregation type.
+    //   AddError("Unknown trait aggregation mode '", trait_input, "' for trait '", name, "'.");
+
+    //   return [](const Collection &){ return std::string("Error! Unknown trait function"); };
+    // }
 
     // --- Manage configuration scope ---
 

@@ -4,9 +4,7 @@
  *  @date 2019-2020.
  *
  *  @file  OrganismManager.h
- *  @brief Class to track a category of organism.
- * 
- *  @todo OrganismManagers should be derived from Modules.
+ *  @brief Track a category of organisms and maintain shared data within a category.
  */
 
 #ifndef MABE_ORGANISM_MANAGER_H
@@ -26,9 +24,16 @@ namespace mabe {
 
   template <typename ORG_T>
   class OrganismManager  : public Module {
-  public:
-    using org_t = ORG_T;
+    /// Allow organisms to access private shared data in their own manager only.
+    friend OrganismTemplate<ORG_T>;
 
+  private:
+    using data_t = typename ORG_T::ManagerData;
+    
+    /// Shared data for organisms that use this manager.
+    data_t data;
+
+  public:
     OrganismManager(MABE & in_control, const std::string & in_name, const std::string & in_desc="")
       : Module(in_control, in_name, in_desc)
     {
@@ -36,6 +41,10 @@ namespace mabe {
     }
     virtual ~OrganismManager() { org_prototype.Delete(); }
 
+    /// Save the organism type that uses this manager.
+    using org_t = ORG_T;
+
+    /// Also get the TypeID for this organism for more run-time type management.
     emp::TypeID GetOrgType() const override { return emp::GetTypeID<ORG_T>(); }
 
     /// Convert this organism to the correct type (after ensuring that it is!)
@@ -47,7 +56,7 @@ namespace mabe {
     /// Convert this CONST organism to the correct type (after ensuring that it is!)
     const org_t & ConvertOrg(const Organism & org) const {
       emp_assert(&(org.GetManager()) == this);
-      return (org_t &) org;
+      return (const org_t &) org;
     }
 
     /// Create a clone of the provided organism; default to using copy constructor.

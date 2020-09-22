@@ -30,7 +30,7 @@
  *       : Offspring is ready to be placed.
  *     OnInjectReady(Organism & inject_org, Population & pop)
  *       : Organism to be injected into pop is ready to be placed.
- *     BeforePlacement(Organism & org, OrgPosition target_pos)
+ *     BeforePlacement(Organism & org, OrgPosition target_pos, OrgPosition parent_pos)
  *       : Placement location has been identified (For birth or inject)
  *     OnPlacement(OrgPosition placement_pos)
  *       : New organism has been placed in the poulation.
@@ -310,6 +310,17 @@ namespace mabe {
     }
     virtual void Randomize(Organism &, emp::Random &) const {
       emp_assert(false, "Randomize() must be overridden for either Organism or OrganismManager module.");
+    }
+
+    virtual emp::Ptr<Organism> Recombine(const Organism &, emp::Ptr<Organism>, emp::Random &) const {
+      emp_assert(false, "Recombine() must be overridden for either Organism or OrganismManager module.");
+      return nullptr;
+    }
+
+    virtual emp::vector<emp::Ptr<Organism>>
+    Recombine(const Organism &, emp::vector<emp::Ptr<Organism>>, emp::Random &) const {
+      emp_assert(false, "Recombine() must be overridden for either Organism or OrganismManager module.");
+      return emp::vector< emp::Ptr<Organism> >();
     }
 
     virtual void SetupConfig() { }
