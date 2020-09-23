@@ -29,6 +29,7 @@ namespace mabe {
 
     void SetupConfig() override {
       LinkPop(pop_id, "pop", "Population to print.");
+      // Add write(update) function to this module's scope
       std::function<int(size_t)> write_func =
         [this](size_t update) {
           WriteToFile(update);
@@ -36,7 +37,6 @@ namespace mabe {
         };
       GetScope().AddFunction("write", write_func,
         "Writes the assigned population to the console.");
-
     }
     
     void WriteToFile(size_t update){
@@ -45,9 +45,6 @@ namespace mabe {
       for(size_t org_idx = 0; org_idx < pop.GetNumOrgs(); ++org_idx){
         std::cout << "\t" << pop[org_idx].ToString() << std::endl;
       }  
-    }
-
-    void OnUpdate(size_t update) override {
     }
   };
 
