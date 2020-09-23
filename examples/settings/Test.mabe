@@ -31,13 +31,13 @@ SelectTournament select_tourny { // Select the top fitness organisms from random
   fitness_trait = "fitness";    // Which trait provides the fitness value to use?
 }
 GrowthPlacement place_next {    // Always appened births to the end of a population.
-  target_pop = "main_pop";      // Population to manage.
+  target = "main_pop";      // Population to manage.
 }
 GrowthPlacement place_next {    // Always appened births to the end of a population.
-  target_pop = "next_pop";      // Population to manage.
+  target = "next_pop";      // Population to manage.
 }
 GrowthPlacement place_next {    // Always appened births to the end of a population.
-  target_pop = "one_step_mutants";      // Population to manage.
+  target = "one_step_mutants";      // Population to manage.
 }
 MovePopulation sync_gen {       // Move organisms from one populaiton to another.
   from_pop = "next_pop";        // Population to move organisms from.
@@ -57,7 +57,6 @@ OneStepMutants mut_gen {
 }
 DumpPopulation dump_one_step{
   pop = "one_step_mutants";
-  update_step = 10;
 }
 EmptyPopulation empty_one_step{
   pop = "one_step_mutants";
@@ -66,4 +65,5 @@ EmptyPopulation empty_one_step{
 
 @start(0) print("random_seed = ", random_seed, "\n");
 @start(0) inject("bits_org", "main_pop", 200);
+@update(100,100,1000) dump_one_step.write(update);
 @update(1000) exit();

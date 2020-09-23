@@ -904,6 +904,11 @@ namespace mabe {
     // Add in built-in event triggers; these are used to say when events should happen.
     config.AddEventType("start");   // Triggered at the beginning of a run.
     config.AddEventType("update");  // Tested every update.
+    
+    // Setup an update variable that tracks the current update that can be used in the config
+    config.GetRootScope().AddValueVar("update", "The current update");
+    // Set initial value of update
+    config.GetRootScope().GetEntry("update")->SetValue(update);
   }
 
   bool MABE::Setup() {
@@ -947,6 +952,9 @@ namespace mabe {
 
   /// Update MABE a single step.
   void MABE::Update() {
+    // Increment value of update in config
+    config.GetRootScope().GetEntry("update")->SetValue(update);
+
     // When in debug mode, check the integrity of MABE each update.
     emp_assert(OK(), update);
 
