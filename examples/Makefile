@@ -50,7 +50,7 @@ native: all
 
 all: $(TARGETS)
 
-$(TARGETS): % : %.cc
+$(TARGETS): % : %.cc ../source/*/*.h
 	$(CXX) $(CFLAGS_version) $(CFLAGS) $< -o $@
 
 $(JS_TARGETS): %.js : %.cc
