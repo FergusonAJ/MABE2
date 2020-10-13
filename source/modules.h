@@ -28,3 +28,6 @@
 
 // Organism Types
 #include "orgs/BitsOrg.h"
+
+// Testing Modules
+#include "testing/ModuleFunctions.h"
