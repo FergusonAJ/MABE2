@@ -172,6 +172,7 @@ namespace mabe {
       }
     }
 
+    // TODO: Redo the way movement is handled (or ensure this works)
     // Get the fitness of a single organism
     double GetFitness(Organism & org){
       ResetState(); // Get a fresh slate
@@ -313,114 +314,6 @@ namespace mabe {
       }
     
     }
-
-    /// TODO: Create a berryworld evaluator class
-    //  // We _could_ reuse the same map for each organism, and just randomize the map between gens
-    //    // Unless that would cause some weird artifacts?
-    //  // We get rid of the ton of local variables used here
-    //// TODO: Redo the way movement is handled (or ensure this works)
-    //// Use the rules of berry world to get the fitness of a particular organism
-    //double GetFitness(Organism & org){
-    //  // Huge list of local variables to keep the state of the world
-    //  int cur_x = world_width / 2; 
-    //  int cur_y = world_height / 2;
-    //  int vel_x = 0;
-    //  int vel_y = 1;
-    //  double cur_fitness = 0;
-    //  double p;
-    //  bool has_eaten_here = false;
-    //  bool has_eaten_before = false;
-    //  size_t last_eaten = 0;
-    //  // Create the world and fill it with berries according to probabilities.
-    //  emp::vector<size_t> berry_map(world_width * world_height);
-    //  for(size_t site_idx = 0; site_idx < berry_map.size(); ++site_idx){
-    //    p = control.GetRandom().GetDouble();
-    //    for(size_t food_idx = 0; food_idx < food_replacement_probs_vec.size(); ++food_idx){
-    //      if(p < food_replacement_probs_vec[food_idx]){
-    //        berry_map[site_idx] = food_idx;
-    //        break;
-    //      }
-    //      else
-    //        p -= food_replacement_probs_vec[food_idx];
-    //    }
-    //  }
-    //  // Iterate for the specified number of updates
-    //  for(size_t update = 0; update < max_updates; ++update){
-    //    // Calculate input to send to the organism (1 if that food is located here, 0 otherwise) 
-    //    emp::vector<double> input_vec(food_type_count, 0);
-    //    if(!has_eaten_here){
-    //        size_t cur_berry = berry_map[cur_y * world_width + cur_x];
-    //        input_vec[berry_map[cur_y * world_width + cur_x]] = 1;
-    //    }
-    //    // Set org's inputs and get the org's outputs (here called actions)
-    //    org.SetVar<emp::vector<double>>(input_trait, input_vec);
-    //    org.GenerateOutput();
-    //    const emp::BitVector & actions = org.GetVar<emp::BitVector>(action_trait);
-    //    if (actions[1]){ // Eat
-    //      // TODO: Verify this is how MABE does it
-    //      if(!has_eaten_here){ // Hasn't eaten here -> Can eat!
-    //        // If the org has eaten before, and this is not the same food eaten last time -> penalty
-    //        if(has_eaten_before && berry_map[cur_y * world_width + cur_x] == last_eaten)
-    //          cur_fitness -= task_switch_cost;
-    //        else // First food eaten OR same food as last time -> reward!
-    //          cur_fitness += food_reward_vec[berry_map[cur_y * world_width + cur_x]];
-    //        // Bookkeeping
-    //        has_eaten_before = true;
-    //        has_eaten_here = true;
-    //      }
-    //    }
-    //    else if(actions[0]){ // Move
-    //      int old_x = cur_x;
-    //      int old_y = cur_y;
-    //      cur_x += vel_x;
-    //      cur_y += vel_y;
-    //      if(is_toroidal){ // If world is torus, wrap!
-    //        cur_x = cur_x % world_width;
-    //        cur_y = cur_y % world_height;
-    //      }
-    //      else{ // If the world is not a torus, keep org in the bounds! 
-    //        if(cur_x < 0) cur_x = 0;
-    //        else if(cur_x >=  world_width) cur_x = world_width - 1;
-    //        if(cur_y < 0) cur_y = 0;
-    //        else if(cur_y >=  world_height) cur_y = world_height - 1;
-    //      }
-    //      // If org ate the food that was here and then moved, add in some new food
-    //      if(has_eaten_here & (cur_x != old_x || cur_y != old_y)){
-    //        has_eaten_here = false;
-    //        // Use food replacement probabilities
-    //        for(size_t food_idx = 0; food_idx < food_replacement_probs_vec.size(); ++food_idx){
-    //          if(p < food_replacement_probs_vec[food_idx]){
-    //            berry_map[cur_y * world_width + cur_x] = food_idx;
-    //            break;
-    //          }
-    //          else
-    //            p -= food_replacement_probs_vec[food_idx];
-    //        }
-    //      }
-    //    }
-    //    else if (actions[2]){ // Turn left 45 degrees
-    //      if     (cur_x == 0  && cur_y == 1) { cur_x =  1;  cur_y = 1; }  // South     -> Southeast 
-    //      else if(cur_x == 1  && cur_y == 0) { cur_x =  1;  cur_y = -1; } // East      -> Northeast
-    //      else if(cur_x == 0  && cur_y == -1) { cur_x = -1; cur_y = -1; } // North     -> Northwest
-    //      else if(cur_x == -1 && cur_y == 0) { cur_x =  -1; cur_y = 1; }  // West      -> Southwest
-    //      else if(cur_x == 1  && cur_y == 1) { cur_x =  1;  cur_y = 0; }  // Southeast -> East
-    //      else if(cur_x == 1  && cur_y == -1) { cur_x = 0;  cur_y = -1; } // Northeast -> North
-    //      else if(cur_x == -1 && cur_y == 1) { cur_x =  0;  cur_y = 1; }  // Southwest -> South
-    //      else if(cur_x == -1 && cur_y == -1) { cur_x = -1; cur_y = 0; }  // Northwest -> West
-    //    }
-    //    else if (actions[3]){ // Turn right 45 degrees
-    //      if     (cur_x == 0  && cur_y == 1) { cur_x =  -1; cur_y = 1; }  // South     -> Southwest 
-    //      else if(cur_x == 1  && cur_y == 0) { cur_x =  1;  cur_y = 1; }  // East      -> Southeast
-    //      else if(cur_x == 0  && cur_y == -1) { cur_x = 1;  cur_y = -1; } // North     -> Northeast
-    //      else if(cur_x == -1 && cur_y == 0) { cur_x =  -1; cur_y = -1; } // West      -> Northwest
-    //      else if(cur_x == 1  && cur_y == 1) { cur_x =  0;  cur_y = 1; }  // Southeast -> South
-    //      else if(cur_x == 1  && cur_y == -1) { cur_x = 1;  cur_y = 0; }  // Northeast -> East
-    //      else if(cur_x == -1 && cur_y == 1) { cur_x =  -1; cur_y = 0; }  // Southwest -> West
-    //      else if(cur_x == -1 && cur_y == -1) { cur_x = 0;  cur_y = -1; } // Northwest -> North
-    //    }
-    //  } 
-    //  return cur_fitness;
-    //}
 
     // Evaluate the collection of organisms
     void OnUpdate(size_t update) override {
