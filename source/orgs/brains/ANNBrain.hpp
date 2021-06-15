@@ -22,27 +22,24 @@
 #include "emp/math/MMatrix.hpp"
 
 namespace mabe {
-
+  // TODO: Accept different genomes
+    // The bitstring genomes do not allow orgs to solve the BerryWorld task (at all)
   class ANNBrain : public OrganismTemplate<ANNBrain> {
   protected:
-    emp::BitVector bits;
-    size_t input_nodes;
-    size_t output_nodes;
-    size_t num_layers;
-    emp::vector<emp::MVector> layer_vec;
-    emp::vector<emp::MMatrix> weight_vec;
-    emp::vector<emp::MVector> bias_vec;
-    emp::BitVector genome;
+    size_t input_nodes;   // Number of nodes in the input layer
+    size_t output_nodes;  // Number of nodes in the output layer
+    size_t num_layers;    // Number of hidden layers
+    emp::vector<emp::MVector> layer_vec;  // Vector of math vectors, with one math vec per layer 
+                                            // containing the current values of those nodes
+    emp::vector<emp::MMatrix> weight_vec; // Vector of matrices, each matrix encodes the weights from
+                                            // layer N to layer N+1
+    emp::vector<emp::MVector> bias_vec;   // Vector of math vectors, with each math vec encoding the 
+                                            // bias values for nodes of the Nth layer
+    emp::BitVector genome;  // Bitstring genome of the org
 
   public:
     ANNBrain(OrganismManager<ANNBrain> & _manager)
       : OrganismTemplate<ANNBrain>(_manager), genome() { }
-    //ANNBrain(const ANNBrain &) = default;
-    //ANNBrain(ANNBrain &&) = default;
-    //ANNBrain(const emp::BitVector & _genome, OrganismManager<ANNBrain> & _manager)
-    //  : OrganismTemplate<ANNBrain>(_manager), genome(_genome) { }
-    //ANNBrain(size_t N, OrganismManager<ANNBrain> & _manager)
-    //  : OrganismTemplate<ANNBrain>(_manager), bits(N) { }
     ~ANNBrain() { ; }
 
     struct ManagerData : public Organism::ManagerData {
@@ -52,7 +49,7 @@ namespace mabe {
       emp::Binomial mut_dist;             ///< Distribution of number of mutations to occur.
       emp::BitVector mut_sites;           ///< A pre-allocated vector for mutation sites. 
       std::string nodes_per_layer_str;    ///< Number of nodes in each hidden layer (comma separated)
-      emp::vector<size_t> nodes_per_layer_vec;  ///< Extracted values from string above
+      emp::vector<size_t> nodes_per_layer_vec;  ///< Parsed values from nodes_per_layer_str
       size_t num_inputs = 3;              ///< Number of input nodes in the ANN
       size_t num_outputs = 2;             ///< Number of output nodes in the ANN
     };
@@ -60,7 +57,8 @@ namespace mabe {
     /// Use "to_string" to convert.
     std::string ToString() const override { return emp::to_string(genome); }
 
-    size_t Mutate(emp::Random & random) override {
+    // Apply mutations to this organism's genome (copied from BitsOrg)
+    size_t Mutate(emp::Random & random) override { 
       const size_t num_muts = SharedData().mut_dist.PickRandom(random);
 
       if (num_muts == 0) return 0;
@@ -79,44 +77,52 @@ namespace mabe {
         mut_sites.Set(pos);
       }
       genome ^= mut_sites;
+
+      // Don't forget to update the ANN!
       GenerateLayersFromGenome();
 
       return num_muts;
     }
 
+    // Randomize the genome
     void Randomize(emp::Random & random) override {
       emp::RandomizeBitVector(genome, random, 0.5);
       GenerateLayersFromGenome();
     }
-    
+   
+    // Always initialize organisms randomly (for now) 
     void Initialize(emp::Random & random) override {
       Randomize(random);
     }
 
+    // Convert comma-separated string of numbers to a usable vector
     void SpliceStringIntoVec(const std::string & s, 
         emp::vector<size_t> & vec, const unsigned char sep = ','){
       vec.clear();
       std::stringstream stream;
       size_t num_chars = 0;
+      // Iterate through each character in the string
       for(size_t idx = 0; idx < s.size(); idx++){
-        if(s[idx] == sep){
+        if(s[idx] == sep){ // If we hit a separating character, pull out the latest number
           if(num_chars > 0){
             vec.push_back(std::stod(stream.str()));
             stream.str("");
             num_chars = 0;
           }
-        }
-        else {
+        } // TODO: What if we hit a non-numeric, non-separator character?
+        else { // Otherwise, add this to the stream
           stream << s[idx];
           ++num_chars;
         }
       } 
+      // If we have characters left in the stream when we hit the end of the string, convert them!
       if(num_chars > 0){
         vec.push_back(std::stoull(stream.str()));
         stream.str("");
       }
     }
 
+    // Calculate how large the genome needs to be to fully encode the ANN
     size_t CalculateGenomeSize(){
       size_t res = 0;
       // For each hidden layer, add biases and weights connecting to previous layer
@@ -127,9 +133,8 @@ namespace mabe {
               SharedData().nodes_per_layer_vec[layer_idx-1];
         } 
       }
-      //res += SharedData().num_inputs; // Input node biases
       res += SharedData().num_outputs; // Output node biases
-      if(SharedData().nodes_per_layer_vec.size() > 0){ // If we have at least one layer
+      if(SharedData().nodes_per_layer_vec.size() > 0){ // If we have at least one hidden layer
         // Add weights from input nodes to first hidden layer
         res += SharedData().num_inputs * SharedData().nodes_per_layer_vec[0];
         // Add weights from last hidden layer to output nodes
@@ -214,9 +219,6 @@ namespace mabe {
 
     /// Setup this organism type to be able to load from config.
     void SetupConfig() override {
-      //GetManager().LinkFuns<size_t>([this](){ return bits.size(); },
-      //                 [this](const size_t & N){ return bits.Resize(N); },
-      //                 "N", "Number of bits in organism");
       GetManager().LinkVar(SharedData().mut_prob, "mut_prob",
                       "Probability of each bit mutating on reproduction.");
       GetManager().LinkVar(SharedData().input_name, "input_name",
@@ -233,16 +235,16 @@ namespace mabe {
 
     /// Setup this organism type with the traits it need to track.
     void SetupModule() override {
+      // Get the number and size of the hidden layers, and construct the network appropriately
       SpliceStringIntoVec(SharedData().nodes_per_layer_str, SharedData().nodes_per_layer_vec);
       size_t genome_size = CalculateGenomeSize();
       genome.resize(genome_size);
       GenerateLayersFromGenome();
+
       // Setup the mutation distribution.
       SharedData().mut_dist.Setup(SharedData().mut_prob, genome.size());
-
       // Setup the default vector to indicate mutation positions.
       SharedData().mut_sites.Resize(genome.size());
-
       // Setup the output trait.
       GetManager().AddSharedTrait(SharedData().input_name,
                                   "Input to ANN.",
@@ -253,7 +255,9 @@ namespace mabe {
                                   emp::BitVector(SharedData().num_outputs));
     }
     
-    /// Put the bits in the correct output position.
+    // TODO: Add the sigmoid activation (and eventually more!) 
+      // (Thus far we've only used bits, and thus the activation function would have no effect)
+    // Propogate the input values through the network to get an output 
     void GenerateOutput() override {
       emp::vector<double> input_vec = GetVar<emp::vector<double>>(SharedData().input_name);
       emp_assert(input_vec.size() == layer_vec[0].cardinality(), 
@@ -261,22 +265,21 @@ namespace mabe {
       emp::BitVector output_vec(SharedData().num_outputs);
 
       if(SharedData().nodes_per_layer_vec.size() == 0){ // No hidden layers
-        layer_vec[1] = layer_vec[0] * weight_vec[0] + bias_vec[0];
-        for(size_t bit_idx = 0; bit_idx < output_vec.size(); ++bit_idx){
-          output_vec[bit_idx] = layer_vec[1][bit_idx] > 0.5 ? 1 : 0; 
-        } 
+        // Output is a function of input, weights, and biases
+        layer_vec[1] = layer_vec[0] * weight_vec[0] + bias_vec[0]; 
       }
-      else{ // Hidden layers
+      else{ // Hidden layers present
         emp::MVector cur_vec = layer_vec[0];
+        // Each layer is the previous layer * weights + biases
         for(size_t layer_idx = 0; layer_idx < layer_vec.size() - 1; ++layer_idx){
           layer_vec[layer_idx + 1] = 
               layer_vec[layer_idx] * weight_vec[layer_idx] + bias_vec[layer_idx];      
         } 
-        for(size_t bit_idx = 0; bit_idx < output_vec.size(); ++bit_idx){
-          output_vec[bit_idx] = layer_vec[layer_vec.size() - 1][bit_idx] > 0.5 ? 1 : 0; 
-        } 
-         
       }
+      // Convert outputs to a format of the organism's output trait
+      for(size_t bit_idx = 0; bit_idx < output_vec.size(); ++bit_idx){
+        output_vec[bit_idx] = layer_vec[1][bit_idx] > 0.5 ? 1 : 0; 
+      } 
       SetVar<emp::BitVector>(SharedData().output_name, output_vec);
     }
   };
