@@ -1,0 +1,15 @@
+Population main_pop;
+Population next_pop;
+
+CommandLine cl;
+EvalBerryWorld eval_berry;
+SelectElite select_e;
+SelectTournament select_t;
+FileOutput output;
+GrowthPlacement place_next;
+MovePopulation sync_gen;
+ANNBrain ann_org;
+
+@start() print("random_seed = ", random_seed, "\n");
+@start() inject("ann_org", 200);
+@update(1000) exit();
