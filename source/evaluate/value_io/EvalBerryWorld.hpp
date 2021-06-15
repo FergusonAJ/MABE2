@@ -75,6 +75,7 @@ namespace mabe {
     }
     ~EvalBerryWorld() { }
 
+    // Setup all configuration options
     void SetupConfig() override {
       LinkCollection(target_collect, "target", "Which population(s) should we evaluate?");
       LinkVar(world_width, "world_width", "How wide is the world?");
@@ -94,40 +95,45 @@ namespace mabe {
       LinkVar(fitness_trait, "fitness_trait", "Which trait should we store fitness in?");
     }
 
+    // Splice a comma-separated string of numbers into a c++ vector of doubles
     void SpliceStringIntoVec(const std::string & s, 
         emp::vector<double> & vec, const unsigned char sep = ','){
       vec.clear();
       std::stringstream stream;
       size_t num_chars = 0;
+      // Iterate through each character in the string
       for(size_t idx = 0; idx < s.size(); idx++){
-        if(s[idx] == sep){
+        if(s[idx] == sep){ // If we hit a separating character, pull out the latest number
           if(num_chars > 0){
             vec.push_back(std::stod(stream.str()));
             stream.str("");
             num_chars = 0;
           }
-        }
-        else {
+        } // TODO: What if we hit a non-numeric, non-separator character?
+        else { // Otherwise, add this to the stream
           stream << s[idx];
           ++num_chars;
         }
       } 
-      if(num_chars > 0){
+      // If we have characters left in the stream when we hit the end of the string, convert them!
+      if(num_chars > 0){ 
         vec.push_back(std::stod(stream.str()));
         stream.str("");
       }
     }
 
+    // Post-configuration module setup
     void SetupModule() override {
       // Setup the traits.
       AddRequiredTrait<emp::vector<double>>(input_trait);
       AddRequiredTrait<emp::BitVector>(action_trait);
       AddOwnedTrait<double>(fitness_trait, "BerryWorld fitness value", 0.0);
-
+      // Convert config options passed as strings to usable vectors
       SpliceStringIntoVec(food_reward_str, food_reward_vec); 
       SpliceStringIntoVec(food_replacement_probs_str, food_replacement_probs_vec); 
-
-      std::cout << "Berry world initialized with " << food_type_count << " types of food!" << std::endl;
+      // Spit out some info to make sure conversions worked
+      std::cout << "Berry world initialized with " << 
+          food_type_count << " types of food!" << std::endl;
       std::cout << "Food rewards: " << std::endl;
       for(size_t idx = 0; idx < food_type_count; ++idx){
         std::cout << "    " << food_reward_vec[idx]  << std::endl;
@@ -140,7 +146,13 @@ namespace mabe {
     }
 
     // TODO: Create a berryworld evaluator class
+      // We _could_ reuse the same map for each organism, and just randomize the map between gens
+        // Unless that would cause some weird artifacts?
+      // We get rid of the ton of local variables used here
+    // TODO: Redo the way movement is handled (or ensure this works)
+    // Use the rules of berry world to get the fitness of a particular organism
     double GetFitness(Organism & org){
+      // Huge list of local variables to keep the state of the world
       int cur_x = world_width / 2; 
       int cur_y = world_height / 2;
       int vel_x = 0;
@@ -150,6 +162,7 @@ namespace mabe {
       bool has_eaten_here = false;
       bool has_eaten_before = false;
       size_t last_eaten = 0;
+      // Create the world and fill it with berries according to probabilities.
       emp::vector<size_t> berry_map(world_width * world_height);
       for(size_t site_idx = 0; site_idx < berry_map.size(); ++site_idx){
         p = control.GetRandom().GetDouble();
@@ -162,47 +175,50 @@ namespace mabe {
             p -= food_replacement_probs_vec[food_idx];
         }
       }
+      // Iterate for the specified number of updates
       for(size_t update = 0; update < max_updates; ++update){
+        // Calculate input to send to the organism (1 if that food is located here, 0 otherwise) 
         emp::vector<double> input_vec(food_type_count, 0);
         if(!has_eaten_here){
             size_t cur_berry = berry_map[cur_y * world_width + cur_x];
             input_vec[berry_map[cur_y * world_width + cur_x]] = 1;
         }
+        // Set org's inputs and get the org's outputs (here called actions)
         org.SetVar<emp::vector<double>>(input_trait, input_vec);
         org.GenerateOutput();
         const emp::BitVector & actions = org.GetVar<emp::BitVector>(action_trait);
         if (actions[1]){ // Eat
           // TODO: Verify this is how MABE does it
-          if(!has_eaten_here){
+          if(!has_eaten_here){ // Hasn't eaten here -> Can eat!
+            // If the org has eaten before, and this is not the same food eaten last time -> penalty
+            if(has_eaten_before && berry_map[cur_y * world_width + cur_x] == last_eaten)
+              cur_fitness -= task_switch_cost;
+            else // First food eaten OR same food as last time -> reward!
+              cur_fitness += food_reward_vec[berry_map[cur_y * world_width + cur_x]];
+            // Bookkeeping
             has_eaten_before = true;
             has_eaten_here = true;
-            if(has_eaten_before){
-              if(berry_map[cur_y * world_width + cur_x] == last_eaten)
-                cur_fitness -= task_switch_cost;
-              else
-                cur_fitness += food_reward_vec[berry_map[cur_y * world_width + cur_x]];
-            }
           }
-          //else
-          //  cur_fitness += food_reward_vec[berry_map[cur_y * world_width + cur_x]];
         }
         else if(actions[0]){ // Move
-          size_t old_x = cur_x;
-          size_t old_y = cur_y;
+          int old_x = cur_x;
+          int old_y = cur_y;
           cur_x += vel_x;
           cur_y += vel_y;
-          if(is_toroidal){
+          if(is_toroidal){ // If world is torus, wrap!
             cur_x = cur_x % world_width;
             cur_y = cur_y % world_height;
           }
-          else{
-            if(cur_x < 0) cur_x = world_width - 1;
-            else if(cur_x >=  world_width) cur_x = 0;
-            if(cur_y < 0) cur_y = world_height - 1;
-            else if(cur_y >=  world_height) cur_y = 0;
+          else{ // If the world is not a torus, keep org in the bounds! 
+            if(cur_x < 0) cur_x = 0;
+            else if(cur_x >=  world_width) cur_x = world_width - 1;
+            if(cur_y < 0) cur_y = 0;
+            else if(cur_y >=  world_height) cur_y = world_height - 1;
           }
+          // If org ate the food that was here and then moved, add in some new food
           if(has_eaten_here & (cur_x != old_x || cur_y != old_y)){
             has_eaten_here = false;
+            // Use food replacement probabilities
             for(size_t food_idx = 0; food_idx < food_replacement_probs_vec.size(); ++food_idx){
               if(p < food_replacement_probs_vec[food_idx]){
                 berry_map[cur_y * world_width + cur_x] = food_idx;
@@ -237,10 +253,11 @@ namespace mabe {
       return cur_fitness;
     }
 
+    // Evaluate the collection of organisms
     void OnUpdate(size_t update) override {
       emp_assert(control.GetNumPopulations() >= 1);
 
-      // Loop through the population and evaluate each organism.
+      // Loop through the population and evaluate each organism, keeping track of best performer
       double max_fitness = 0.0;
       emp::Ptr<Organism> max_org = nullptr;
       mabe::Collection alive_collect( target_collect.GetAlive() );
