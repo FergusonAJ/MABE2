@@ -12,6 +12,7 @@
 #include "evaluate/static/EvalDiagnostic.hpp"
 #include "evaluate/static/EvalMatchBits.hpp"
 #include "evaluate/static/EvalNK.hpp"
+#include "evaluate/value_io/EvalBerryWorld.hpp"
 
 // Interface Modules
 #include "interface/CommandLine.hpp"
@@ -33,3 +34,5 @@
 #include "orgs/AvidaGPOrg.hpp"
 #include "orgs/BitsOrg.hpp"
 #include "orgs/ValsOrg.hpp"
+#include "orgs/brains/ANNBrain.hpp"
+#include "orgs/brains/HumanBrain.hpp"
