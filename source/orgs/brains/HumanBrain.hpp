@@ -4,7 +4,7 @@
  *  @date 2019-2020.
  *
  *  @file  HumanBrain.hpp
- *  @brief Testing brain that prompts the user for input 
+ *  @brief Brain that prompts the user for input, useful for testing. 
  *  @note Status: ALPHA
  */
 
@@ -31,12 +31,6 @@ namespace mabe {
   public:
     HumanBrain(OrganismManager<HumanBrain> & _manager)
       : OrganismTemplate<HumanBrain>(_manager)  { }
-    //HumanBrain(const HumanBrain &) = default;
-    //HumanBrain(HumanBrain &&) = default;
-    //HumanBrain(const emp::BitVector & _genome, OrganismManager<HumanBrain> & _manager)
-    //  : OrganismTemplate<HumanBrain>(_manager), genome(_genome) { }
-    //HumanBrain(size_t N, OrganismManager<HumanBrain> & _manager)
-    //  : OrganismTemplate<HumanBrain>(_manager), bits(N) { }
     ~HumanBrain() { ; }
 
     struct ManagerData : public Organism::ManagerData {
@@ -49,6 +43,7 @@ namespace mabe {
     /// Use "to_string" to convert.
     std::string ToString() const override { return "human"; }
 
+    // Not used, but must be defined
     size_t Mutate(emp::Random & random) override {
       return 0;
     }
@@ -59,31 +54,34 @@ namespace mabe {
       ;
     }
 
+    // Convert comma-separated string of numbers to a usable vector
     void SpliceStringIntoVec(const std::string & s, 
         emp::vector<size_t> & vec, const unsigned char sep = ','){
       vec.clear();
       std::stringstream stream;
       size_t num_chars = 0;
+      // Iterate through each character in the string
       for(size_t idx = 0; idx < s.size(); idx++){
-        if(s[idx] == sep){
+        if(s[idx] == sep){ // If we hit a separating character, pull out the latest number
           if(num_chars > 0){
             vec.push_back(std::stod(stream.str()));
             stream.str("");
             num_chars = 0;
           }
-        }
-        else {
+        } // TODO: What if we hit a non-numeric, non-separator character?
+        else { // Otherwise, add this to the stream
           stream << s[idx];
           ++num_chars;
         }
       } 
+      // If we have characters left in the stream when we hit the end of the string, convert them!
       if(num_chars > 0){
         vec.push_back(std::stoull(stream.str()));
         stream.str("");
       }
     }
 
-    /// Setup this organism type to be able to load from config.
+    /// Setup this organism's configuration options.
     void SetupConfig() override {
       GetManager().LinkVar(SharedData().input_name, "input_name",
                       "Name of variable that contains input data.");
@@ -95,7 +93,7 @@ namespace mabe {
                       "Number of output values");
     }
 
-    /// Setup this organism type with the traits it need to track.
+    /// Setup this organism type with the traits it needs to track.
     void SetupModule() override{ 
       // Setup the output trait.
       GetManager().AddSharedTrait(SharedData().input_name,
@@ -107,22 +105,24 @@ namespace mabe {
                                   emp::BitVector(SharedData().num_outputs));
     }
     
-    /// Put the bits in the correct output position.
+    /// Send the user current inputs and ask for outputs 
     void GenerateOutput() override {
+      // Inputs
       emp::vector<double> input_vec = GetVar<emp::vector<double>>(SharedData().input_name);
       emp::BitVector output_vec(SharedData().num_outputs);
       std::cout << "Input: " << input_vec << std::endl;
-      std::cout << "Please type your output as a comma separated list of non-negative integers then hit enter:"
-        << std::endl;
+      std::cout << "Please type your output as a comma separated list of non-negative integers then hit enter:" << std::endl;
+      // Outputs
       bool valid_input = false;
-      while(!valid_input){
+      while(!valid_input){ // Keep looping until we get something usable (right number of values)
         emp::vector<size_t> user_input_vec; 
         std::string user_input_str;
-        std::cin  >> user_input_str;
+        std::cin >> user_input_str;
+        // Turn string into vector
         SpliceStringIntoVec(user_input_str, user_input_vec);
-        if(SharedData().num_outputs == user_input_vec.size()){
+        if(SharedData().num_outputs == user_input_vec.size()){// Do we have the right number of vals?
           valid_input = true;
-          for(size_t idx = 0; idx < user_input_vec.size(); ++idx){
+          for(size_t idx = 0; idx < user_input_vec.size(); ++idx){ // Convert to bits
             output_vec[idx] = user_input_vec[idx] >= 0.5 ? 1 : 0;
           }
         }
