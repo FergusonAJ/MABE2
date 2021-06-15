@@ -22,16 +22,17 @@ namespace mabe {
   class BerryWorldEvaluator {
     friend EvalBerryWorld;
     protected:
+    MABE& control;
     // Variable defining the world
-    size_t world_width;       // World width as measured by number of tiles/berries
-    size_t world_height;      // World width as measured by number of tiles/berries
+    int world_width;       // World width as measured by number of tiles/berries
+    int world_height;      // World width as measured by number of tiles/berries
     bool is_toroidal;         // If true, walking off one side of the world will wrap 
                                 // you to the opposite side (i.e., the world is a torus)
+    size_t max_updates;  // How many updates (eat/move/rotate) does each organism take
     size_t food_type_count;   // Number of different types of berries that can spawn
     double task_switch_cost;  // The penalty for an organism to eat a berry of a different type 
                                 // than the previous berry consumed
     // TODO: Make a config option
-    size_t max_updates;  // How many updates (eat/move/rotate) does each organism take
     emp::vector<double> food_reward_vec;  // Parsed version of food_reward_str
     emp::vector<double> food_replacement_probs_vec; // Parsed version of food_reward_str
     // Variables to keep the state of the world
@@ -45,7 +46,6 @@ namespace mabe {
     double cur_fitness = 0;
     emp::vector<size_t> berry_map;
     emp::vector<size_t> clean_berry_map;
-    MABE& control;
     std::string input_trait;          // Name of the trait to assign org inputs (i.e. env. stimuli)
     std::string action_trait;         // Name of the trait returned from the org to denote actions
     std::string fitness_trait;        // Name of the trait to assign fitness to
@@ -127,8 +127,6 @@ namespace mabe {
        bool _max_updates = 10,
        size_t _food_types = 2,
        double _task_switch_cost = 1.4,
-       const std::string & _food_reward_str = "1,1",
-       const std::string & _food_replacement_probs_str = "0.5,0.5",
        const std::string & _itrait="inputs", 
        const std::string & _atrait="actions", 
        const std::string & _ftrait="fitness"
@@ -182,7 +180,6 @@ namespace mabe {
         // Calculate input to send to the organism (1 if that food is located here, 0 otherwise) 
         emp::vector<double> input_vec(food_type_count, 0);
         if(!has_eaten_here){
-            size_t cur_berry = berry_map[cur_y * world_width + cur_x];
             input_vec[berry_map[cur_y * world_width + cur_x]] = 1;
         }
         // Set org's inputs and get the org's outputs (here called actions)
@@ -201,18 +198,16 @@ namespace mabe {
 
   class EvalBerryWorld : public Module {
   private:
+    BerryWorldEvaluator world;
+    mabe::Collection target_collect;  // Collection of organisms to evaluate
     std::string food_reward_str;          // What's the fitness reward for eating each type of berry?
                                             // Passed from config as a comma-separated string
-    //emp::vector<double> food_reward_vec;  // Parsed version of food_reward_str
     std::string food_replacement_probs_str;   // Probability that a new food will be of X type.
                                                 // Comma-separated string passed from config.
                                                 // E.g., 0.25,0.5,0.25, each new berry has a 50% 
                                                 // chance of being type 2 and a 25% chance each of 
                                                 // type 1 or 3
                                                 // All probabilities should add up to 1.
-    //emp::vector<double> food_replacement_probs_vec; // Parsed version of food_reward_str
-    mabe::Collection target_collect;  // Collection of organisms to evaluate
-    BerryWorldEvaluator world;
 
   public:
     EvalBerryWorld(mabe::MABE & control,
