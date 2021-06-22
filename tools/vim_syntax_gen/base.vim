@@ -13,6 +13,7 @@ syn keyword mabeModuleName <<TYPES>>
 syn match mabeComment '//.*$'
 syn match mabeFunction '@\w*'
 syn region mabeBlock start="{" end="}" fold transparent
+syn region mabeString start="\"" end="\""
 
 " Regular int like number with - + or nothing in front
 syn match mabeNumber '\d\+' 
@@ -36,4 +37,5 @@ hi def link mabeModuleName Type
 hi def link mabeComment Comment
 hi def link mabeFunction Statement
 hi def link mabeNumber Constant
+hi def link mabeString Constant
 
