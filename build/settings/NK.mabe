@@ -15,11 +15,19 @@ EvalNK eval_nk {                // Evaluate bitstrings on an NK fitness lanscape
   fitness_trait = "fitness";    // Which trait should we store NK fitness in?
 }
 
+Combinator comb{
+  collection = "main_pop";
+  trait_1 = "fitness";
+  trait_2 = "fitness";
+  output_trait = "fitness_2";
+  operator = "+";
+}
+
 FileOutput output {
   filename = "output.csv";      // Name of file for output data.
 
   // Column format to use in the file.
-  format = "fitness,fitness:richness,fitness:mode,fitness:max,fitness:mean,fitness:stddev,fitness:entropy,bits";
+  format = "fitness:max,fitness_2:max,fitness:0,fitness_2:0";
   target = "main_pop";          // Which population(s) should we print from?
   output_updates = "0:10";      // Which updates should we output data?
 }

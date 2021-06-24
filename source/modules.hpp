@@ -12,6 +12,7 @@
 #include "evaluate/static/EvalDiagnostic.hpp"
 #include "evaluate/static/EvalMatchBits.hpp"
 #include "evaluate/static/EvalNK.hpp"
+#include "evaluate/Combinator.hpp"
 
 // Interface Modules
 #include "interface/CommandLine.hpp"
