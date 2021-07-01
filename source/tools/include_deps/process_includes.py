@@ -1,4 +1,7 @@
 input_filename = 'include_list.txt'
+dot_filename = 'output.dot'
+
+from graphviz import Digraph
 
 D = {}
 included_list = []
@@ -32,9 +35,11 @@ with open(input_filename, 'r') as in_fp:
         #print(full_source_path)
 
 print('Level 0')
+base_path_list = []
 for path in included_list:
     if path not in D.keys():
         print('\t', path)
+        base_path_list.append(path)
 
 def get_level(path, cur_level = 0):
     if path not in D.keys():
@@ -58,3 +63,33 @@ for level in range(1, len(level_list)):
     for path in level_list[level]:
         print('\t', path)
 
+node_D = {}
+cur_idx = 0
+
+graph = Digraph()
+for path in base_path_list:
+    if path not in node_D.keys():
+        node_D[path] = str(cur_idx)
+        cur_idx += 1
+        graph.node(node_D[path], path, shape='house')
+for path in D.keys():
+    if path not in node_D.keys():
+        node_D[path] = str(cur_idx)
+        cur_idx += 1
+        graph.node(node_D[path], path)
+    for include_path in D[path]:
+        if include_path not in node_D.keys():
+            node_D[include_path] = str(cur_idx)
+            cur_idx += 1
+            graph.node(node_D[include_path], include_path)
+        graph.edge(node_D[path], node_D[include_path])
+graph.render('dependencies')
+
+
+#with open(dot_filename, 'w') as dot_fp:
+#    dot_fp.write('digraph includes {\n')
+#    for source_path in D.keys():
+#        for include_path in D[source_path]:
+#            dot_fp.write(source_path + ' -> ' + include_path + '\n')
+#
+#    dot_fp.write('}')
