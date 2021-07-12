@@ -67,22 +67,27 @@ node_D = {}
 cur_idx = 0
 
 graph = Digraph()
-for path in base_path_list:
-    if path not in node_D.keys():
-        node_D[path] = str(cur_idx)
-        cur_idx += 1
-        graph.node(node_D[path], path, shape='house')
-for path in D.keys():
-    if path not in node_D.keys():
-        node_D[path] = str(cur_idx)
-        cur_idx += 1
-        graph.node(node_D[path], path)
-    for include_path in D[path]:
-        if include_path not in node_D.keys():
-            node_D[include_path] = str(cur_idx)
+with graph.subgraph() as base_layer:
+    base_layer.attr(rank='same')
+    for path in base_path_list:
+        if path not in node_D.keys():
+            node_D[path] = str(cur_idx)
             cur_idx += 1
-            graph.node(node_D[include_path], include_path)
-        graph.edge(node_D[path], node_D[include_path])
+            base_layer.node(node_D[path], path, shape='house', pos='0,0')
+for level in range(1, len(level_list)):
+    with graph.subgraph() as layer:
+        layer.attr(rank='same')
+        for path in level_list[level]:
+            if path not in node_D.keys():
+                node_D[path] = str(cur_idx)
+                cur_idx += 1
+                layer.node(node_D[path], path)
+            for include_path in D[path]:
+                if include_path not in node_D.keys():
+                    node_D[include_path] = str(cur_idx)
+                    cur_idx += 1
+                    layer.node(node_D[include_path], include_path)
+                graph.edge(node_D[path], node_D[include_path])
 graph.render('dependencies')
 
 
