@@ -756,7 +756,8 @@ namespace mabe {
     emp_assert(OK(), update);
 
     // If informaiton on any of the signals has changed, update them.
-    if (rescan_signals) UpdateSignals();
+    //if (rescan_signals) UpdateSignals();
+    UpdateSignals();
 
     // Signal that a new update is about to begin.
     before_update_sig.Trigger(update);
