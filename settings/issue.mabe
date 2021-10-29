@@ -1,0 +1,47 @@
+random_seed = 0;       // Seed for random number generator; use 0 to base on time.
+Population main_pop;            // Collection of organisms
+Population next_pop;            // Collection of organisms
+Value pop_size = 5;            // Local value variable.
+CommandLine cl {                // Handle basic I/O on the command line.
+  format = "fitness:max,fitness:mean";// Column format to use in the file.
+  target = "main_pop";          // Which population(s) should we print from?
+}
+EvalNK eval_nk {                // Evaluate bitstrings on an NK fitness lanscape.
+  target = "main_pop";          // Which population(s) should we evaluate?
+  N = 100;                      // Number of bits required in output
+  K = 3;                        // Number of bits used in each gene
+  bits_trait = "bits";          // Which trait stores the bit sequence to evaluate?
+  fitness_trait = "fitness";    // Which trait should we store NK fitness in?
+}
+FileOutput output {             // Output collected data into a specified file.
+  filename = "output.csv";      // Name of file for output data.
+  format = "fitness:max,fitness:mean,fitness:0,fitness:1,fitness:2,fitness:3,fitness:4";// Column format to use in the file.
+  target = "main_pop";          // Which population(s) should we print from?
+  output_updates = "0:1";      // Which updates should we output data?
+}
+SelectTournament select_t {     // Select the top fitness organisms from random subgroups for replication.
+  select_pop = "main_pop";      // Population from which to select parents
+  birth_pop = "next_pop";       // Population into which offspring should be placed
+  tournament_size = 2;          // Number of orgs in each tournament
+  num_tournaments = 5;        // Number of tournaments to run
+  fitness_fun = "fitness";      // Trait equation that produces fitness value to use
+}
+GrowthPlacement place_next {    // Always appened births to the end of a population.
+  target = "main_pop,next_pop"; // Population(s) to manage.
+}
+MovePopulation sync_gen {       // Move organisms from one populaiton to another.
+  from_pop = "next_pop";        // Population to move organisms from.
+  to_pop = "main_pop";          // Population to move organisms into.
+  reset_to = 1;                 // Should we erase organisms at the destination?
+}
+BitsOrg bits_org {              // Organism consisting of a series of N bits.
+  N = 100;                      // Number of bits in organism
+  mut_prob = 0.01;              // Probability of each bit mutating on reproduction.
+  output_name = "bits";         // Name of variable to contain bit sequence.
+  init_random = 1;              // Should we randomize ancestor?  (0 = all zeros)
+}
+
+@start(0) PRINT("random_seed = ", random_seed, "\n");
+@start(0) INJECT("bits_org", "main_pop", pop_size);
+@update(5) eval_nk._active = 0;
+@update(10) EXIT();
