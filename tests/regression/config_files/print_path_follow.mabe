@@ -1,0 +1,4193 @@
+random_seed = 30;               // Seed for random number generator; use 0 to base on time.
+Population main_pop;            // Collection of organisms
+Var pop_size = 1000;            // Local value variable.
+Var max_gens = 100;             // Local value variable.
+Var do_multiply = 1;            // Local value variable.
+MaxSizePlacement place_max_size { // Grow population to a given size then maintain
+  target = "main_pop";            // Population(s) to manage.
+  max_pop_size = pop_size;        // Maximum size of the population.
+};
+AnnotatePlacement_Position pos_annotater { // Store org's position as trait on placement.
+  target = "main_pop";      // Population(s) to annotate
+  pos_trait = "org_pos";    // Name of trait that will hold organism's position
+};
+SchedulerProbabilistic scheduler { // Rations out updates to organisms based on a specified attribute, using a method akin to roulette wheel selection.
+  pop = "main_pop";             // Which population should we select parents from?
+  avg_updates = 30;             // How many updates should organism receive on average?
+  trait = "merit";              // Which trait provides the fitness value to use?
+  base_value = 1;               // What value should the scheduler use for organisms that have performed no tasks?
+  merit_scale_factor = 2;       // How should the scheduler scale merit?
+};
+VirtualCPU_Inst_Nop inst_lib_nop { // Nop instructions for VirtualCPUOrg
+  target_pop = "main_pop";      // Population(s) to manage.
+  num_nops = 6;                 // Number of nops to include.
+  include_nop_x = 0;            // Include the special case NopX?
+  nop_x_id = -1;                // ID for the NopX instruction
+  start_nop_id = 0;            // ID for the NopA instruction, additional nops increment from there
+};
+VirtualCPU_Inst_Math inst_lib_math { // Math instructions for VirtualCPUOrg
+  include_inc = 1;              // Do we include the 'inc' instruction?
+  include_dec = 1;              // Do we include the 'dec' instruction?
+  include_add = 1;              // Do we include the 'add' instruction?
+  include_sub = 1;              // Do we include the 'sub' instruction?
+  include_nand = 1;             // Do we include the 'nand' instruction?
+  include_shift_l = 1;          // Do we include the 'shift_l' instruction?
+  include_shift_r = 1;          // Do we include the 'shift_r' instruction?
+  inc_id = 6;                  // ID of the 'inc' instruction
+  dec_id = 7;                  // ID of the 'dec' instruction
+  add_id = 8;                  // ID of the 'add' instruction
+  sub_id = 9;                  // ID of the 'sub' instruction
+  nand_id = 10;                  // ID of the 'nand' instruction
+  shift_l_id = 11;              // ID of the 'shift_l' instruction
+  shift_r_id = 12;               // ID of the 'shift_r' instruction
+  target_pop = "main_pop";      // Population(s) to manage.
+};
+VirtualCPU_Inst_IO inst_lib_io { // IO instructions for VirtualCPUOrg
+  target_pop = "main_pop";      // Population(s) to manage.
+  input_name = "input";         // Name of variable to store inputs
+  output_name = "output";       // Name of variable to store outputs
+  input_idx_name = "input_idx"; // Index of next input to be loaded
+  io_inst_id = 13;              // ID of the IO instruction
+};
+VirtualCPU_Inst_Flow inst_lib_flow { // Flow control instructions for VirtualCPUOrg
+  include_if_label = 1;         // Do we include the 'if_label' instruction?
+  include_if_less = 1;          // Do we include the 'if_less' instruction?
+  include_if_not_equal = 1;     // Do we include the 'if_not_equal' instruction?
+  include_mov_head_if_not_equal = 1; // Do we include the 'mov_head_if_not_equal' instruction?
+  if_not_equal_id = 14;          // ID of the 'if_not_equal' instruction
+  if_less_id = 15;               // ID of the 'if_less' instruction
+  if_label_id = 16;             // ID of the 'if_label' instruction
+  mov_head_if_not_equal_id = 17;// ID of the 'mov_head_if_not_equal' instruction
+  target_pop = "main_pop";      // Population(s) to manage.
+};
+VirtualCPU_Inst_Label inst_lib_label { // Label control instructions for VirtualCPUOrg
+  include_label = 1;                 // Do we include the 'label' instruction?
+  include_search_label_direct_b = 1; // Do we include the 'search_label_direct_b' instruction?
+  include_search_label_direct_f = 1; // Do we include the 'search_label_direct_f' instruction?
+  include_search_label_direct_s = 1; // Do we include the 'search_label_direct_s' instruction?
+  include_search_seq_direct_b = 1;   // Do we include the 'search_seq_direct_b' instruction?
+  include_search_seq_direct_f = 1;   // Do we include the 'search_seq_direct_f' instruction?
+  include_search_seq_direct_s = 1;   // Do we include the 'search_seq_direct_s' instruction?
+  label_id = 18;                     // ID of the 'label' instruction
+  search_label_direct_b_id = 19;     // ID of the 'search_label_direct_s' instruction
+  search_label_direct_f_id = 20;     // ID of the 'search_label_direct_s' instruction
+  search_label_direct_s_id = 21;     // ID of the 'search_label_direct_s' instruction
+  search_seq_direct_b_id = 22;       // ID of the 'search_seq_direct_s' instruction
+  search_seq_direct_f_id = 23;       // ID of the 'search_seq_direct_s' instruction
+  search_seq_direct_s_id = 24;       // ID of the 'search_seq_direct_s' instruction
+  target_pop = "main_pop"; // Population(s) to manage.
+};
+VirtualCPU_Inst_Manipulation inst_lib_manip { // Manipulation instructions for VirtualCPUOrg
+  include_get_head = 1;         // Do we include the 'get_head' instruction?
+  include_jmp_head = 1;         // Do we include the 'jmp_head' instruction?
+  include_mov_head = 1;         // Do we include the 'mov_head' instruction?
+  include_pop = 1;              // Do we include the 'pop' instruction?
+  include_push = 1;             // Do we include the 'push' instruction?
+  include_set_flow = 1;         // Do we include the 'set_flow' instruction?
+  include_swap = 1;             // Do we include the 'swap' instruction?
+  include_swap_stack = 1;       // Do we include the 'swap_stack' instruction?
+  pop_inst_id = 25;              // ID for the 'pop' instruction
+  push_id = 26;                  // ID for the 'push' instruction
+  swap_stack_id = 27;            // ID for the 'swap_stack' instruction
+  swap_id = 28;                  // ID for the 'swap' instruction
+  mov_head_id = 29;              // ID for the 'mov_head' instruction
+  jmp_head_id = 30;              // ID for the 'jmp_head' instruction
+  get_head_id = 31;              // ID for the 'get_head' instruction
+  set_flow_id = 32;              // ID for the 'set_flow' instruction
+  target_pop = "main_pop";      // Population(s) to manage.
+};
+VirtualCPU_Inst_Replication inst_lib_repl { // Replication instructions for VirtualCPUOrg
+  target_pop = "main_pop";      // Population(s) to manage.
+  pos_trait = "org_pos";        // Name of trait that holds organism's position
+  offspring_genome_trait = "offspring_genome";// Name of trait that holds the offspring organism's genome
+  include_h_alloc = 0;          // Do we include the 'h_alloc' instruction?
+  include_h_divide = 0;         // Do we include the 'h_divide' instruction?
+  include_h_copy = 0;           // Do we include the 'h_copy' instruction?
+  include_h_search = 0;         // Do we include the 'h_search' instruction?
+  include_repro = 1;            // Do we include the 'repro' instruction?
+  h_alloc_id = 33;              // ID of the h_alloc instruction
+  h_divide_id = 34;             // ID of the h_divide instruction
+  h_copy_id = 35;               // ID of the h_copy instruction
+  h_search_id = 36;             // ID of the h_search instruction
+  repro_id = 33;                // ID of the repro instruction
+};
+EvalPathFollow path_follow {      // Evaluate organisms on their ability to follow a path.
+  target_pop = "main_pop";            // Which population(s) should we evaluate?
+  score_trait = "child_merit";    // Which trait stores path following performance?
+  state_trait = "state";          // Which trait stores organisms' path follow state?
+  map_filenames = "test_map.txt"; // List of map files to load, separated by semicolons(;)
+  randomize_cues = 1;           // If true, cues are assigned random values in for each new path
+  sg_move_id = 34;              // ID of the 'sg_move' instruction
+  sg_move_back_id = 35;         // ID of the 'sg_move_back' instruction
+  sg_rotate_right_id = 36;      // ID of the 'sg_rotate_right' instruction
+  sg_rotate_left_id = 37;       // ID of the 'sg_rotate_left' instruction
+  sg_sense_id = 38;             // ID of the 'sg_sense' instruction
+};
+VirtualCPUOrg avida_org {       // Organism consisting of Avida instructions.
+  point_mut_prob = 0.01;        // Per-site probability of a point mutations
+  insertion_mut_prob = 0.01;        // Per-site probability of a insertion mutations
+  deletion_mut_prob = 0.01;        // Per-site probability of a deletion mutations
+  N = 0;                        // Initial number of instructions in genome
+  init_random = 0;              // Should we randomize ancestor?  (0 = "blank" default)
+  eval_time = 200;              // How many CPU cycles should we give organisms to run?
+  input_name = "input";         // Name of variable to load inputs from.
+  output_name = "old_output";   // Name of variable to output results.
+  genome_name = "genome";       // Where to store the genome?.
+  genome_length_name = "genome_length";   // Where to store the genome's length? 
+  merit_name = "merit";         // Name of variable corresponding to the organism's task performance.
+  child_merit_name = "child_merit";// Name of variable corresponding to the organism's task performance that will be used to calculate CPU cylces given to offspring.
+  initial_merit = 0.01;       // Initial value for merit (task performance)
+  verbose = 0;
+  initial_genome_filename = "ancestor_extended.org";// File that contains the gennome used to initialize organisms.
+  inst_set_output_filename = "inst_set.txt";
+  expanded_nop_args = 1;        // If true, some instructions (e.g., math) will use multiple nops to fully define the registers used
+};
+AnalyzeSystematics sys{
+  data_file_name = "phylo/phylogenetic_data.csv";// Filename for systematics data file.
+  data_updates = "0:1:-1";      // Which updates should we output a data from the phylogeny?
+  snapshot_file_root_name = "phylo/phylogeny";// Filename for snapshot files (will have update number and .csv appended to end)
+  snapshot_updates = "0:1:-1";  // Which updates should we output a snapshot of the phylogeny?
+  store_ancestors = 1;          // Store all ancestors of extant taxa.(1 = TRUE)
+  store_outside = 0;            // Store all taxa that ever existed.(1 = TRUE)
+  taxon_info = "genome";        // Which trait should we identify unique taxa based on
+};
+
+Var dominant_genome;
+DataFile fit_file { filename="fitness.csv"; };
+fit_file.ADD_SETUP("dominant_genome = main_pop.CALC_MODE('genome')" );
+fit_file.ADD_COLUMN("merit_mean",       "main_pop.CALC_MEAN('child_merit')" );
+fit_file.ADD_COLUMN("merit_max",        "main_pop.CALC_MAX('child_merit')" );
+fit_file.ADD_COLUMN("dominant_genome",  "dominant_genome" );
+
+DataFile max_file { filename="max_org.csv"; };
+OrgList best_org;
+max_file.ADD_SETUP("best_org = main_pop.FIND_MAX('child_merit')" );
+max_file.ADD_COLUMN("merit",       "best_org.TRAIT('child_merit')" );
+max_file.ADD_COLUMN("merit_given", "best_org.TRAIT('merit')" );
+max_file.ADD_COLUMN("gen", "best_org.TRAIT('generation')" );
+
+@START() {
+  PRINT("random_seed = ", random_seed, "\n");  // Print seed at run start.
+  main_pop.INJECT("avida_org", 1);             // Inject ancestor organism 
+};;
+
+Var avg_gen; 
+@UPDATE(Var ud) {
+  scheduler.SCHEDULE();
+  PRINT("UD:", GET_UPDATE(),
+        "  pop_size=", main_pop.SIZE(),
+        "  merit_mean=", main_pop.CALC_MEAN("child_merit"),
+        "  merit_max=", main_pop.CALC_MAX("child_merit"),
+        "  gen_mean=", main_pop.CALC_MEAN("generation"),
+        "  gen_max=", main_pop.CALC_MAX("generation"),
+        "  genome_length_max=", main_pop.CALC_MAX("genome_length"),
+        "  genome_length_mean=", main_pop.CALC_MEAN("genome_length")
+       );
+  fit_file.WRITE();
+  max_file.WRITE();
+  avg_gen = main_pop.CALC_MEAN("generation");
+
+  IF(main_pop.SIZE() > 0){
+    OrgList tmp0 = main_pop.INDEX(0);
+    PRINT("[0]", tmp0.TRAIT("genome"), " ", tmp0.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 1){
+    OrgList tmp1 = main_pop.INDEX(1);
+    PRINT("[1]", tmp1.TRAIT("genome"), " ", tmp1.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 2){
+    OrgList tmp2 = main_pop.INDEX(2);
+    PRINT("[2]", tmp2.TRAIT("genome"), " ", tmp2.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 3){
+    OrgList tmp3 = main_pop.INDEX(3);
+    PRINT("[3]", tmp3.TRAIT("genome"), " ", tmp3.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 4){
+    OrgList tmp4 = main_pop.INDEX(4);
+    PRINT("[4]", tmp4.TRAIT("genome"), " ", tmp4.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 5){
+    OrgList tmp5 = main_pop.INDEX(5);
+    PRINT("[5]", tmp5.TRAIT("genome"), " ", tmp5.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 6){
+    OrgList tmp6 = main_pop.INDEX(6);
+    PRINT("[6]", tmp6.TRAIT("genome"), " ", tmp6.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 7){
+    OrgList tmp7 = main_pop.INDEX(7);
+    PRINT("[7]", tmp7.TRAIT("genome"), " ", tmp7.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 8){
+    OrgList tmp8 = main_pop.INDEX(8);
+    PRINT("[8]", tmp8.TRAIT("genome"), " ", tmp8.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 9){
+    OrgList tmp9 = main_pop.INDEX(9);
+    PRINT("[9]", tmp9.TRAIT("genome"), " ", tmp9.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 10){
+    OrgList tmp10 = main_pop.INDEX(10);
+    PRINT("[10]", tmp10.TRAIT("genome"), " ", tmp10.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 11){
+    OrgList tmp11 = main_pop.INDEX(11);
+    PRINT("[11]", tmp11.TRAIT("genome"), " ", tmp11.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 12){
+    OrgList tmp12 = main_pop.INDEX(12);
+    PRINT("[12]", tmp12.TRAIT("genome"), " ", tmp12.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 13){
+    OrgList tmp13 = main_pop.INDEX(13);
+    PRINT("[13]", tmp13.TRAIT("genome"), " ", tmp13.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 14){
+    OrgList tmp14 = main_pop.INDEX(14);
+    PRINT("[14]", tmp14.TRAIT("genome"), " ", tmp14.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 15){
+    OrgList tmp15 = main_pop.INDEX(15);
+    PRINT("[15]", tmp15.TRAIT("genome"), " ", tmp15.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 16){
+    OrgList tmp16 = main_pop.INDEX(16);
+    PRINT("[16]", tmp16.TRAIT("genome"), " ", tmp16.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 17){
+    OrgList tmp17 = main_pop.INDEX(17);
+    PRINT("[17]", tmp17.TRAIT("genome"), " ", tmp17.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 18){
+    OrgList tmp18 = main_pop.INDEX(18);
+    PRINT("[18]", tmp18.TRAIT("genome"), " ", tmp18.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 19){
+    OrgList tmp19 = main_pop.INDEX(19);
+    PRINT("[19]", tmp19.TRAIT("genome"), " ", tmp19.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 20){
+    OrgList tmp20 = main_pop.INDEX(20);
+    PRINT("[20]", tmp20.TRAIT("genome"), " ", tmp20.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 21){
+    OrgList tmp21 = main_pop.INDEX(21);
+    PRINT("[21]", tmp21.TRAIT("genome"), " ", tmp21.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 22){
+    OrgList tmp22 = main_pop.INDEX(22);
+    PRINT("[22]", tmp22.TRAIT("genome"), " ", tmp22.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 23){
+    OrgList tmp23 = main_pop.INDEX(23);
+    PRINT("[23]", tmp23.TRAIT("genome"), " ", tmp23.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 24){
+    OrgList tmp24 = main_pop.INDEX(24);
+    PRINT("[24]", tmp24.TRAIT("genome"), " ", tmp24.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 25){
+    OrgList tmp25 = main_pop.INDEX(25);
+    PRINT("[25]", tmp25.TRAIT("genome"), " ", tmp25.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 26){
+    OrgList tmp26 = main_pop.INDEX(26);
+    PRINT("[26]", tmp26.TRAIT("genome"), " ", tmp26.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 27){
+    OrgList tmp27 = main_pop.INDEX(27);
+    PRINT("[27]", tmp27.TRAIT("genome"), " ", tmp27.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 28){
+    OrgList tmp28 = main_pop.INDEX(28);
+    PRINT("[28]", tmp28.TRAIT("genome"), " ", tmp28.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 29){
+    OrgList tmp29 = main_pop.INDEX(29);
+    PRINT("[29]", tmp29.TRAIT("genome"), " ", tmp29.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 30){
+    OrgList tmp30 = main_pop.INDEX(30);
+    PRINT("[30]", tmp30.TRAIT("genome"), " ", tmp30.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 31){
+    OrgList tmp31 = main_pop.INDEX(31);
+    PRINT("[31]", tmp31.TRAIT("genome"), " ", tmp31.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 32){
+    OrgList tmp32 = main_pop.INDEX(32);
+    PRINT("[32]", tmp32.TRAIT("genome"), " ", tmp32.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 33){
+    OrgList tmp33 = main_pop.INDEX(33);
+    PRINT("[33]", tmp33.TRAIT("genome"), " ", tmp33.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 34){
+    OrgList tmp34 = main_pop.INDEX(34);
+    PRINT("[34]", tmp34.TRAIT("genome"), " ", tmp34.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 35){
+    OrgList tmp35 = main_pop.INDEX(35);
+    PRINT("[35]", tmp35.TRAIT("genome"), " ", tmp35.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 36){
+    OrgList tmp36 = main_pop.INDEX(36);
+    PRINT("[36]", tmp36.TRAIT("genome"), " ", tmp36.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 37){
+    OrgList tmp37 = main_pop.INDEX(37);
+    PRINT("[37]", tmp37.TRAIT("genome"), " ", tmp37.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 38){
+    OrgList tmp38 = main_pop.INDEX(38);
+    PRINT("[38]", tmp38.TRAIT("genome"), " ", tmp38.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 39){
+    OrgList tmp39 = main_pop.INDEX(39);
+    PRINT("[39]", tmp39.TRAIT("genome"), " ", tmp39.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 40){
+    OrgList tmp40 = main_pop.INDEX(40);
+    PRINT("[40]", tmp40.TRAIT("genome"), " ", tmp40.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 41){
+    OrgList tmp41 = main_pop.INDEX(41);
+    PRINT("[41]", tmp41.TRAIT("genome"), " ", tmp41.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 42){
+    OrgList tmp42 = main_pop.INDEX(42);
+    PRINT("[42]", tmp42.TRAIT("genome"), " ", tmp42.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 43){
+    OrgList tmp43 = main_pop.INDEX(43);
+    PRINT("[43]", tmp43.TRAIT("genome"), " ", tmp43.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 44){
+    OrgList tmp44 = main_pop.INDEX(44);
+    PRINT("[44]", tmp44.TRAIT("genome"), " ", tmp44.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 45){
+    OrgList tmp45 = main_pop.INDEX(45);
+    PRINT("[45]", tmp45.TRAIT("genome"), " ", tmp45.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 46){
+    OrgList tmp46 = main_pop.INDEX(46);
+    PRINT("[46]", tmp46.TRAIT("genome"), " ", tmp46.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 47){
+    OrgList tmp47 = main_pop.INDEX(47);
+    PRINT("[47]", tmp47.TRAIT("genome"), " ", tmp47.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 48){
+    OrgList tmp48 = main_pop.INDEX(48);
+    PRINT("[48]", tmp48.TRAIT("genome"), " ", tmp48.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 49){
+    OrgList tmp49 = main_pop.INDEX(49);
+    PRINT("[49]", tmp49.TRAIT("genome"), " ", tmp49.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 50){
+    OrgList tmp50 = main_pop.INDEX(50);
+    PRINT("[50]", tmp50.TRAIT("genome"), " ", tmp50.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 51){
+    OrgList tmp51 = main_pop.INDEX(51);
+    PRINT("[51]", tmp51.TRAIT("genome"), " ", tmp51.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 52){
+    OrgList tmp52 = main_pop.INDEX(52);
+    PRINT("[52]", tmp52.TRAIT("genome"), " ", tmp52.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 53){
+    OrgList tmp53 = main_pop.INDEX(53);
+    PRINT("[53]", tmp53.TRAIT("genome"), " ", tmp53.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 54){
+    OrgList tmp54 = main_pop.INDEX(54);
+    PRINT("[54]", tmp54.TRAIT("genome"), " ", tmp54.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 55){
+    OrgList tmp55 = main_pop.INDEX(55);
+    PRINT("[55]", tmp55.TRAIT("genome"), " ", tmp55.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 56){
+    OrgList tmp56 = main_pop.INDEX(56);
+    PRINT("[56]", tmp56.TRAIT("genome"), " ", tmp56.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 57){
+    OrgList tmp57 = main_pop.INDEX(57);
+    PRINT("[57]", tmp57.TRAIT("genome"), " ", tmp57.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 58){
+    OrgList tmp58 = main_pop.INDEX(58);
+    PRINT("[58]", tmp58.TRAIT("genome"), " ", tmp58.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 59){
+    OrgList tmp59 = main_pop.INDEX(59);
+    PRINT("[59]", tmp59.TRAIT("genome"), " ", tmp59.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 60){
+    OrgList tmp60 = main_pop.INDEX(60);
+    PRINT("[60]", tmp60.TRAIT("genome"), " ", tmp60.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 61){
+    OrgList tmp61 = main_pop.INDEX(61);
+    PRINT("[61]", tmp61.TRAIT("genome"), " ", tmp61.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 62){
+    OrgList tmp62 = main_pop.INDEX(62);
+    PRINT("[62]", tmp62.TRAIT("genome"), " ", tmp62.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 63){
+    OrgList tmp63 = main_pop.INDEX(63);
+    PRINT("[63]", tmp63.TRAIT("genome"), " ", tmp63.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 64){
+    OrgList tmp64 = main_pop.INDEX(64);
+    PRINT("[64]", tmp64.TRAIT("genome"), " ", tmp64.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 65){
+    OrgList tmp65 = main_pop.INDEX(65);
+    PRINT("[65]", tmp65.TRAIT("genome"), " ", tmp65.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 66){
+    OrgList tmp66 = main_pop.INDEX(66);
+    PRINT("[66]", tmp66.TRAIT("genome"), " ", tmp66.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 67){
+    OrgList tmp67 = main_pop.INDEX(67);
+    PRINT("[67]", tmp67.TRAIT("genome"), " ", tmp67.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 68){
+    OrgList tmp68 = main_pop.INDEX(68);
+    PRINT("[68]", tmp68.TRAIT("genome"), " ", tmp68.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 69){
+    OrgList tmp69 = main_pop.INDEX(69);
+    PRINT("[69]", tmp69.TRAIT("genome"), " ", tmp69.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 70){
+    OrgList tmp70 = main_pop.INDEX(70);
+    PRINT("[70]", tmp70.TRAIT("genome"), " ", tmp70.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 71){
+    OrgList tmp71 = main_pop.INDEX(71);
+    PRINT("[71]", tmp71.TRAIT("genome"), " ", tmp71.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 72){
+    OrgList tmp72 = main_pop.INDEX(72);
+    PRINT("[72]", tmp72.TRAIT("genome"), " ", tmp72.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 73){
+    OrgList tmp73 = main_pop.INDEX(73);
+    PRINT("[73]", tmp73.TRAIT("genome"), " ", tmp73.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 74){
+    OrgList tmp74 = main_pop.INDEX(74);
+    PRINT("[74]", tmp74.TRAIT("genome"), " ", tmp74.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 75){
+    OrgList tmp75 = main_pop.INDEX(75);
+    PRINT("[75]", tmp75.TRAIT("genome"), " ", tmp75.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 76){
+    OrgList tmp76 = main_pop.INDEX(76);
+    PRINT("[76]", tmp76.TRAIT("genome"), " ", tmp76.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 77){
+    OrgList tmp77 = main_pop.INDEX(77);
+    PRINT("[77]", tmp77.TRAIT("genome"), " ", tmp77.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 78){
+    OrgList tmp78 = main_pop.INDEX(78);
+    PRINT("[78]", tmp78.TRAIT("genome"), " ", tmp78.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 79){
+    OrgList tmp79 = main_pop.INDEX(79);
+    PRINT("[79]", tmp79.TRAIT("genome"), " ", tmp79.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 80){
+    OrgList tmp80 = main_pop.INDEX(80);
+    PRINT("[80]", tmp80.TRAIT("genome"), " ", tmp80.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 81){
+    OrgList tmp81 = main_pop.INDEX(81);
+    PRINT("[81]", tmp81.TRAIT("genome"), " ", tmp81.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 82){
+    OrgList tmp82 = main_pop.INDEX(82);
+    PRINT("[82]", tmp82.TRAIT("genome"), " ", tmp82.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 83){
+    OrgList tmp83 = main_pop.INDEX(83);
+    PRINT("[83]", tmp83.TRAIT("genome"), " ", tmp83.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 84){
+    OrgList tmp84 = main_pop.INDEX(84);
+    PRINT("[84]", tmp84.TRAIT("genome"), " ", tmp84.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 85){
+    OrgList tmp85 = main_pop.INDEX(85);
+    PRINT("[85]", tmp85.TRAIT("genome"), " ", tmp85.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 86){
+    OrgList tmp86 = main_pop.INDEX(86);
+    PRINT("[86]", tmp86.TRAIT("genome"), " ", tmp86.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 87){
+    OrgList tmp87 = main_pop.INDEX(87);
+    PRINT("[87]", tmp87.TRAIT("genome"), " ", tmp87.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 88){
+    OrgList tmp88 = main_pop.INDEX(88);
+    PRINT("[88]", tmp88.TRAIT("genome"), " ", tmp88.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 89){
+    OrgList tmp89 = main_pop.INDEX(89);
+    PRINT("[89]", tmp89.TRAIT("genome"), " ", tmp89.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 90){
+    OrgList tmp90 = main_pop.INDEX(90);
+    PRINT("[90]", tmp90.TRAIT("genome"), " ", tmp90.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 91){
+    OrgList tmp91 = main_pop.INDEX(91);
+    PRINT("[91]", tmp91.TRAIT("genome"), " ", tmp91.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 92){
+    OrgList tmp92 = main_pop.INDEX(92);
+    PRINT("[92]", tmp92.TRAIT("genome"), " ", tmp92.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 93){
+    OrgList tmp93 = main_pop.INDEX(93);
+    PRINT("[93]", tmp93.TRAIT("genome"), " ", tmp93.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 94){
+    OrgList tmp94 = main_pop.INDEX(94);
+    PRINT("[94]", tmp94.TRAIT("genome"), " ", tmp94.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 95){
+    OrgList tmp95 = main_pop.INDEX(95);
+    PRINT("[95]", tmp95.TRAIT("genome"), " ", tmp95.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 96){
+    OrgList tmp96 = main_pop.INDEX(96);
+    PRINT("[96]", tmp96.TRAIT("genome"), " ", tmp96.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 97){
+    OrgList tmp97 = main_pop.INDEX(97);
+    PRINT("[97]", tmp97.TRAIT("genome"), " ", tmp97.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 98){
+    OrgList tmp98 = main_pop.INDEX(98);
+    PRINT("[98]", tmp98.TRAIT("genome"), " ", tmp98.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 99){
+    OrgList tmp99 = main_pop.INDEX(99);
+    PRINT("[99]", tmp99.TRAIT("genome"), " ", tmp99.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 100){
+    OrgList tmp100 = main_pop.INDEX(100);
+    PRINT("[100]", tmp100.TRAIT("genome"), " ", tmp100.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 101){
+    OrgList tmp101 = main_pop.INDEX(101);
+    PRINT("[101]", tmp101.TRAIT("genome"), " ", tmp101.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 102){
+    OrgList tmp102 = main_pop.INDEX(102);
+    PRINT("[102]", tmp102.TRAIT("genome"), " ", tmp102.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 103){
+    OrgList tmp103 = main_pop.INDEX(103);
+    PRINT("[103]", tmp103.TRAIT("genome"), " ", tmp103.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 104){
+    OrgList tmp104 = main_pop.INDEX(104);
+    PRINT("[104]", tmp104.TRAIT("genome"), " ", tmp104.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 105){
+    OrgList tmp105 = main_pop.INDEX(105);
+    PRINT("[105]", tmp105.TRAIT("genome"), " ", tmp105.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 106){
+    OrgList tmp106 = main_pop.INDEX(106);
+    PRINT("[106]", tmp106.TRAIT("genome"), " ", tmp106.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 107){
+    OrgList tmp107 = main_pop.INDEX(107);
+    PRINT("[107]", tmp107.TRAIT("genome"), " ", tmp107.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 108){
+    OrgList tmp108 = main_pop.INDEX(108);
+    PRINT("[108]", tmp108.TRAIT("genome"), " ", tmp108.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 109){
+    OrgList tmp109 = main_pop.INDEX(109);
+    PRINT("[109]", tmp109.TRAIT("genome"), " ", tmp109.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 110){
+    OrgList tmp110 = main_pop.INDEX(110);
+    PRINT("[110]", tmp110.TRAIT("genome"), " ", tmp110.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 111){
+    OrgList tmp111 = main_pop.INDEX(111);
+    PRINT("[111]", tmp111.TRAIT("genome"), " ", tmp111.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 112){
+    OrgList tmp112 = main_pop.INDEX(112);
+    PRINT("[112]", tmp112.TRAIT("genome"), " ", tmp112.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 113){
+    OrgList tmp113 = main_pop.INDEX(113);
+    PRINT("[113]", tmp113.TRAIT("genome"), " ", tmp113.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 114){
+    OrgList tmp114 = main_pop.INDEX(114);
+    PRINT("[114]", tmp114.TRAIT("genome"), " ", tmp114.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 115){
+    OrgList tmp115 = main_pop.INDEX(115);
+    PRINT("[115]", tmp115.TRAIT("genome"), " ", tmp115.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 116){
+    OrgList tmp116 = main_pop.INDEX(116);
+    PRINT("[116]", tmp116.TRAIT("genome"), " ", tmp116.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 117){
+    OrgList tmp117 = main_pop.INDEX(117);
+    PRINT("[117]", tmp117.TRAIT("genome"), " ", tmp117.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 118){
+    OrgList tmp118 = main_pop.INDEX(118);
+    PRINT("[118]", tmp118.TRAIT("genome"), " ", tmp118.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 119){
+    OrgList tmp119 = main_pop.INDEX(119);
+    PRINT("[119]", tmp119.TRAIT("genome"), " ", tmp119.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 120){
+    OrgList tmp120 = main_pop.INDEX(120);
+    PRINT("[120]", tmp120.TRAIT("genome"), " ", tmp120.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 121){
+    OrgList tmp121 = main_pop.INDEX(121);
+    PRINT("[121]", tmp121.TRAIT("genome"), " ", tmp121.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 122){
+    OrgList tmp122 = main_pop.INDEX(122);
+    PRINT("[122]", tmp122.TRAIT("genome"), " ", tmp122.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 123){
+    OrgList tmp123 = main_pop.INDEX(123);
+    PRINT("[123]", tmp123.TRAIT("genome"), " ", tmp123.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 124){
+    OrgList tmp124 = main_pop.INDEX(124);
+    PRINT("[124]", tmp124.TRAIT("genome"), " ", tmp124.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 125){
+    OrgList tmp125 = main_pop.INDEX(125);
+    PRINT("[125]", tmp125.TRAIT("genome"), " ", tmp125.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 126){
+    OrgList tmp126 = main_pop.INDEX(126);
+    PRINT("[126]", tmp126.TRAIT("genome"), " ", tmp126.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 127){
+    OrgList tmp127 = main_pop.INDEX(127);
+    PRINT("[127]", tmp127.TRAIT("genome"), " ", tmp127.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 128){
+    OrgList tmp128 = main_pop.INDEX(128);
+    PRINT("[128]", tmp128.TRAIT("genome"), " ", tmp128.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 129){
+    OrgList tmp129 = main_pop.INDEX(129);
+    PRINT("[129]", tmp129.TRAIT("genome"), " ", tmp129.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 130){
+    OrgList tmp130 = main_pop.INDEX(130);
+    PRINT("[130]", tmp130.TRAIT("genome"), " ", tmp130.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 131){
+    OrgList tmp131 = main_pop.INDEX(131);
+    PRINT("[131]", tmp131.TRAIT("genome"), " ", tmp131.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 132){
+    OrgList tmp132 = main_pop.INDEX(132);
+    PRINT("[132]", tmp132.TRAIT("genome"), " ", tmp132.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 133){
+    OrgList tmp133 = main_pop.INDEX(133);
+    PRINT("[133]", tmp133.TRAIT("genome"), " ", tmp133.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 134){
+    OrgList tmp134 = main_pop.INDEX(134);
+    PRINT("[134]", tmp134.TRAIT("genome"), " ", tmp134.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 135){
+    OrgList tmp135 = main_pop.INDEX(135);
+    PRINT("[135]", tmp135.TRAIT("genome"), " ", tmp135.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 136){
+    OrgList tmp136 = main_pop.INDEX(136);
+    PRINT("[136]", tmp136.TRAIT("genome"), " ", tmp136.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 137){
+    OrgList tmp137 = main_pop.INDEX(137);
+    PRINT("[137]", tmp137.TRAIT("genome"), " ", tmp137.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 138){
+    OrgList tmp138 = main_pop.INDEX(138);
+    PRINT("[138]", tmp138.TRAIT("genome"), " ", tmp138.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 139){
+    OrgList tmp139 = main_pop.INDEX(139);
+    PRINT("[139]", tmp139.TRAIT("genome"), " ", tmp139.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 140){
+    OrgList tmp140 = main_pop.INDEX(140);
+    PRINT("[140]", tmp140.TRAIT("genome"), " ", tmp140.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 141){
+    OrgList tmp141 = main_pop.INDEX(141);
+    PRINT("[141]", tmp141.TRAIT("genome"), " ", tmp141.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 142){
+    OrgList tmp142 = main_pop.INDEX(142);
+    PRINT("[142]", tmp142.TRAIT("genome"), " ", tmp142.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 143){
+    OrgList tmp143 = main_pop.INDEX(143);
+    PRINT("[143]", tmp143.TRAIT("genome"), " ", tmp143.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 144){
+    OrgList tmp144 = main_pop.INDEX(144);
+    PRINT("[144]", tmp144.TRAIT("genome"), " ", tmp144.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 145){
+    OrgList tmp145 = main_pop.INDEX(145);
+    PRINT("[145]", tmp145.TRAIT("genome"), " ", tmp145.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 146){
+    OrgList tmp146 = main_pop.INDEX(146);
+    PRINT("[146]", tmp146.TRAIT("genome"), " ", tmp146.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 147){
+    OrgList tmp147 = main_pop.INDEX(147);
+    PRINT("[147]", tmp147.TRAIT("genome"), " ", tmp147.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 148){
+    OrgList tmp148 = main_pop.INDEX(148);
+    PRINT("[148]", tmp148.TRAIT("genome"), " ", tmp148.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 149){
+    OrgList tmp149 = main_pop.INDEX(149);
+    PRINT("[149]", tmp149.TRAIT("genome"), " ", tmp149.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 150){
+    OrgList tmp150 = main_pop.INDEX(150);
+    PRINT("[150]", tmp150.TRAIT("genome"), " ", tmp150.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 151){
+    OrgList tmp151 = main_pop.INDEX(151);
+    PRINT("[151]", tmp151.TRAIT("genome"), " ", tmp151.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 152){
+    OrgList tmp152 = main_pop.INDEX(152);
+    PRINT("[152]", tmp152.TRAIT("genome"), " ", tmp152.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 153){
+    OrgList tmp153 = main_pop.INDEX(153);
+    PRINT("[153]", tmp153.TRAIT("genome"), " ", tmp153.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 154){
+    OrgList tmp154 = main_pop.INDEX(154);
+    PRINT("[154]", tmp154.TRAIT("genome"), " ", tmp154.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 155){
+    OrgList tmp155 = main_pop.INDEX(155);
+    PRINT("[155]", tmp155.TRAIT("genome"), " ", tmp155.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 156){
+    OrgList tmp156 = main_pop.INDEX(156);
+    PRINT("[156]", tmp156.TRAIT("genome"), " ", tmp156.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 157){
+    OrgList tmp157 = main_pop.INDEX(157);
+    PRINT("[157]", tmp157.TRAIT("genome"), " ", tmp157.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 158){
+    OrgList tmp158 = main_pop.INDEX(158);
+    PRINT("[158]", tmp158.TRAIT("genome"), " ", tmp158.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 159){
+    OrgList tmp159 = main_pop.INDEX(159);
+    PRINT("[159]", tmp159.TRAIT("genome"), " ", tmp159.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 160){
+    OrgList tmp160 = main_pop.INDEX(160);
+    PRINT("[160]", tmp160.TRAIT("genome"), " ", tmp160.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 161){
+    OrgList tmp161 = main_pop.INDEX(161);
+    PRINT("[161]", tmp161.TRAIT("genome"), " ", tmp161.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 162){
+    OrgList tmp162 = main_pop.INDEX(162);
+    PRINT("[162]", tmp162.TRAIT("genome"), " ", tmp162.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 163){
+    OrgList tmp163 = main_pop.INDEX(163);
+    PRINT("[163]", tmp163.TRAIT("genome"), " ", tmp163.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 164){
+    OrgList tmp164 = main_pop.INDEX(164);
+    PRINT("[164]", tmp164.TRAIT("genome"), " ", tmp164.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 165){
+    OrgList tmp165 = main_pop.INDEX(165);
+    PRINT("[165]", tmp165.TRAIT("genome"), " ", tmp165.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 166){
+    OrgList tmp166 = main_pop.INDEX(166);
+    PRINT("[166]", tmp166.TRAIT("genome"), " ", tmp166.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 167){
+    OrgList tmp167 = main_pop.INDEX(167);
+    PRINT("[167]", tmp167.TRAIT("genome"), " ", tmp167.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 168){
+    OrgList tmp168 = main_pop.INDEX(168);
+    PRINT("[168]", tmp168.TRAIT("genome"), " ", tmp168.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 169){
+    OrgList tmp169 = main_pop.INDEX(169);
+    PRINT("[169]", tmp169.TRAIT("genome"), " ", tmp169.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 170){
+    OrgList tmp170 = main_pop.INDEX(170);
+    PRINT("[170]", tmp170.TRAIT("genome"), " ", tmp170.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 171){
+    OrgList tmp171 = main_pop.INDEX(171);
+    PRINT("[171]", tmp171.TRAIT("genome"), " ", tmp171.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 172){
+    OrgList tmp172 = main_pop.INDEX(172);
+    PRINT("[172]", tmp172.TRAIT("genome"), " ", tmp172.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 173){
+    OrgList tmp173 = main_pop.INDEX(173);
+    PRINT("[173]", tmp173.TRAIT("genome"), " ", tmp173.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 174){
+    OrgList tmp174 = main_pop.INDEX(174);
+    PRINT("[174]", tmp174.TRAIT("genome"), " ", tmp174.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 175){
+    OrgList tmp175 = main_pop.INDEX(175);
+    PRINT("[175]", tmp175.TRAIT("genome"), " ", tmp175.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 176){
+    OrgList tmp176 = main_pop.INDEX(176);
+    PRINT("[176]", tmp176.TRAIT("genome"), " ", tmp176.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 177){
+    OrgList tmp177 = main_pop.INDEX(177);
+    PRINT("[177]", tmp177.TRAIT("genome"), " ", tmp177.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 178){
+    OrgList tmp178 = main_pop.INDEX(178);
+    PRINT("[178]", tmp178.TRAIT("genome"), " ", tmp178.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 179){
+    OrgList tmp179 = main_pop.INDEX(179);
+    PRINT("[179]", tmp179.TRAIT("genome"), " ", tmp179.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 180){
+    OrgList tmp180 = main_pop.INDEX(180);
+    PRINT("[180]", tmp180.TRAIT("genome"), " ", tmp180.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 181){
+    OrgList tmp181 = main_pop.INDEX(181);
+    PRINT("[181]", tmp181.TRAIT("genome"), " ", tmp181.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 182){
+    OrgList tmp182 = main_pop.INDEX(182);
+    PRINT("[182]", tmp182.TRAIT("genome"), " ", tmp182.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 183){
+    OrgList tmp183 = main_pop.INDEX(183);
+    PRINT("[183]", tmp183.TRAIT("genome"), " ", tmp183.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 184){
+    OrgList tmp184 = main_pop.INDEX(184);
+    PRINT("[184]", tmp184.TRAIT("genome"), " ", tmp184.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 185){
+    OrgList tmp185 = main_pop.INDEX(185);
+    PRINT("[185]", tmp185.TRAIT("genome"), " ", tmp185.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 186){
+    OrgList tmp186 = main_pop.INDEX(186);
+    PRINT("[186]", tmp186.TRAIT("genome"), " ", tmp186.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 187){
+    OrgList tmp187 = main_pop.INDEX(187);
+    PRINT("[187]", tmp187.TRAIT("genome"), " ", tmp187.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 188){
+    OrgList tmp188 = main_pop.INDEX(188);
+    PRINT("[188]", tmp188.TRAIT("genome"), " ", tmp188.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 189){
+    OrgList tmp189 = main_pop.INDEX(189);
+    PRINT("[189]", tmp189.TRAIT("genome"), " ", tmp189.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 190){
+    OrgList tmp190 = main_pop.INDEX(190);
+    PRINT("[190]", tmp190.TRAIT("genome"), " ", tmp190.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 191){
+    OrgList tmp191 = main_pop.INDEX(191);
+    PRINT("[191]", tmp191.TRAIT("genome"), " ", tmp191.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 192){
+    OrgList tmp192 = main_pop.INDEX(192);
+    PRINT("[192]", tmp192.TRAIT("genome"), " ", tmp192.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 193){
+    OrgList tmp193 = main_pop.INDEX(193);
+    PRINT("[193]", tmp193.TRAIT("genome"), " ", tmp193.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 194){
+    OrgList tmp194 = main_pop.INDEX(194);
+    PRINT("[194]", tmp194.TRAIT("genome"), " ", tmp194.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 195){
+    OrgList tmp195 = main_pop.INDEX(195);
+    PRINT("[195]", tmp195.TRAIT("genome"), " ", tmp195.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 196){
+    OrgList tmp196 = main_pop.INDEX(196);
+    PRINT("[196]", tmp196.TRAIT("genome"), " ", tmp196.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 197){
+    OrgList tmp197 = main_pop.INDEX(197);
+    PRINT("[197]", tmp197.TRAIT("genome"), " ", tmp197.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 198){
+    OrgList tmp198 = main_pop.INDEX(198);
+    PRINT("[198]", tmp198.TRAIT("genome"), " ", tmp198.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 199){
+    OrgList tmp199 = main_pop.INDEX(199);
+    PRINT("[199]", tmp199.TRAIT("genome"), " ", tmp199.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 200){
+    OrgList tmp200 = main_pop.INDEX(200);
+    PRINT("[200]", tmp200.TRAIT("genome"), " ", tmp200.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 201){
+    OrgList tmp201 = main_pop.INDEX(201);
+    PRINT("[201]", tmp201.TRAIT("genome"), " ", tmp201.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 202){
+    OrgList tmp202 = main_pop.INDEX(202);
+    PRINT("[202]", tmp202.TRAIT("genome"), " ", tmp202.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 203){
+    OrgList tmp203 = main_pop.INDEX(203);
+    PRINT("[203]", tmp203.TRAIT("genome"), " ", tmp203.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 204){
+    OrgList tmp204 = main_pop.INDEX(204);
+    PRINT("[204]", tmp204.TRAIT("genome"), " ", tmp204.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 205){
+    OrgList tmp205 = main_pop.INDEX(205);
+    PRINT("[205]", tmp205.TRAIT("genome"), " ", tmp205.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 206){
+    OrgList tmp206 = main_pop.INDEX(206);
+    PRINT("[206]", tmp206.TRAIT("genome"), " ", tmp206.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 207){
+    OrgList tmp207 = main_pop.INDEX(207);
+    PRINT("[207]", tmp207.TRAIT("genome"), " ", tmp207.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 208){
+    OrgList tmp208 = main_pop.INDEX(208);
+    PRINT("[208]", tmp208.TRAIT("genome"), " ", tmp208.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 209){
+    OrgList tmp209 = main_pop.INDEX(209);
+    PRINT("[209]", tmp209.TRAIT("genome"), " ", tmp209.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 210){
+    OrgList tmp210 = main_pop.INDEX(210);
+    PRINT("[210]", tmp210.TRAIT("genome"), " ", tmp210.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 211){
+    OrgList tmp211 = main_pop.INDEX(211);
+    PRINT("[211]", tmp211.TRAIT("genome"), " ", tmp211.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 212){
+    OrgList tmp212 = main_pop.INDEX(212);
+    PRINT("[212]", tmp212.TRAIT("genome"), " ", tmp212.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 213){
+    OrgList tmp213 = main_pop.INDEX(213);
+    PRINT("[213]", tmp213.TRAIT("genome"), " ", tmp213.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 214){
+    OrgList tmp214 = main_pop.INDEX(214);
+    PRINT("[214]", tmp214.TRAIT("genome"), " ", tmp214.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 215){
+    OrgList tmp215 = main_pop.INDEX(215);
+    PRINT("[215]", tmp215.TRAIT("genome"), " ", tmp215.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 216){
+    OrgList tmp216 = main_pop.INDEX(216);
+    PRINT("[216]", tmp216.TRAIT("genome"), " ", tmp216.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 217){
+    OrgList tmp217 = main_pop.INDEX(217);
+    PRINT("[217]", tmp217.TRAIT("genome"), " ", tmp217.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 218){
+    OrgList tmp218 = main_pop.INDEX(218);
+    PRINT("[218]", tmp218.TRAIT("genome"), " ", tmp218.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 219){
+    OrgList tmp219 = main_pop.INDEX(219);
+    PRINT("[219]", tmp219.TRAIT("genome"), " ", tmp219.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 220){
+    OrgList tmp220 = main_pop.INDEX(220);
+    PRINT("[220]", tmp220.TRAIT("genome"), " ", tmp220.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 221){
+    OrgList tmp221 = main_pop.INDEX(221);
+    PRINT("[221]", tmp221.TRAIT("genome"), " ", tmp221.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 222){
+    OrgList tmp222 = main_pop.INDEX(222);
+    PRINT("[222]", tmp222.TRAIT("genome"), " ", tmp222.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 223){
+    OrgList tmp223 = main_pop.INDEX(223);
+    PRINT("[223]", tmp223.TRAIT("genome"), " ", tmp223.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 224){
+    OrgList tmp224 = main_pop.INDEX(224);
+    PRINT("[224]", tmp224.TRAIT("genome"), " ", tmp224.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 225){
+    OrgList tmp225 = main_pop.INDEX(225);
+    PRINT("[225]", tmp225.TRAIT("genome"), " ", tmp225.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 226){
+    OrgList tmp226 = main_pop.INDEX(226);
+    PRINT("[226]", tmp226.TRAIT("genome"), " ", tmp226.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 227){
+    OrgList tmp227 = main_pop.INDEX(227);
+    PRINT("[227]", tmp227.TRAIT("genome"), " ", tmp227.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 228){
+    OrgList tmp228 = main_pop.INDEX(228);
+    PRINT("[228]", tmp228.TRAIT("genome"), " ", tmp228.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 229){
+    OrgList tmp229 = main_pop.INDEX(229);
+    PRINT("[229]", tmp229.TRAIT("genome"), " ", tmp229.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 230){
+    OrgList tmp230 = main_pop.INDEX(230);
+    PRINT("[230]", tmp230.TRAIT("genome"), " ", tmp230.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 231){
+    OrgList tmp231 = main_pop.INDEX(231);
+    PRINT("[231]", tmp231.TRAIT("genome"), " ", tmp231.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 232){
+    OrgList tmp232 = main_pop.INDEX(232);
+    PRINT("[232]", tmp232.TRAIT("genome"), " ", tmp232.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 233){
+    OrgList tmp233 = main_pop.INDEX(233);
+    PRINT("[233]", tmp233.TRAIT("genome"), " ", tmp233.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 234){
+    OrgList tmp234 = main_pop.INDEX(234);
+    PRINT("[234]", tmp234.TRAIT("genome"), " ", tmp234.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 235){
+    OrgList tmp235 = main_pop.INDEX(235);
+    PRINT("[235]", tmp235.TRAIT("genome"), " ", tmp235.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 236){
+    OrgList tmp236 = main_pop.INDEX(236);
+    PRINT("[236]", tmp236.TRAIT("genome"), " ", tmp236.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 237){
+    OrgList tmp237 = main_pop.INDEX(237);
+    PRINT("[237]", tmp237.TRAIT("genome"), " ", tmp237.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 238){
+    OrgList tmp238 = main_pop.INDEX(238);
+    PRINT("[238]", tmp238.TRAIT("genome"), " ", tmp238.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 239){
+    OrgList tmp239 = main_pop.INDEX(239);
+    PRINT("[239]", tmp239.TRAIT("genome"), " ", tmp239.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 240){
+    OrgList tmp240 = main_pop.INDEX(240);
+    PRINT("[240]", tmp240.TRAIT("genome"), " ", tmp240.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 241){
+    OrgList tmp241 = main_pop.INDEX(241);
+    PRINT("[241]", tmp241.TRAIT("genome"), " ", tmp241.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 242){
+    OrgList tmp242 = main_pop.INDEX(242);
+    PRINT("[242]", tmp242.TRAIT("genome"), " ", tmp242.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 243){
+    OrgList tmp243 = main_pop.INDEX(243);
+    PRINT("[243]", tmp243.TRAIT("genome"), " ", tmp243.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 244){
+    OrgList tmp244 = main_pop.INDEX(244);
+    PRINT("[244]", tmp244.TRAIT("genome"), " ", tmp244.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 245){
+    OrgList tmp245 = main_pop.INDEX(245);
+    PRINT("[245]", tmp245.TRAIT("genome"), " ", tmp245.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 246){
+    OrgList tmp246 = main_pop.INDEX(246);
+    PRINT("[246]", tmp246.TRAIT("genome"), " ", tmp246.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 247){
+    OrgList tmp247 = main_pop.INDEX(247);
+    PRINT("[247]", tmp247.TRAIT("genome"), " ", tmp247.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 248){
+    OrgList tmp248 = main_pop.INDEX(248);
+    PRINT("[248]", tmp248.TRAIT("genome"), " ", tmp248.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 249){
+    OrgList tmp249 = main_pop.INDEX(249);
+    PRINT("[249]", tmp249.TRAIT("genome"), " ", tmp249.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 250){
+    OrgList tmp250 = main_pop.INDEX(250);
+    PRINT("[250]", tmp250.TRAIT("genome"), " ", tmp250.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 251){
+    OrgList tmp251 = main_pop.INDEX(251);
+    PRINT("[251]", tmp251.TRAIT("genome"), " ", tmp251.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 252){
+    OrgList tmp252 = main_pop.INDEX(252);
+    PRINT("[252]", tmp252.TRAIT("genome"), " ", tmp252.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 253){
+    OrgList tmp253 = main_pop.INDEX(253);
+    PRINT("[253]", tmp253.TRAIT("genome"), " ", tmp253.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 254){
+    OrgList tmp254 = main_pop.INDEX(254);
+    PRINT("[254]", tmp254.TRAIT("genome"), " ", tmp254.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 255){
+    OrgList tmp255 = main_pop.INDEX(255);
+    PRINT("[255]", tmp255.TRAIT("genome"), " ", tmp255.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 256){
+    OrgList tmp256 = main_pop.INDEX(256);
+    PRINT("[256]", tmp256.TRAIT("genome"), " ", tmp256.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 257){
+    OrgList tmp257 = main_pop.INDEX(257);
+    PRINT("[257]", tmp257.TRAIT("genome"), " ", tmp257.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 258){
+    OrgList tmp258 = main_pop.INDEX(258);
+    PRINT("[258]", tmp258.TRAIT("genome"), " ", tmp258.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 259){
+    OrgList tmp259 = main_pop.INDEX(259);
+    PRINT("[259]", tmp259.TRAIT("genome"), " ", tmp259.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 260){
+    OrgList tmp260 = main_pop.INDEX(260);
+    PRINT("[260]", tmp260.TRAIT("genome"), " ", tmp260.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 261){
+    OrgList tmp261 = main_pop.INDEX(261);
+    PRINT("[261]", tmp261.TRAIT("genome"), " ", tmp261.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 262){
+    OrgList tmp262 = main_pop.INDEX(262);
+    PRINT("[262]", tmp262.TRAIT("genome"), " ", tmp262.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 263){
+    OrgList tmp263 = main_pop.INDEX(263);
+    PRINT("[263]", tmp263.TRAIT("genome"), " ", tmp263.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 264){
+    OrgList tmp264 = main_pop.INDEX(264);
+    PRINT("[264]", tmp264.TRAIT("genome"), " ", tmp264.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 265){
+    OrgList tmp265 = main_pop.INDEX(265);
+    PRINT("[265]", tmp265.TRAIT("genome"), " ", tmp265.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 266){
+    OrgList tmp266 = main_pop.INDEX(266);
+    PRINT("[266]", tmp266.TRAIT("genome"), " ", tmp266.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 267){
+    OrgList tmp267 = main_pop.INDEX(267);
+    PRINT("[267]", tmp267.TRAIT("genome"), " ", tmp267.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 268){
+    OrgList tmp268 = main_pop.INDEX(268);
+    PRINT("[268]", tmp268.TRAIT("genome"), " ", tmp268.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 269){
+    OrgList tmp269 = main_pop.INDEX(269);
+    PRINT("[269]", tmp269.TRAIT("genome"), " ", tmp269.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 270){
+    OrgList tmp270 = main_pop.INDEX(270);
+    PRINT("[270]", tmp270.TRAIT("genome"), " ", tmp270.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 271){
+    OrgList tmp271 = main_pop.INDEX(271);
+    PRINT("[271]", tmp271.TRAIT("genome"), " ", tmp271.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 272){
+    OrgList tmp272 = main_pop.INDEX(272);
+    PRINT("[272]", tmp272.TRAIT("genome"), " ", tmp272.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 273){
+    OrgList tmp273 = main_pop.INDEX(273);
+    PRINT("[273]", tmp273.TRAIT("genome"), " ", tmp273.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 274){
+    OrgList tmp274 = main_pop.INDEX(274);
+    PRINT("[274]", tmp274.TRAIT("genome"), " ", tmp274.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 275){
+    OrgList tmp275 = main_pop.INDEX(275);
+    PRINT("[275]", tmp275.TRAIT("genome"), " ", tmp275.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 276){
+    OrgList tmp276 = main_pop.INDEX(276);
+    PRINT("[276]", tmp276.TRAIT("genome"), " ", tmp276.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 277){
+    OrgList tmp277 = main_pop.INDEX(277);
+    PRINT("[277]", tmp277.TRAIT("genome"), " ", tmp277.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 278){
+    OrgList tmp278 = main_pop.INDEX(278);
+    PRINT("[278]", tmp278.TRAIT("genome"), " ", tmp278.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 279){
+    OrgList tmp279 = main_pop.INDEX(279);
+    PRINT("[279]", tmp279.TRAIT("genome"), " ", tmp279.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 280){
+    OrgList tmp280 = main_pop.INDEX(280);
+    PRINT("[280]", tmp280.TRAIT("genome"), " ", tmp280.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 281){
+    OrgList tmp281 = main_pop.INDEX(281);
+    PRINT("[281]", tmp281.TRAIT("genome"), " ", tmp281.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 282){
+    OrgList tmp282 = main_pop.INDEX(282);
+    PRINT("[282]", tmp282.TRAIT("genome"), " ", tmp282.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 283){
+    OrgList tmp283 = main_pop.INDEX(283);
+    PRINT("[283]", tmp283.TRAIT("genome"), " ", tmp283.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 284){
+    OrgList tmp284 = main_pop.INDEX(284);
+    PRINT("[284]", tmp284.TRAIT("genome"), " ", tmp284.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 285){
+    OrgList tmp285 = main_pop.INDEX(285);
+    PRINT("[285]", tmp285.TRAIT("genome"), " ", tmp285.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 286){
+    OrgList tmp286 = main_pop.INDEX(286);
+    PRINT("[286]", tmp286.TRAIT("genome"), " ", tmp286.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 287){
+    OrgList tmp287 = main_pop.INDEX(287);
+    PRINT("[287]", tmp287.TRAIT("genome"), " ", tmp287.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 288){
+    OrgList tmp288 = main_pop.INDEX(288);
+    PRINT("[288]", tmp288.TRAIT("genome"), " ", tmp288.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 289){
+    OrgList tmp289 = main_pop.INDEX(289);
+    PRINT("[289]", tmp289.TRAIT("genome"), " ", tmp289.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 290){
+    OrgList tmp290 = main_pop.INDEX(290);
+    PRINT("[290]", tmp290.TRAIT("genome"), " ", tmp290.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 291){
+    OrgList tmp291 = main_pop.INDEX(291);
+    PRINT("[291]", tmp291.TRAIT("genome"), " ", tmp291.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 292){
+    OrgList tmp292 = main_pop.INDEX(292);
+    PRINT("[292]", tmp292.TRAIT("genome"), " ", tmp292.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 293){
+    OrgList tmp293 = main_pop.INDEX(293);
+    PRINT("[293]", tmp293.TRAIT("genome"), " ", tmp293.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 294){
+    OrgList tmp294 = main_pop.INDEX(294);
+    PRINT("[294]", tmp294.TRAIT("genome"), " ", tmp294.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 295){
+    OrgList tmp295 = main_pop.INDEX(295);
+    PRINT("[295]", tmp295.TRAIT("genome"), " ", tmp295.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 296){
+    OrgList tmp296 = main_pop.INDEX(296);
+    PRINT("[296]", tmp296.TRAIT("genome"), " ", tmp296.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 297){
+    OrgList tmp297 = main_pop.INDEX(297);
+    PRINT("[297]", tmp297.TRAIT("genome"), " ", tmp297.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 298){
+    OrgList tmp298 = main_pop.INDEX(298);
+    PRINT("[298]", tmp298.TRAIT("genome"), " ", tmp298.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 299){
+    OrgList tmp299 = main_pop.INDEX(299);
+    PRINT("[299]", tmp299.TRAIT("genome"), " ", tmp299.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 300){
+    OrgList tmp300 = main_pop.INDEX(300);
+    PRINT("[300]", tmp300.TRAIT("genome"), " ", tmp300.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 301){
+    OrgList tmp301 = main_pop.INDEX(301);
+    PRINT("[301]", tmp301.TRAIT("genome"), " ", tmp301.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 302){
+    OrgList tmp302 = main_pop.INDEX(302);
+    PRINT("[302]", tmp302.TRAIT("genome"), " ", tmp302.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 303){
+    OrgList tmp303 = main_pop.INDEX(303);
+    PRINT("[303]", tmp303.TRAIT("genome"), " ", tmp303.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 304){
+    OrgList tmp304 = main_pop.INDEX(304);
+    PRINT("[304]", tmp304.TRAIT("genome"), " ", tmp304.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 305){
+    OrgList tmp305 = main_pop.INDEX(305);
+    PRINT("[305]", tmp305.TRAIT("genome"), " ", tmp305.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 306){
+    OrgList tmp306 = main_pop.INDEX(306);
+    PRINT("[306]", tmp306.TRAIT("genome"), " ", tmp306.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 307){
+    OrgList tmp307 = main_pop.INDEX(307);
+    PRINT("[307]", tmp307.TRAIT("genome"), " ", tmp307.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 308){
+    OrgList tmp308 = main_pop.INDEX(308);
+    PRINT("[308]", tmp308.TRAIT("genome"), " ", tmp308.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 309){
+    OrgList tmp309 = main_pop.INDEX(309);
+    PRINT("[309]", tmp309.TRAIT("genome"), " ", tmp309.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 310){
+    OrgList tmp310 = main_pop.INDEX(310);
+    PRINT("[310]", tmp310.TRAIT("genome"), " ", tmp310.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 311){
+    OrgList tmp311 = main_pop.INDEX(311);
+    PRINT("[311]", tmp311.TRAIT("genome"), " ", tmp311.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 312){
+    OrgList tmp312 = main_pop.INDEX(312);
+    PRINT("[312]", tmp312.TRAIT("genome"), " ", tmp312.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 313){
+    OrgList tmp313 = main_pop.INDEX(313);
+    PRINT("[313]", tmp313.TRAIT("genome"), " ", tmp313.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 314){
+    OrgList tmp314 = main_pop.INDEX(314);
+    PRINT("[314]", tmp314.TRAIT("genome"), " ", tmp314.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 315){
+    OrgList tmp315 = main_pop.INDEX(315);
+    PRINT("[315]", tmp315.TRAIT("genome"), " ", tmp315.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 316){
+    OrgList tmp316 = main_pop.INDEX(316);
+    PRINT("[316]", tmp316.TRAIT("genome"), " ", tmp316.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 317){
+    OrgList tmp317 = main_pop.INDEX(317);
+    PRINT("[317]", tmp317.TRAIT("genome"), " ", tmp317.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 318){
+    OrgList tmp318 = main_pop.INDEX(318);
+    PRINT("[318]", tmp318.TRAIT("genome"), " ", tmp318.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 319){
+    OrgList tmp319 = main_pop.INDEX(319);
+    PRINT("[319]", tmp319.TRAIT("genome"), " ", tmp319.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 320){
+    OrgList tmp320 = main_pop.INDEX(320);
+    PRINT("[320]", tmp320.TRAIT("genome"), " ", tmp320.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 321){
+    OrgList tmp321 = main_pop.INDEX(321);
+    PRINT("[321]", tmp321.TRAIT("genome"), " ", tmp321.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 322){
+    OrgList tmp322 = main_pop.INDEX(322);
+    PRINT("[322]", tmp322.TRAIT("genome"), " ", tmp322.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 323){
+    OrgList tmp323 = main_pop.INDEX(323);
+    PRINT("[323]", tmp323.TRAIT("genome"), " ", tmp323.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 324){
+    OrgList tmp324 = main_pop.INDEX(324);
+    PRINT("[324]", tmp324.TRAIT("genome"), " ", tmp324.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 325){
+    OrgList tmp325 = main_pop.INDEX(325);
+    PRINT("[325]", tmp325.TRAIT("genome"), " ", tmp325.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 326){
+    OrgList tmp326 = main_pop.INDEX(326);
+    PRINT("[326]", tmp326.TRAIT("genome"), " ", tmp326.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 327){
+    OrgList tmp327 = main_pop.INDEX(327);
+    PRINT("[327]", tmp327.TRAIT("genome"), " ", tmp327.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 328){
+    OrgList tmp328 = main_pop.INDEX(328);
+    PRINT("[328]", tmp328.TRAIT("genome"), " ", tmp328.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 329){
+    OrgList tmp329 = main_pop.INDEX(329);
+    PRINT("[329]", tmp329.TRAIT("genome"), " ", tmp329.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 330){
+    OrgList tmp330 = main_pop.INDEX(330);
+    PRINT("[330]", tmp330.TRAIT("genome"), " ", tmp330.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 331){
+    OrgList tmp331 = main_pop.INDEX(331);
+    PRINT("[331]", tmp331.TRAIT("genome"), " ", tmp331.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 332){
+    OrgList tmp332 = main_pop.INDEX(332);
+    PRINT("[332]", tmp332.TRAIT("genome"), " ", tmp332.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 333){
+    OrgList tmp333 = main_pop.INDEX(333);
+    PRINT("[333]", tmp333.TRAIT("genome"), " ", tmp333.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 334){
+    OrgList tmp334 = main_pop.INDEX(334);
+    PRINT("[334]", tmp334.TRAIT("genome"), " ", tmp334.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 335){
+    OrgList tmp335 = main_pop.INDEX(335);
+    PRINT("[335]", tmp335.TRAIT("genome"), " ", tmp335.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 336){
+    OrgList tmp336 = main_pop.INDEX(336);
+    PRINT("[336]", tmp336.TRAIT("genome"), " ", tmp336.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 337){
+    OrgList tmp337 = main_pop.INDEX(337);
+    PRINT("[337]", tmp337.TRAIT("genome"), " ", tmp337.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 338){
+    OrgList tmp338 = main_pop.INDEX(338);
+    PRINT("[338]", tmp338.TRAIT("genome"), " ", tmp338.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 339){
+    OrgList tmp339 = main_pop.INDEX(339);
+    PRINT("[339]", tmp339.TRAIT("genome"), " ", tmp339.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 340){
+    OrgList tmp340 = main_pop.INDEX(340);
+    PRINT("[340]", tmp340.TRAIT("genome"), " ", tmp340.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 341){
+    OrgList tmp341 = main_pop.INDEX(341);
+    PRINT("[341]", tmp341.TRAIT("genome"), " ", tmp341.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 342){
+    OrgList tmp342 = main_pop.INDEX(342);
+    PRINT("[342]", tmp342.TRAIT("genome"), " ", tmp342.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 343){
+    OrgList tmp343 = main_pop.INDEX(343);
+    PRINT("[343]", tmp343.TRAIT("genome"), " ", tmp343.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 344){
+    OrgList tmp344 = main_pop.INDEX(344);
+    PRINT("[344]", tmp344.TRAIT("genome"), " ", tmp344.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 345){
+    OrgList tmp345 = main_pop.INDEX(345);
+    PRINT("[345]", tmp345.TRAIT("genome"), " ", tmp345.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 346){
+    OrgList tmp346 = main_pop.INDEX(346);
+    PRINT("[346]", tmp346.TRAIT("genome"), " ", tmp346.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 347){
+    OrgList tmp347 = main_pop.INDEX(347);
+    PRINT("[347]", tmp347.TRAIT("genome"), " ", tmp347.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 348){
+    OrgList tmp348 = main_pop.INDEX(348);
+    PRINT("[348]", tmp348.TRAIT("genome"), " ", tmp348.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 349){
+    OrgList tmp349 = main_pop.INDEX(349);
+    PRINT("[349]", tmp349.TRAIT("genome"), " ", tmp349.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 350){
+    OrgList tmp350 = main_pop.INDEX(350);
+    PRINT("[350]", tmp350.TRAIT("genome"), " ", tmp350.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 351){
+    OrgList tmp351 = main_pop.INDEX(351);
+    PRINT("[351]", tmp351.TRAIT("genome"), " ", tmp351.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 352){
+    OrgList tmp352 = main_pop.INDEX(352);
+    PRINT("[352]", tmp352.TRAIT("genome"), " ", tmp352.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 353){
+    OrgList tmp353 = main_pop.INDEX(353);
+    PRINT("[353]", tmp353.TRAIT("genome"), " ", tmp353.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 354){
+    OrgList tmp354 = main_pop.INDEX(354);
+    PRINT("[354]", tmp354.TRAIT("genome"), " ", tmp354.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 355){
+    OrgList tmp355 = main_pop.INDEX(355);
+    PRINT("[355]", tmp355.TRAIT("genome"), " ", tmp355.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 356){
+    OrgList tmp356 = main_pop.INDEX(356);
+    PRINT("[356]", tmp356.TRAIT("genome"), " ", tmp356.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 357){
+    OrgList tmp357 = main_pop.INDEX(357);
+    PRINT("[357]", tmp357.TRAIT("genome"), " ", tmp357.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 358){
+    OrgList tmp358 = main_pop.INDEX(358);
+    PRINT("[358]", tmp358.TRAIT("genome"), " ", tmp358.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 359){
+    OrgList tmp359 = main_pop.INDEX(359);
+    PRINT("[359]", tmp359.TRAIT("genome"), " ", tmp359.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 360){
+    OrgList tmp360 = main_pop.INDEX(360);
+    PRINT("[360]", tmp360.TRAIT("genome"), " ", tmp360.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 361){
+    OrgList tmp361 = main_pop.INDEX(361);
+    PRINT("[361]", tmp361.TRAIT("genome"), " ", tmp361.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 362){
+    OrgList tmp362 = main_pop.INDEX(362);
+    PRINT("[362]", tmp362.TRAIT("genome"), " ", tmp362.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 363){
+    OrgList tmp363 = main_pop.INDEX(363);
+    PRINT("[363]", tmp363.TRAIT("genome"), " ", tmp363.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 364){
+    OrgList tmp364 = main_pop.INDEX(364);
+    PRINT("[364]", tmp364.TRAIT("genome"), " ", tmp364.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 365){
+    OrgList tmp365 = main_pop.INDEX(365);
+    PRINT("[365]", tmp365.TRAIT("genome"), " ", tmp365.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 366){
+    OrgList tmp366 = main_pop.INDEX(366);
+    PRINT("[366]", tmp366.TRAIT("genome"), " ", tmp366.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 367){
+    OrgList tmp367 = main_pop.INDEX(367);
+    PRINT("[367]", tmp367.TRAIT("genome"), " ", tmp367.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 368){
+    OrgList tmp368 = main_pop.INDEX(368);
+    PRINT("[368]", tmp368.TRAIT("genome"), " ", tmp368.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 369){
+    OrgList tmp369 = main_pop.INDEX(369);
+    PRINT("[369]", tmp369.TRAIT("genome"), " ", tmp369.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 370){
+    OrgList tmp370 = main_pop.INDEX(370);
+    PRINT("[370]", tmp370.TRAIT("genome"), " ", tmp370.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 371){
+    OrgList tmp371 = main_pop.INDEX(371);
+    PRINT("[371]", tmp371.TRAIT("genome"), " ", tmp371.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 372){
+    OrgList tmp372 = main_pop.INDEX(372);
+    PRINT("[372]", tmp372.TRAIT("genome"), " ", tmp372.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 373){
+    OrgList tmp373 = main_pop.INDEX(373);
+    PRINT("[373]", tmp373.TRAIT("genome"), " ", tmp373.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 374){
+    OrgList tmp374 = main_pop.INDEX(374);
+    PRINT("[374]", tmp374.TRAIT("genome"), " ", tmp374.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 375){
+    OrgList tmp375 = main_pop.INDEX(375);
+    PRINT("[375]", tmp375.TRAIT("genome"), " ", tmp375.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 376){
+    OrgList tmp376 = main_pop.INDEX(376);
+    PRINT("[376]", tmp376.TRAIT("genome"), " ", tmp376.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 377){
+    OrgList tmp377 = main_pop.INDEX(377);
+    PRINT("[377]", tmp377.TRAIT("genome"), " ", tmp377.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 378){
+    OrgList tmp378 = main_pop.INDEX(378);
+    PRINT("[378]", tmp378.TRAIT("genome"), " ", tmp378.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 379){
+    OrgList tmp379 = main_pop.INDEX(379);
+    PRINT("[379]", tmp379.TRAIT("genome"), " ", tmp379.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 380){
+    OrgList tmp380 = main_pop.INDEX(380);
+    PRINT("[380]", tmp380.TRAIT("genome"), " ", tmp380.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 381){
+    OrgList tmp381 = main_pop.INDEX(381);
+    PRINT("[381]", tmp381.TRAIT("genome"), " ", tmp381.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 382){
+    OrgList tmp382 = main_pop.INDEX(382);
+    PRINT("[382]", tmp382.TRAIT("genome"), " ", tmp382.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 383){
+    OrgList tmp383 = main_pop.INDEX(383);
+    PRINT("[383]", tmp383.TRAIT("genome"), " ", tmp383.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 384){
+    OrgList tmp384 = main_pop.INDEX(384);
+    PRINT("[384]", tmp384.TRAIT("genome"), " ", tmp384.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 385){
+    OrgList tmp385 = main_pop.INDEX(385);
+    PRINT("[385]", tmp385.TRAIT("genome"), " ", tmp385.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 386){
+    OrgList tmp386 = main_pop.INDEX(386);
+    PRINT("[386]", tmp386.TRAIT("genome"), " ", tmp386.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 387){
+    OrgList tmp387 = main_pop.INDEX(387);
+    PRINT("[387]", tmp387.TRAIT("genome"), " ", tmp387.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 388){
+    OrgList tmp388 = main_pop.INDEX(388);
+    PRINT("[388]", tmp388.TRAIT("genome"), " ", tmp388.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 389){
+    OrgList tmp389 = main_pop.INDEX(389);
+    PRINT("[389]", tmp389.TRAIT("genome"), " ", tmp389.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 390){
+    OrgList tmp390 = main_pop.INDEX(390);
+    PRINT("[390]", tmp390.TRAIT("genome"), " ", tmp390.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 391){
+    OrgList tmp391 = main_pop.INDEX(391);
+    PRINT("[391]", tmp391.TRAIT("genome"), " ", tmp391.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 392){
+    OrgList tmp392 = main_pop.INDEX(392);
+    PRINT("[392]", tmp392.TRAIT("genome"), " ", tmp392.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 393){
+    OrgList tmp393 = main_pop.INDEX(393);
+    PRINT("[393]", tmp393.TRAIT("genome"), " ", tmp393.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 394){
+    OrgList tmp394 = main_pop.INDEX(394);
+    PRINT("[394]", tmp394.TRAIT("genome"), " ", tmp394.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 395){
+    OrgList tmp395 = main_pop.INDEX(395);
+    PRINT("[395]", tmp395.TRAIT("genome"), " ", tmp395.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 396){
+    OrgList tmp396 = main_pop.INDEX(396);
+    PRINT("[396]", tmp396.TRAIT("genome"), " ", tmp396.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 397){
+    OrgList tmp397 = main_pop.INDEX(397);
+    PRINT("[397]", tmp397.TRAIT("genome"), " ", tmp397.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 398){
+    OrgList tmp398 = main_pop.INDEX(398);
+    PRINT("[398]", tmp398.TRAIT("genome"), " ", tmp398.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 399){
+    OrgList tmp399 = main_pop.INDEX(399);
+    PRINT("[399]", tmp399.TRAIT("genome"), " ", tmp399.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 400){
+    OrgList tmp400 = main_pop.INDEX(400);
+    PRINT("[400]", tmp400.TRAIT("genome"), " ", tmp400.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 401){
+    OrgList tmp401 = main_pop.INDEX(401);
+    PRINT("[401]", tmp401.TRAIT("genome"), " ", tmp401.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 402){
+    OrgList tmp402 = main_pop.INDEX(402);
+    PRINT("[402]", tmp402.TRAIT("genome"), " ", tmp402.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 403){
+    OrgList tmp403 = main_pop.INDEX(403);
+    PRINT("[403]", tmp403.TRAIT("genome"), " ", tmp403.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 404){
+    OrgList tmp404 = main_pop.INDEX(404);
+    PRINT("[404]", tmp404.TRAIT("genome"), " ", tmp404.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 405){
+    OrgList tmp405 = main_pop.INDEX(405);
+    PRINT("[405]", tmp405.TRAIT("genome"), " ", tmp405.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 406){
+    OrgList tmp406 = main_pop.INDEX(406);
+    PRINT("[406]", tmp406.TRAIT("genome"), " ", tmp406.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 407){
+    OrgList tmp407 = main_pop.INDEX(407);
+    PRINT("[407]", tmp407.TRAIT("genome"), " ", tmp407.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 408){
+    OrgList tmp408 = main_pop.INDEX(408);
+    PRINT("[408]", tmp408.TRAIT("genome"), " ", tmp408.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 409){
+    OrgList tmp409 = main_pop.INDEX(409);
+    PRINT("[409]", tmp409.TRAIT("genome"), " ", tmp409.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 410){
+    OrgList tmp410 = main_pop.INDEX(410);
+    PRINT("[410]", tmp410.TRAIT("genome"), " ", tmp410.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 411){
+    OrgList tmp411 = main_pop.INDEX(411);
+    PRINT("[411]", tmp411.TRAIT("genome"), " ", tmp411.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 412){
+    OrgList tmp412 = main_pop.INDEX(412);
+    PRINT("[412]", tmp412.TRAIT("genome"), " ", tmp412.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 413){
+    OrgList tmp413 = main_pop.INDEX(413);
+    PRINT("[413]", tmp413.TRAIT("genome"), " ", tmp413.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 414){
+    OrgList tmp414 = main_pop.INDEX(414);
+    PRINT("[414]", tmp414.TRAIT("genome"), " ", tmp414.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 415){
+    OrgList tmp415 = main_pop.INDEX(415);
+    PRINT("[415]", tmp415.TRAIT("genome"), " ", tmp415.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 416){
+    OrgList tmp416 = main_pop.INDEX(416);
+    PRINT("[416]", tmp416.TRAIT("genome"), " ", tmp416.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 417){
+    OrgList tmp417 = main_pop.INDEX(417);
+    PRINT("[417]", tmp417.TRAIT("genome"), " ", tmp417.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 418){
+    OrgList tmp418 = main_pop.INDEX(418);
+    PRINT("[418]", tmp418.TRAIT("genome"), " ", tmp418.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 419){
+    OrgList tmp419 = main_pop.INDEX(419);
+    PRINT("[419]", tmp419.TRAIT("genome"), " ", tmp419.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 420){
+    OrgList tmp420 = main_pop.INDEX(420);
+    PRINT("[420]", tmp420.TRAIT("genome"), " ", tmp420.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 421){
+    OrgList tmp421 = main_pop.INDEX(421);
+    PRINT("[421]", tmp421.TRAIT("genome"), " ", tmp421.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 422){
+    OrgList tmp422 = main_pop.INDEX(422);
+    PRINT("[422]", tmp422.TRAIT("genome"), " ", tmp422.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 423){
+    OrgList tmp423 = main_pop.INDEX(423);
+    PRINT("[423]", tmp423.TRAIT("genome"), " ", tmp423.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 424){
+    OrgList tmp424 = main_pop.INDEX(424);
+    PRINT("[424]", tmp424.TRAIT("genome"), " ", tmp424.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 425){
+    OrgList tmp425 = main_pop.INDEX(425);
+    PRINT("[425]", tmp425.TRAIT("genome"), " ", tmp425.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 426){
+    OrgList tmp426 = main_pop.INDEX(426);
+    PRINT("[426]", tmp426.TRAIT("genome"), " ", tmp426.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 427){
+    OrgList tmp427 = main_pop.INDEX(427);
+    PRINT("[427]", tmp427.TRAIT("genome"), " ", tmp427.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 428){
+    OrgList tmp428 = main_pop.INDEX(428);
+    PRINT("[428]", tmp428.TRAIT("genome"), " ", tmp428.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 429){
+    OrgList tmp429 = main_pop.INDEX(429);
+    PRINT("[429]", tmp429.TRAIT("genome"), " ", tmp429.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 430){
+    OrgList tmp430 = main_pop.INDEX(430);
+    PRINT("[430]", tmp430.TRAIT("genome"), " ", tmp430.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 431){
+    OrgList tmp431 = main_pop.INDEX(431);
+    PRINT("[431]", tmp431.TRAIT("genome"), " ", tmp431.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 432){
+    OrgList tmp432 = main_pop.INDEX(432);
+    PRINT("[432]", tmp432.TRAIT("genome"), " ", tmp432.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 433){
+    OrgList tmp433 = main_pop.INDEX(433);
+    PRINT("[433]", tmp433.TRAIT("genome"), " ", tmp433.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 434){
+    OrgList tmp434 = main_pop.INDEX(434);
+    PRINT("[434]", tmp434.TRAIT("genome"), " ", tmp434.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 435){
+    OrgList tmp435 = main_pop.INDEX(435);
+    PRINT("[435]", tmp435.TRAIT("genome"), " ", tmp435.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 436){
+    OrgList tmp436 = main_pop.INDEX(436);
+    PRINT("[436]", tmp436.TRAIT("genome"), " ", tmp436.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 437){
+    OrgList tmp437 = main_pop.INDEX(437);
+    PRINT("[437]", tmp437.TRAIT("genome"), " ", tmp437.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 438){
+    OrgList tmp438 = main_pop.INDEX(438);
+    PRINT("[438]", tmp438.TRAIT("genome"), " ", tmp438.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 439){
+    OrgList tmp439 = main_pop.INDEX(439);
+    PRINT("[439]", tmp439.TRAIT("genome"), " ", tmp439.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 440){
+    OrgList tmp440 = main_pop.INDEX(440);
+    PRINT("[440]", tmp440.TRAIT("genome"), " ", tmp440.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 441){
+    OrgList tmp441 = main_pop.INDEX(441);
+    PRINT("[441]", tmp441.TRAIT("genome"), " ", tmp441.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 442){
+    OrgList tmp442 = main_pop.INDEX(442);
+    PRINT("[442]", tmp442.TRAIT("genome"), " ", tmp442.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 443){
+    OrgList tmp443 = main_pop.INDEX(443);
+    PRINT("[443]", tmp443.TRAIT("genome"), " ", tmp443.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 444){
+    OrgList tmp444 = main_pop.INDEX(444);
+    PRINT("[444]", tmp444.TRAIT("genome"), " ", tmp444.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 445){
+    OrgList tmp445 = main_pop.INDEX(445);
+    PRINT("[445]", tmp445.TRAIT("genome"), " ", tmp445.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 446){
+    OrgList tmp446 = main_pop.INDEX(446);
+    PRINT("[446]", tmp446.TRAIT("genome"), " ", tmp446.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 447){
+    OrgList tmp447 = main_pop.INDEX(447);
+    PRINT("[447]", tmp447.TRAIT("genome"), " ", tmp447.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 448){
+    OrgList tmp448 = main_pop.INDEX(448);
+    PRINT("[448]", tmp448.TRAIT("genome"), " ", tmp448.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 449){
+    OrgList tmp449 = main_pop.INDEX(449);
+    PRINT("[449]", tmp449.TRAIT("genome"), " ", tmp449.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 450){
+    OrgList tmp450 = main_pop.INDEX(450);
+    PRINT("[450]", tmp450.TRAIT("genome"), " ", tmp450.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 451){
+    OrgList tmp451 = main_pop.INDEX(451);
+    PRINT("[451]", tmp451.TRAIT("genome"), " ", tmp451.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 452){
+    OrgList tmp452 = main_pop.INDEX(452);
+    PRINT("[452]", tmp452.TRAIT("genome"), " ", tmp452.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 453){
+    OrgList tmp453 = main_pop.INDEX(453);
+    PRINT("[453]", tmp453.TRAIT("genome"), " ", tmp453.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 454){
+    OrgList tmp454 = main_pop.INDEX(454);
+    PRINT("[454]", tmp454.TRAIT("genome"), " ", tmp454.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 455){
+    OrgList tmp455 = main_pop.INDEX(455);
+    PRINT("[455]", tmp455.TRAIT("genome"), " ", tmp455.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 456){
+    OrgList tmp456 = main_pop.INDEX(456);
+    PRINT("[456]", tmp456.TRAIT("genome"), " ", tmp456.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 457){
+    OrgList tmp457 = main_pop.INDEX(457);
+    PRINT("[457]", tmp457.TRAIT("genome"), " ", tmp457.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 458){
+    OrgList tmp458 = main_pop.INDEX(458);
+    PRINT("[458]", tmp458.TRAIT("genome"), " ", tmp458.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 459){
+    OrgList tmp459 = main_pop.INDEX(459);
+    PRINT("[459]", tmp459.TRAIT("genome"), " ", tmp459.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 460){
+    OrgList tmp460 = main_pop.INDEX(460);
+    PRINT("[460]", tmp460.TRAIT("genome"), " ", tmp460.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 461){
+    OrgList tmp461 = main_pop.INDEX(461);
+    PRINT("[461]", tmp461.TRAIT("genome"), " ", tmp461.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 462){
+    OrgList tmp462 = main_pop.INDEX(462);
+    PRINT("[462]", tmp462.TRAIT("genome"), " ", tmp462.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 463){
+    OrgList tmp463 = main_pop.INDEX(463);
+    PRINT("[463]", tmp463.TRAIT("genome"), " ", tmp463.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 464){
+    OrgList tmp464 = main_pop.INDEX(464);
+    PRINT("[464]", tmp464.TRAIT("genome"), " ", tmp464.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 465){
+    OrgList tmp465 = main_pop.INDEX(465);
+    PRINT("[465]", tmp465.TRAIT("genome"), " ", tmp465.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 466){
+    OrgList tmp466 = main_pop.INDEX(466);
+    PRINT("[466]", tmp466.TRAIT("genome"), " ", tmp466.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 467){
+    OrgList tmp467 = main_pop.INDEX(467);
+    PRINT("[467]", tmp467.TRAIT("genome"), " ", tmp467.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 468){
+    OrgList tmp468 = main_pop.INDEX(468);
+    PRINT("[468]", tmp468.TRAIT("genome"), " ", tmp468.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 469){
+    OrgList tmp469 = main_pop.INDEX(469);
+    PRINT("[469]", tmp469.TRAIT("genome"), " ", tmp469.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 470){
+    OrgList tmp470 = main_pop.INDEX(470);
+    PRINT("[470]", tmp470.TRAIT("genome"), " ", tmp470.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 471){
+    OrgList tmp471 = main_pop.INDEX(471);
+    PRINT("[471]", tmp471.TRAIT("genome"), " ", tmp471.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 472){
+    OrgList tmp472 = main_pop.INDEX(472);
+    PRINT("[472]", tmp472.TRAIT("genome"), " ", tmp472.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 473){
+    OrgList tmp473 = main_pop.INDEX(473);
+    PRINT("[473]", tmp473.TRAIT("genome"), " ", tmp473.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 474){
+    OrgList tmp474 = main_pop.INDEX(474);
+    PRINT("[474]", tmp474.TRAIT("genome"), " ", tmp474.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 475){
+    OrgList tmp475 = main_pop.INDEX(475);
+    PRINT("[475]", tmp475.TRAIT("genome"), " ", tmp475.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 476){
+    OrgList tmp476 = main_pop.INDEX(476);
+    PRINT("[476]", tmp476.TRAIT("genome"), " ", tmp476.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 477){
+    OrgList tmp477 = main_pop.INDEX(477);
+    PRINT("[477]", tmp477.TRAIT("genome"), " ", tmp477.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 478){
+    OrgList tmp478 = main_pop.INDEX(478);
+    PRINT("[478]", tmp478.TRAIT("genome"), " ", tmp478.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 479){
+    OrgList tmp479 = main_pop.INDEX(479);
+    PRINT("[479]", tmp479.TRAIT("genome"), " ", tmp479.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 480){
+    OrgList tmp480 = main_pop.INDEX(480);
+    PRINT("[480]", tmp480.TRAIT("genome"), " ", tmp480.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 481){
+    OrgList tmp481 = main_pop.INDEX(481);
+    PRINT("[481]", tmp481.TRAIT("genome"), " ", tmp481.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 482){
+    OrgList tmp482 = main_pop.INDEX(482);
+    PRINT("[482]", tmp482.TRAIT("genome"), " ", tmp482.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 483){
+    OrgList tmp483 = main_pop.INDEX(483);
+    PRINT("[483]", tmp483.TRAIT("genome"), " ", tmp483.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 484){
+    OrgList tmp484 = main_pop.INDEX(484);
+    PRINT("[484]", tmp484.TRAIT("genome"), " ", tmp484.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 485){
+    OrgList tmp485 = main_pop.INDEX(485);
+    PRINT("[485]", tmp485.TRAIT("genome"), " ", tmp485.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 486){
+    OrgList tmp486 = main_pop.INDEX(486);
+    PRINT("[486]", tmp486.TRAIT("genome"), " ", tmp486.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 487){
+    OrgList tmp487 = main_pop.INDEX(487);
+    PRINT("[487]", tmp487.TRAIT("genome"), " ", tmp487.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 488){
+    OrgList tmp488 = main_pop.INDEX(488);
+    PRINT("[488]", tmp488.TRAIT("genome"), " ", tmp488.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 489){
+    OrgList tmp489 = main_pop.INDEX(489);
+    PRINT("[489]", tmp489.TRAIT("genome"), " ", tmp489.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 490){
+    OrgList tmp490 = main_pop.INDEX(490);
+    PRINT("[490]", tmp490.TRAIT("genome"), " ", tmp490.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 491){
+    OrgList tmp491 = main_pop.INDEX(491);
+    PRINT("[491]", tmp491.TRAIT("genome"), " ", tmp491.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 492){
+    OrgList tmp492 = main_pop.INDEX(492);
+    PRINT("[492]", tmp492.TRAIT("genome"), " ", tmp492.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 493){
+    OrgList tmp493 = main_pop.INDEX(493);
+    PRINT("[493]", tmp493.TRAIT("genome"), " ", tmp493.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 494){
+    OrgList tmp494 = main_pop.INDEX(494);
+    PRINT("[494]", tmp494.TRAIT("genome"), " ", tmp494.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 495){
+    OrgList tmp495 = main_pop.INDEX(495);
+    PRINT("[495]", tmp495.TRAIT("genome"), " ", tmp495.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 496){
+    OrgList tmp496 = main_pop.INDEX(496);
+    PRINT("[496]", tmp496.TRAIT("genome"), " ", tmp496.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 497){
+    OrgList tmp497 = main_pop.INDEX(497);
+    PRINT("[497]", tmp497.TRAIT("genome"), " ", tmp497.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 498){
+    OrgList tmp498 = main_pop.INDEX(498);
+    PRINT("[498]", tmp498.TRAIT("genome"), " ", tmp498.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 499){
+    OrgList tmp499 = main_pop.INDEX(499);
+    PRINT("[499]", tmp499.TRAIT("genome"), " ", tmp499.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 500){
+    OrgList tmp500 = main_pop.INDEX(500);
+    PRINT("[500]", tmp500.TRAIT("genome"), " ", tmp500.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 501){
+    OrgList tmp501 = main_pop.INDEX(501);
+    PRINT("[501]", tmp501.TRAIT("genome"), " ", tmp501.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 502){
+    OrgList tmp502 = main_pop.INDEX(502);
+    PRINT("[502]", tmp502.TRAIT("genome"), " ", tmp502.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 503){
+    OrgList tmp503 = main_pop.INDEX(503);
+    PRINT("[503]", tmp503.TRAIT("genome"), " ", tmp503.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 504){
+    OrgList tmp504 = main_pop.INDEX(504);
+    PRINT("[504]", tmp504.TRAIT("genome"), " ", tmp504.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 505){
+    OrgList tmp505 = main_pop.INDEX(505);
+    PRINT("[505]", tmp505.TRAIT("genome"), " ", tmp505.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 506){
+    OrgList tmp506 = main_pop.INDEX(506);
+    PRINT("[506]", tmp506.TRAIT("genome"), " ", tmp506.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 507){
+    OrgList tmp507 = main_pop.INDEX(507);
+    PRINT("[507]", tmp507.TRAIT("genome"), " ", tmp507.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 508){
+    OrgList tmp508 = main_pop.INDEX(508);
+    PRINT("[508]", tmp508.TRAIT("genome"), " ", tmp508.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 509){
+    OrgList tmp509 = main_pop.INDEX(509);
+    PRINT("[509]", tmp509.TRAIT("genome"), " ", tmp509.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 510){
+    OrgList tmp510 = main_pop.INDEX(510);
+    PRINT("[510]", tmp510.TRAIT("genome"), " ", tmp510.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 511){
+    OrgList tmp511 = main_pop.INDEX(511);
+    PRINT("[511]", tmp511.TRAIT("genome"), " ", tmp511.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 512){
+    OrgList tmp512 = main_pop.INDEX(512);
+    PRINT("[512]", tmp512.TRAIT("genome"), " ", tmp512.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 513){
+    OrgList tmp513 = main_pop.INDEX(513);
+    PRINT("[513]", tmp513.TRAIT("genome"), " ", tmp513.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 514){
+    OrgList tmp514 = main_pop.INDEX(514);
+    PRINT("[514]", tmp514.TRAIT("genome"), " ", tmp514.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 515){
+    OrgList tmp515 = main_pop.INDEX(515);
+    PRINT("[515]", tmp515.TRAIT("genome"), " ", tmp515.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 516){
+    OrgList tmp516 = main_pop.INDEX(516);
+    PRINT("[516]", tmp516.TRAIT("genome"), " ", tmp516.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 517){
+    OrgList tmp517 = main_pop.INDEX(517);
+    PRINT("[517]", tmp517.TRAIT("genome"), " ", tmp517.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 518){
+    OrgList tmp518 = main_pop.INDEX(518);
+    PRINT("[518]", tmp518.TRAIT("genome"), " ", tmp518.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 519){
+    OrgList tmp519 = main_pop.INDEX(519);
+    PRINT("[519]", tmp519.TRAIT("genome"), " ", tmp519.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 520){
+    OrgList tmp520 = main_pop.INDEX(520);
+    PRINT("[520]", tmp520.TRAIT("genome"), " ", tmp520.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 521){
+    OrgList tmp521 = main_pop.INDEX(521);
+    PRINT("[521]", tmp521.TRAIT("genome"), " ", tmp521.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 522){
+    OrgList tmp522 = main_pop.INDEX(522);
+    PRINT("[522]", tmp522.TRAIT("genome"), " ", tmp522.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 523){
+    OrgList tmp523 = main_pop.INDEX(523);
+    PRINT("[523]", tmp523.TRAIT("genome"), " ", tmp523.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 524){
+    OrgList tmp524 = main_pop.INDEX(524);
+    PRINT("[524]", tmp524.TRAIT("genome"), " ", tmp524.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 525){
+    OrgList tmp525 = main_pop.INDEX(525);
+    PRINT("[525]", tmp525.TRAIT("genome"), " ", tmp525.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 526){
+    OrgList tmp526 = main_pop.INDEX(526);
+    PRINT("[526]", tmp526.TRAIT("genome"), " ", tmp526.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 527){
+    OrgList tmp527 = main_pop.INDEX(527);
+    PRINT("[527]", tmp527.TRAIT("genome"), " ", tmp527.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 528){
+    OrgList tmp528 = main_pop.INDEX(528);
+    PRINT("[528]", tmp528.TRAIT("genome"), " ", tmp528.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 529){
+    OrgList tmp529 = main_pop.INDEX(529);
+    PRINT("[529]", tmp529.TRAIT("genome"), " ", tmp529.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 530){
+    OrgList tmp530 = main_pop.INDEX(530);
+    PRINT("[530]", tmp530.TRAIT("genome"), " ", tmp530.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 531){
+    OrgList tmp531 = main_pop.INDEX(531);
+    PRINT("[531]", tmp531.TRAIT("genome"), " ", tmp531.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 532){
+    OrgList tmp532 = main_pop.INDEX(532);
+    PRINT("[532]", tmp532.TRAIT("genome"), " ", tmp532.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 533){
+    OrgList tmp533 = main_pop.INDEX(533);
+    PRINT("[533]", tmp533.TRAIT("genome"), " ", tmp533.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 534){
+    OrgList tmp534 = main_pop.INDEX(534);
+    PRINT("[534]", tmp534.TRAIT("genome"), " ", tmp534.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 535){
+    OrgList tmp535 = main_pop.INDEX(535);
+    PRINT("[535]", tmp535.TRAIT("genome"), " ", tmp535.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 536){
+    OrgList tmp536 = main_pop.INDEX(536);
+    PRINT("[536]", tmp536.TRAIT("genome"), " ", tmp536.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 537){
+    OrgList tmp537 = main_pop.INDEX(537);
+    PRINT("[537]", tmp537.TRAIT("genome"), " ", tmp537.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 538){
+    OrgList tmp538 = main_pop.INDEX(538);
+    PRINT("[538]", tmp538.TRAIT("genome"), " ", tmp538.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 539){
+    OrgList tmp539 = main_pop.INDEX(539);
+    PRINT("[539]", tmp539.TRAIT("genome"), " ", tmp539.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 540){
+    OrgList tmp540 = main_pop.INDEX(540);
+    PRINT("[540]", tmp540.TRAIT("genome"), " ", tmp540.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 541){
+    OrgList tmp541 = main_pop.INDEX(541);
+    PRINT("[541]", tmp541.TRAIT("genome"), " ", tmp541.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 542){
+    OrgList tmp542 = main_pop.INDEX(542);
+    PRINT("[542]", tmp542.TRAIT("genome"), " ", tmp542.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 543){
+    OrgList tmp543 = main_pop.INDEX(543);
+    PRINT("[543]", tmp543.TRAIT("genome"), " ", tmp543.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 544){
+    OrgList tmp544 = main_pop.INDEX(544);
+    PRINT("[544]", tmp544.TRAIT("genome"), " ", tmp544.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 545){
+    OrgList tmp545 = main_pop.INDEX(545);
+    PRINT("[545]", tmp545.TRAIT("genome"), " ", tmp545.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 546){
+    OrgList tmp546 = main_pop.INDEX(546);
+    PRINT("[546]", tmp546.TRAIT("genome"), " ", tmp546.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 547){
+    OrgList tmp547 = main_pop.INDEX(547);
+    PRINT("[547]", tmp547.TRAIT("genome"), " ", tmp547.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 548){
+    OrgList tmp548 = main_pop.INDEX(548);
+    PRINT("[548]", tmp548.TRAIT("genome"), " ", tmp548.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 549){
+    OrgList tmp549 = main_pop.INDEX(549);
+    PRINT("[549]", tmp549.TRAIT("genome"), " ", tmp549.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 550){
+    OrgList tmp550 = main_pop.INDEX(550);
+    PRINT("[550]", tmp550.TRAIT("genome"), " ", tmp550.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 551){
+    OrgList tmp551 = main_pop.INDEX(551);
+    PRINT("[551]", tmp551.TRAIT("genome"), " ", tmp551.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 552){
+    OrgList tmp552 = main_pop.INDEX(552);
+    PRINT("[552]", tmp552.TRAIT("genome"), " ", tmp552.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 553){
+    OrgList tmp553 = main_pop.INDEX(553);
+    PRINT("[553]", tmp553.TRAIT("genome"), " ", tmp553.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 554){
+    OrgList tmp554 = main_pop.INDEX(554);
+    PRINT("[554]", tmp554.TRAIT("genome"), " ", tmp554.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 555){
+    OrgList tmp555 = main_pop.INDEX(555);
+    PRINT("[555]", tmp555.TRAIT("genome"), " ", tmp555.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 556){
+    OrgList tmp556 = main_pop.INDEX(556);
+    PRINT("[556]", tmp556.TRAIT("genome"), " ", tmp556.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 557){
+    OrgList tmp557 = main_pop.INDEX(557);
+    PRINT("[557]", tmp557.TRAIT("genome"), " ", tmp557.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 558){
+    OrgList tmp558 = main_pop.INDEX(558);
+    PRINT("[558]", tmp558.TRAIT("genome"), " ", tmp558.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 559){
+    OrgList tmp559 = main_pop.INDEX(559);
+    PRINT("[559]", tmp559.TRAIT("genome"), " ", tmp559.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 560){
+    OrgList tmp560 = main_pop.INDEX(560);
+    PRINT("[560]", tmp560.TRAIT("genome"), " ", tmp560.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 561){
+    OrgList tmp561 = main_pop.INDEX(561);
+    PRINT("[561]", tmp561.TRAIT("genome"), " ", tmp561.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 562){
+    OrgList tmp562 = main_pop.INDEX(562);
+    PRINT("[562]", tmp562.TRAIT("genome"), " ", tmp562.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 563){
+    OrgList tmp563 = main_pop.INDEX(563);
+    PRINT("[563]", tmp563.TRAIT("genome"), " ", tmp563.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 564){
+    OrgList tmp564 = main_pop.INDEX(564);
+    PRINT("[564]", tmp564.TRAIT("genome"), " ", tmp564.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 565){
+    OrgList tmp565 = main_pop.INDEX(565);
+    PRINT("[565]", tmp565.TRAIT("genome"), " ", tmp565.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 566){
+    OrgList tmp566 = main_pop.INDEX(566);
+    PRINT("[566]", tmp566.TRAIT("genome"), " ", tmp566.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 567){
+    OrgList tmp567 = main_pop.INDEX(567);
+    PRINT("[567]", tmp567.TRAIT("genome"), " ", tmp567.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 568){
+    OrgList tmp568 = main_pop.INDEX(568);
+    PRINT("[568]", tmp568.TRAIT("genome"), " ", tmp568.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 569){
+    OrgList tmp569 = main_pop.INDEX(569);
+    PRINT("[569]", tmp569.TRAIT("genome"), " ", tmp569.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 570){
+    OrgList tmp570 = main_pop.INDEX(570);
+    PRINT("[570]", tmp570.TRAIT("genome"), " ", tmp570.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 571){
+    OrgList tmp571 = main_pop.INDEX(571);
+    PRINT("[571]", tmp571.TRAIT("genome"), " ", tmp571.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 572){
+    OrgList tmp572 = main_pop.INDEX(572);
+    PRINT("[572]", tmp572.TRAIT("genome"), " ", tmp572.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 573){
+    OrgList tmp573 = main_pop.INDEX(573);
+    PRINT("[573]", tmp573.TRAIT("genome"), " ", tmp573.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 574){
+    OrgList tmp574 = main_pop.INDEX(574);
+    PRINT("[574]", tmp574.TRAIT("genome"), " ", tmp574.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 575){
+    OrgList tmp575 = main_pop.INDEX(575);
+    PRINT("[575]", tmp575.TRAIT("genome"), " ", tmp575.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 576){
+    OrgList tmp576 = main_pop.INDEX(576);
+    PRINT("[576]", tmp576.TRAIT("genome"), " ", tmp576.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 577){
+    OrgList tmp577 = main_pop.INDEX(577);
+    PRINT("[577]", tmp577.TRAIT("genome"), " ", tmp577.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 578){
+    OrgList tmp578 = main_pop.INDEX(578);
+    PRINT("[578]", tmp578.TRAIT("genome"), " ", tmp578.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 579){
+    OrgList tmp579 = main_pop.INDEX(579);
+    PRINT("[579]", tmp579.TRAIT("genome"), " ", tmp579.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 580){
+    OrgList tmp580 = main_pop.INDEX(580);
+    PRINT("[580]", tmp580.TRAIT("genome"), " ", tmp580.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 581){
+    OrgList tmp581 = main_pop.INDEX(581);
+    PRINT("[581]", tmp581.TRAIT("genome"), " ", tmp581.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 582){
+    OrgList tmp582 = main_pop.INDEX(582);
+    PRINT("[582]", tmp582.TRAIT("genome"), " ", tmp582.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 583){
+    OrgList tmp583 = main_pop.INDEX(583);
+    PRINT("[583]", tmp583.TRAIT("genome"), " ", tmp583.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 584){
+    OrgList tmp584 = main_pop.INDEX(584);
+    PRINT("[584]", tmp584.TRAIT("genome"), " ", tmp584.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 585){
+    OrgList tmp585 = main_pop.INDEX(585);
+    PRINT("[585]", tmp585.TRAIT("genome"), " ", tmp585.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 586){
+    OrgList tmp586 = main_pop.INDEX(586);
+    PRINT("[586]", tmp586.TRAIT("genome"), " ", tmp586.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 587){
+    OrgList tmp587 = main_pop.INDEX(587);
+    PRINT("[587]", tmp587.TRAIT("genome"), " ", tmp587.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 588){
+    OrgList tmp588 = main_pop.INDEX(588);
+    PRINT("[588]", tmp588.TRAIT("genome"), " ", tmp588.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 589){
+    OrgList tmp589 = main_pop.INDEX(589);
+    PRINT("[589]", tmp589.TRAIT("genome"), " ", tmp589.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 590){
+    OrgList tmp590 = main_pop.INDEX(590);
+    PRINT("[590]", tmp590.TRAIT("genome"), " ", tmp590.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 591){
+    OrgList tmp591 = main_pop.INDEX(591);
+    PRINT("[591]", tmp591.TRAIT("genome"), " ", tmp591.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 592){
+    OrgList tmp592 = main_pop.INDEX(592);
+    PRINT("[592]", tmp592.TRAIT("genome"), " ", tmp592.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 593){
+    OrgList tmp593 = main_pop.INDEX(593);
+    PRINT("[593]", tmp593.TRAIT("genome"), " ", tmp593.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 594){
+    OrgList tmp594 = main_pop.INDEX(594);
+    PRINT("[594]", tmp594.TRAIT("genome"), " ", tmp594.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 595){
+    OrgList tmp595 = main_pop.INDEX(595);
+    PRINT("[595]", tmp595.TRAIT("genome"), " ", tmp595.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 596){
+    OrgList tmp596 = main_pop.INDEX(596);
+    PRINT("[596]", tmp596.TRAIT("genome"), " ", tmp596.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 597){
+    OrgList tmp597 = main_pop.INDEX(597);
+    PRINT("[597]", tmp597.TRAIT("genome"), " ", tmp597.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 598){
+    OrgList tmp598 = main_pop.INDEX(598);
+    PRINT("[598]", tmp598.TRAIT("genome"), " ", tmp598.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 599){
+    OrgList tmp599 = main_pop.INDEX(599);
+    PRINT("[599]", tmp599.TRAIT("genome"), " ", tmp599.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 600){
+    OrgList tmp600 = main_pop.INDEX(600);
+    PRINT("[600]", tmp600.TRAIT("genome"), " ", tmp600.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 601){
+    OrgList tmp601 = main_pop.INDEX(601);
+    PRINT("[601]", tmp601.TRAIT("genome"), " ", tmp601.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 602){
+    OrgList tmp602 = main_pop.INDEX(602);
+    PRINT("[602]", tmp602.TRAIT("genome"), " ", tmp602.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 603){
+    OrgList tmp603 = main_pop.INDEX(603);
+    PRINT("[603]", tmp603.TRAIT("genome"), " ", tmp603.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 604){
+    OrgList tmp604 = main_pop.INDEX(604);
+    PRINT("[604]", tmp604.TRAIT("genome"), " ", tmp604.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 605){
+    OrgList tmp605 = main_pop.INDEX(605);
+    PRINT("[605]", tmp605.TRAIT("genome"), " ", tmp605.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 606){
+    OrgList tmp606 = main_pop.INDEX(606);
+    PRINT("[606]", tmp606.TRAIT("genome"), " ", tmp606.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 607){
+    OrgList tmp607 = main_pop.INDEX(607);
+    PRINT("[607]", tmp607.TRAIT("genome"), " ", tmp607.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 608){
+    OrgList tmp608 = main_pop.INDEX(608);
+    PRINT("[608]", tmp608.TRAIT("genome"), " ", tmp608.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 609){
+    OrgList tmp609 = main_pop.INDEX(609);
+    PRINT("[609]", tmp609.TRAIT("genome"), " ", tmp609.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 610){
+    OrgList tmp610 = main_pop.INDEX(610);
+    PRINT("[610]", tmp610.TRAIT("genome"), " ", tmp610.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 611){
+    OrgList tmp611 = main_pop.INDEX(611);
+    PRINT("[611]", tmp611.TRAIT("genome"), " ", tmp611.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 612){
+    OrgList tmp612 = main_pop.INDEX(612);
+    PRINT("[612]", tmp612.TRAIT("genome"), " ", tmp612.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 613){
+    OrgList tmp613 = main_pop.INDEX(613);
+    PRINT("[613]", tmp613.TRAIT("genome"), " ", tmp613.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 614){
+    OrgList tmp614 = main_pop.INDEX(614);
+    PRINT("[614]", tmp614.TRAIT("genome"), " ", tmp614.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 615){
+    OrgList tmp615 = main_pop.INDEX(615);
+    PRINT("[615]", tmp615.TRAIT("genome"), " ", tmp615.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 616){
+    OrgList tmp616 = main_pop.INDEX(616);
+    PRINT("[616]", tmp616.TRAIT("genome"), " ", tmp616.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 617){
+    OrgList tmp617 = main_pop.INDEX(617);
+    PRINT("[617]", tmp617.TRAIT("genome"), " ", tmp617.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 618){
+    OrgList tmp618 = main_pop.INDEX(618);
+    PRINT("[618]", tmp618.TRAIT("genome"), " ", tmp618.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 619){
+    OrgList tmp619 = main_pop.INDEX(619);
+    PRINT("[619]", tmp619.TRAIT("genome"), " ", tmp619.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 620){
+    OrgList tmp620 = main_pop.INDEX(620);
+    PRINT("[620]", tmp620.TRAIT("genome"), " ", tmp620.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 621){
+    OrgList tmp621 = main_pop.INDEX(621);
+    PRINT("[621]", tmp621.TRAIT("genome"), " ", tmp621.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 622){
+    OrgList tmp622 = main_pop.INDEX(622);
+    PRINT("[622]", tmp622.TRAIT("genome"), " ", tmp622.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 623){
+    OrgList tmp623 = main_pop.INDEX(623);
+    PRINT("[623]", tmp623.TRAIT("genome"), " ", tmp623.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 624){
+    OrgList tmp624 = main_pop.INDEX(624);
+    PRINT("[624]", tmp624.TRAIT("genome"), " ", tmp624.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 625){
+    OrgList tmp625 = main_pop.INDEX(625);
+    PRINT("[625]", tmp625.TRAIT("genome"), " ", tmp625.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 626){
+    OrgList tmp626 = main_pop.INDEX(626);
+    PRINT("[626]", tmp626.TRAIT("genome"), " ", tmp626.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 627){
+    OrgList tmp627 = main_pop.INDEX(627);
+    PRINT("[627]", tmp627.TRAIT("genome"), " ", tmp627.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 628){
+    OrgList tmp628 = main_pop.INDEX(628);
+    PRINT("[628]", tmp628.TRAIT("genome"), " ", tmp628.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 629){
+    OrgList tmp629 = main_pop.INDEX(629);
+    PRINT("[629]", tmp629.TRAIT("genome"), " ", tmp629.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 630){
+    OrgList tmp630 = main_pop.INDEX(630);
+    PRINT("[630]", tmp630.TRAIT("genome"), " ", tmp630.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 631){
+    OrgList tmp631 = main_pop.INDEX(631);
+    PRINT("[631]", tmp631.TRAIT("genome"), " ", tmp631.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 632){
+    OrgList tmp632 = main_pop.INDEX(632);
+    PRINT("[632]", tmp632.TRAIT("genome"), " ", tmp632.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 633){
+    OrgList tmp633 = main_pop.INDEX(633);
+    PRINT("[633]", tmp633.TRAIT("genome"), " ", tmp633.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 634){
+    OrgList tmp634 = main_pop.INDEX(634);
+    PRINT("[634]", tmp634.TRAIT("genome"), " ", tmp634.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 635){
+    OrgList tmp635 = main_pop.INDEX(635);
+    PRINT("[635]", tmp635.TRAIT("genome"), " ", tmp635.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 636){
+    OrgList tmp636 = main_pop.INDEX(636);
+    PRINT("[636]", tmp636.TRAIT("genome"), " ", tmp636.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 637){
+    OrgList tmp637 = main_pop.INDEX(637);
+    PRINT("[637]", tmp637.TRAIT("genome"), " ", tmp637.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 638){
+    OrgList tmp638 = main_pop.INDEX(638);
+    PRINT("[638]", tmp638.TRAIT("genome"), " ", tmp638.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 639){
+    OrgList tmp639 = main_pop.INDEX(639);
+    PRINT("[639]", tmp639.TRAIT("genome"), " ", tmp639.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 640){
+    OrgList tmp640 = main_pop.INDEX(640);
+    PRINT("[640]", tmp640.TRAIT("genome"), " ", tmp640.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 641){
+    OrgList tmp641 = main_pop.INDEX(641);
+    PRINT("[641]", tmp641.TRAIT("genome"), " ", tmp641.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 642){
+    OrgList tmp642 = main_pop.INDEX(642);
+    PRINT("[642]", tmp642.TRAIT("genome"), " ", tmp642.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 643){
+    OrgList tmp643 = main_pop.INDEX(643);
+    PRINT("[643]", tmp643.TRAIT("genome"), " ", tmp643.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 644){
+    OrgList tmp644 = main_pop.INDEX(644);
+    PRINT("[644]", tmp644.TRAIT("genome"), " ", tmp644.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 645){
+    OrgList tmp645 = main_pop.INDEX(645);
+    PRINT("[645]", tmp645.TRAIT("genome"), " ", tmp645.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 646){
+    OrgList tmp646 = main_pop.INDEX(646);
+    PRINT("[646]", tmp646.TRAIT("genome"), " ", tmp646.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 647){
+    OrgList tmp647 = main_pop.INDEX(647);
+    PRINT("[647]", tmp647.TRAIT("genome"), " ", tmp647.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 648){
+    OrgList tmp648 = main_pop.INDEX(648);
+    PRINT("[648]", tmp648.TRAIT("genome"), " ", tmp648.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 649){
+    OrgList tmp649 = main_pop.INDEX(649);
+    PRINT("[649]", tmp649.TRAIT("genome"), " ", tmp649.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 650){
+    OrgList tmp650 = main_pop.INDEX(650);
+    PRINT("[650]", tmp650.TRAIT("genome"), " ", tmp650.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 651){
+    OrgList tmp651 = main_pop.INDEX(651);
+    PRINT("[651]", tmp651.TRAIT("genome"), " ", tmp651.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 652){
+    OrgList tmp652 = main_pop.INDEX(652);
+    PRINT("[652]", tmp652.TRAIT("genome"), " ", tmp652.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 653){
+    OrgList tmp653 = main_pop.INDEX(653);
+    PRINT("[653]", tmp653.TRAIT("genome"), " ", tmp653.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 654){
+    OrgList tmp654 = main_pop.INDEX(654);
+    PRINT("[654]", tmp654.TRAIT("genome"), " ", tmp654.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 655){
+    OrgList tmp655 = main_pop.INDEX(655);
+    PRINT("[655]", tmp655.TRAIT("genome"), " ", tmp655.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 656){
+    OrgList tmp656 = main_pop.INDEX(656);
+    PRINT("[656]", tmp656.TRAIT("genome"), " ", tmp656.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 657){
+    OrgList tmp657 = main_pop.INDEX(657);
+    PRINT("[657]", tmp657.TRAIT("genome"), " ", tmp657.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 658){
+    OrgList tmp658 = main_pop.INDEX(658);
+    PRINT("[658]", tmp658.TRAIT("genome"), " ", tmp658.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 659){
+    OrgList tmp659 = main_pop.INDEX(659);
+    PRINT("[659]", tmp659.TRAIT("genome"), " ", tmp659.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 660){
+    OrgList tmp660 = main_pop.INDEX(660);
+    PRINT("[660]", tmp660.TRAIT("genome"), " ", tmp660.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 661){
+    OrgList tmp661 = main_pop.INDEX(661);
+    PRINT("[661]", tmp661.TRAIT("genome"), " ", tmp661.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 662){
+    OrgList tmp662 = main_pop.INDEX(662);
+    PRINT("[662]", tmp662.TRAIT("genome"), " ", tmp662.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 663){
+    OrgList tmp663 = main_pop.INDEX(663);
+    PRINT("[663]", tmp663.TRAIT("genome"), " ", tmp663.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 664){
+    OrgList tmp664 = main_pop.INDEX(664);
+    PRINT("[664]", tmp664.TRAIT("genome"), " ", tmp664.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 665){
+    OrgList tmp665 = main_pop.INDEX(665);
+    PRINT("[665]", tmp665.TRAIT("genome"), " ", tmp665.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 666){
+    OrgList tmp666 = main_pop.INDEX(666);
+    PRINT("[666]", tmp666.TRAIT("genome"), " ", tmp666.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 667){
+    OrgList tmp667 = main_pop.INDEX(667);
+    PRINT("[667]", tmp667.TRAIT("genome"), " ", tmp667.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 668){
+    OrgList tmp668 = main_pop.INDEX(668);
+    PRINT("[668]", tmp668.TRAIT("genome"), " ", tmp668.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 669){
+    OrgList tmp669 = main_pop.INDEX(669);
+    PRINT("[669]", tmp669.TRAIT("genome"), " ", tmp669.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 670){
+    OrgList tmp670 = main_pop.INDEX(670);
+    PRINT("[670]", tmp670.TRAIT("genome"), " ", tmp670.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 671){
+    OrgList tmp671 = main_pop.INDEX(671);
+    PRINT("[671]", tmp671.TRAIT("genome"), " ", tmp671.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 672){
+    OrgList tmp672 = main_pop.INDEX(672);
+    PRINT("[672]", tmp672.TRAIT("genome"), " ", tmp672.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 673){
+    OrgList tmp673 = main_pop.INDEX(673);
+    PRINT("[673]", tmp673.TRAIT("genome"), " ", tmp673.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 674){
+    OrgList tmp674 = main_pop.INDEX(674);
+    PRINT("[674]", tmp674.TRAIT("genome"), " ", tmp674.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 675){
+    OrgList tmp675 = main_pop.INDEX(675);
+    PRINT("[675]", tmp675.TRAIT("genome"), " ", tmp675.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 676){
+    OrgList tmp676 = main_pop.INDEX(676);
+    PRINT("[676]", tmp676.TRAIT("genome"), " ", tmp676.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 677){
+    OrgList tmp677 = main_pop.INDEX(677);
+    PRINT("[677]", tmp677.TRAIT("genome"), " ", tmp677.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 678){
+    OrgList tmp678 = main_pop.INDEX(678);
+    PRINT("[678]", tmp678.TRAIT("genome"), " ", tmp678.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 679){
+    OrgList tmp679 = main_pop.INDEX(679);
+    PRINT("[679]", tmp679.TRAIT("genome"), " ", tmp679.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 680){
+    OrgList tmp680 = main_pop.INDEX(680);
+    PRINT("[680]", tmp680.TRAIT("genome"), " ", tmp680.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 681){
+    OrgList tmp681 = main_pop.INDEX(681);
+    PRINT("[681]", tmp681.TRAIT("genome"), " ", tmp681.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 682){
+    OrgList tmp682 = main_pop.INDEX(682);
+    PRINT("[682]", tmp682.TRAIT("genome"), " ", tmp682.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 683){
+    OrgList tmp683 = main_pop.INDEX(683);
+    PRINT("[683]", tmp683.TRAIT("genome"), " ", tmp683.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 684){
+    OrgList tmp684 = main_pop.INDEX(684);
+    PRINT("[684]", tmp684.TRAIT("genome"), " ", tmp684.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 685){
+    OrgList tmp685 = main_pop.INDEX(685);
+    PRINT("[685]", tmp685.TRAIT("genome"), " ", tmp685.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 686){
+    OrgList tmp686 = main_pop.INDEX(686);
+    PRINT("[686]", tmp686.TRAIT("genome"), " ", tmp686.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 687){
+    OrgList tmp687 = main_pop.INDEX(687);
+    PRINT("[687]", tmp687.TRAIT("genome"), " ", tmp687.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 688){
+    OrgList tmp688 = main_pop.INDEX(688);
+    PRINT("[688]", tmp688.TRAIT("genome"), " ", tmp688.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 689){
+    OrgList tmp689 = main_pop.INDEX(689);
+    PRINT("[689]", tmp689.TRAIT("genome"), " ", tmp689.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 690){
+    OrgList tmp690 = main_pop.INDEX(690);
+    PRINT("[690]", tmp690.TRAIT("genome"), " ", tmp690.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 691){
+    OrgList tmp691 = main_pop.INDEX(691);
+    PRINT("[691]", tmp691.TRAIT("genome"), " ", tmp691.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 692){
+    OrgList tmp692 = main_pop.INDEX(692);
+    PRINT("[692]", tmp692.TRAIT("genome"), " ", tmp692.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 693){
+    OrgList tmp693 = main_pop.INDEX(693);
+    PRINT("[693]", tmp693.TRAIT("genome"), " ", tmp693.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 694){
+    OrgList tmp694 = main_pop.INDEX(694);
+    PRINT("[694]", tmp694.TRAIT("genome"), " ", tmp694.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 695){
+    OrgList tmp695 = main_pop.INDEX(695);
+    PRINT("[695]", tmp695.TRAIT("genome"), " ", tmp695.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 696){
+    OrgList tmp696 = main_pop.INDEX(696);
+    PRINT("[696]", tmp696.TRAIT("genome"), " ", tmp696.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 697){
+    OrgList tmp697 = main_pop.INDEX(697);
+    PRINT("[697]", tmp697.TRAIT("genome"), " ", tmp697.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 698){
+    OrgList tmp698 = main_pop.INDEX(698);
+    PRINT("[698]", tmp698.TRAIT("genome"), " ", tmp698.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 699){
+    OrgList tmp699 = main_pop.INDEX(699);
+    PRINT("[699]", tmp699.TRAIT("genome"), " ", tmp699.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 700){
+    OrgList tmp700 = main_pop.INDEX(700);
+    PRINT("[700]", tmp700.TRAIT("genome"), " ", tmp700.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 701){
+    OrgList tmp701 = main_pop.INDEX(701);
+    PRINT("[701]", tmp701.TRAIT("genome"), " ", tmp701.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 702){
+    OrgList tmp702 = main_pop.INDEX(702);
+    PRINT("[702]", tmp702.TRAIT("genome"), " ", tmp702.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 703){
+    OrgList tmp703 = main_pop.INDEX(703);
+    PRINT("[703]", tmp703.TRAIT("genome"), " ", tmp703.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 704){
+    OrgList tmp704 = main_pop.INDEX(704);
+    PRINT("[704]", tmp704.TRAIT("genome"), " ", tmp704.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 705){
+    OrgList tmp705 = main_pop.INDEX(705);
+    PRINT("[705]", tmp705.TRAIT("genome"), " ", tmp705.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 706){
+    OrgList tmp706 = main_pop.INDEX(706);
+    PRINT("[706]", tmp706.TRAIT("genome"), " ", tmp706.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 707){
+    OrgList tmp707 = main_pop.INDEX(707);
+    PRINT("[707]", tmp707.TRAIT("genome"), " ", tmp707.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 708){
+    OrgList tmp708 = main_pop.INDEX(708);
+    PRINT("[708]", tmp708.TRAIT("genome"), " ", tmp708.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 709){
+    OrgList tmp709 = main_pop.INDEX(709);
+    PRINT("[709]", tmp709.TRAIT("genome"), " ", tmp709.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 710){
+    OrgList tmp710 = main_pop.INDEX(710);
+    PRINT("[710]", tmp710.TRAIT("genome"), " ", tmp710.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 711){
+    OrgList tmp711 = main_pop.INDEX(711);
+    PRINT("[711]", tmp711.TRAIT("genome"), " ", tmp711.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 712){
+    OrgList tmp712 = main_pop.INDEX(712);
+    PRINT("[712]", tmp712.TRAIT("genome"), " ", tmp712.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 713){
+    OrgList tmp713 = main_pop.INDEX(713);
+    PRINT("[713]", tmp713.TRAIT("genome"), " ", tmp713.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 714){
+    OrgList tmp714 = main_pop.INDEX(714);
+    PRINT("[714]", tmp714.TRAIT("genome"), " ", tmp714.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 715){
+    OrgList tmp715 = main_pop.INDEX(715);
+    PRINT("[715]", tmp715.TRAIT("genome"), " ", tmp715.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 716){
+    OrgList tmp716 = main_pop.INDEX(716);
+    PRINT("[716]", tmp716.TRAIT("genome"), " ", tmp716.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 717){
+    OrgList tmp717 = main_pop.INDEX(717);
+    PRINT("[717]", tmp717.TRAIT("genome"), " ", tmp717.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 718){
+    OrgList tmp718 = main_pop.INDEX(718);
+    PRINT("[718]", tmp718.TRAIT("genome"), " ", tmp718.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 719){
+    OrgList tmp719 = main_pop.INDEX(719);
+    PRINT("[719]", tmp719.TRAIT("genome"), " ", tmp719.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 720){
+    OrgList tmp720 = main_pop.INDEX(720);
+    PRINT("[720]", tmp720.TRAIT("genome"), " ", tmp720.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 721){
+    OrgList tmp721 = main_pop.INDEX(721);
+    PRINT("[721]", tmp721.TRAIT("genome"), " ", tmp721.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 722){
+    OrgList tmp722 = main_pop.INDEX(722);
+    PRINT("[722]", tmp722.TRAIT("genome"), " ", tmp722.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 723){
+    OrgList tmp723 = main_pop.INDEX(723);
+    PRINT("[723]", tmp723.TRAIT("genome"), " ", tmp723.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 724){
+    OrgList tmp724 = main_pop.INDEX(724);
+    PRINT("[724]", tmp724.TRAIT("genome"), " ", tmp724.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 725){
+    OrgList tmp725 = main_pop.INDEX(725);
+    PRINT("[725]", tmp725.TRAIT("genome"), " ", tmp725.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 726){
+    OrgList tmp726 = main_pop.INDEX(726);
+    PRINT("[726]", tmp726.TRAIT("genome"), " ", tmp726.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 727){
+    OrgList tmp727 = main_pop.INDEX(727);
+    PRINT("[727]", tmp727.TRAIT("genome"), " ", tmp727.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 728){
+    OrgList tmp728 = main_pop.INDEX(728);
+    PRINT("[728]", tmp728.TRAIT("genome"), " ", tmp728.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 729){
+    OrgList tmp729 = main_pop.INDEX(729);
+    PRINT("[729]", tmp729.TRAIT("genome"), " ", tmp729.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 730){
+    OrgList tmp730 = main_pop.INDEX(730);
+    PRINT("[730]", tmp730.TRAIT("genome"), " ", tmp730.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 731){
+    OrgList tmp731 = main_pop.INDEX(731);
+    PRINT("[731]", tmp731.TRAIT("genome"), " ", tmp731.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 732){
+    OrgList tmp732 = main_pop.INDEX(732);
+    PRINT("[732]", tmp732.TRAIT("genome"), " ", tmp732.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 733){
+    OrgList tmp733 = main_pop.INDEX(733);
+    PRINT("[733]", tmp733.TRAIT("genome"), " ", tmp733.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 734){
+    OrgList tmp734 = main_pop.INDEX(734);
+    PRINT("[734]", tmp734.TRAIT("genome"), " ", tmp734.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 735){
+    OrgList tmp735 = main_pop.INDEX(735);
+    PRINT("[735]", tmp735.TRAIT("genome"), " ", tmp735.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 736){
+    OrgList tmp736 = main_pop.INDEX(736);
+    PRINT("[736]", tmp736.TRAIT("genome"), " ", tmp736.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 737){
+    OrgList tmp737 = main_pop.INDEX(737);
+    PRINT("[737]", tmp737.TRAIT("genome"), " ", tmp737.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 738){
+    OrgList tmp738 = main_pop.INDEX(738);
+    PRINT("[738]", tmp738.TRAIT("genome"), " ", tmp738.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 739){
+    OrgList tmp739 = main_pop.INDEX(739);
+    PRINT("[739]", tmp739.TRAIT("genome"), " ", tmp739.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 740){
+    OrgList tmp740 = main_pop.INDEX(740);
+    PRINT("[740]", tmp740.TRAIT("genome"), " ", tmp740.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 741){
+    OrgList tmp741 = main_pop.INDEX(741);
+    PRINT("[741]", tmp741.TRAIT("genome"), " ", tmp741.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 742){
+    OrgList tmp742 = main_pop.INDEX(742);
+    PRINT("[742]", tmp742.TRAIT("genome"), " ", tmp742.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 743){
+    OrgList tmp743 = main_pop.INDEX(743);
+    PRINT("[743]", tmp743.TRAIT("genome"), " ", tmp743.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 744){
+    OrgList tmp744 = main_pop.INDEX(744);
+    PRINT("[744]", tmp744.TRAIT("genome"), " ", tmp744.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 745){
+    OrgList tmp745 = main_pop.INDEX(745);
+    PRINT("[745]", tmp745.TRAIT("genome"), " ", tmp745.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 746){
+    OrgList tmp746 = main_pop.INDEX(746);
+    PRINT("[746]", tmp746.TRAIT("genome"), " ", tmp746.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 747){
+    OrgList tmp747 = main_pop.INDEX(747);
+    PRINT("[747]", tmp747.TRAIT("genome"), " ", tmp747.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 748){
+    OrgList tmp748 = main_pop.INDEX(748);
+    PRINT("[748]", tmp748.TRAIT("genome"), " ", tmp748.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 749){
+    OrgList tmp749 = main_pop.INDEX(749);
+    PRINT("[749]", tmp749.TRAIT("genome"), " ", tmp749.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 750){
+    OrgList tmp750 = main_pop.INDEX(750);
+    PRINT("[750]", tmp750.TRAIT("genome"), " ", tmp750.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 751){
+    OrgList tmp751 = main_pop.INDEX(751);
+    PRINT("[751]", tmp751.TRAIT("genome"), " ", tmp751.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 752){
+    OrgList tmp752 = main_pop.INDEX(752);
+    PRINT("[752]", tmp752.TRAIT("genome"), " ", tmp752.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 753){
+    OrgList tmp753 = main_pop.INDEX(753);
+    PRINT("[753]", tmp753.TRAIT("genome"), " ", tmp753.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 754){
+    OrgList tmp754 = main_pop.INDEX(754);
+    PRINT("[754]", tmp754.TRAIT("genome"), " ", tmp754.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 755){
+    OrgList tmp755 = main_pop.INDEX(755);
+    PRINT("[755]", tmp755.TRAIT("genome"), " ", tmp755.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 756){
+    OrgList tmp756 = main_pop.INDEX(756);
+    PRINT("[756]", tmp756.TRAIT("genome"), " ", tmp756.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 757){
+    OrgList tmp757 = main_pop.INDEX(757);
+    PRINT("[757]", tmp757.TRAIT("genome"), " ", tmp757.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 758){
+    OrgList tmp758 = main_pop.INDEX(758);
+    PRINT("[758]", tmp758.TRAIT("genome"), " ", tmp758.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 759){
+    OrgList tmp759 = main_pop.INDEX(759);
+    PRINT("[759]", tmp759.TRAIT("genome"), " ", tmp759.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 760){
+    OrgList tmp760 = main_pop.INDEX(760);
+    PRINT("[760]", tmp760.TRAIT("genome"), " ", tmp760.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 761){
+    OrgList tmp761 = main_pop.INDEX(761);
+    PRINT("[761]", tmp761.TRAIT("genome"), " ", tmp761.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 762){
+    OrgList tmp762 = main_pop.INDEX(762);
+    PRINT("[762]", tmp762.TRAIT("genome"), " ", tmp762.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 763){
+    OrgList tmp763 = main_pop.INDEX(763);
+    PRINT("[763]", tmp763.TRAIT("genome"), " ", tmp763.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 764){
+    OrgList tmp764 = main_pop.INDEX(764);
+    PRINT("[764]", tmp764.TRAIT("genome"), " ", tmp764.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 765){
+    OrgList tmp765 = main_pop.INDEX(765);
+    PRINT("[765]", tmp765.TRAIT("genome"), " ", tmp765.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 766){
+    OrgList tmp766 = main_pop.INDEX(766);
+    PRINT("[766]", tmp766.TRAIT("genome"), " ", tmp766.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 767){
+    OrgList tmp767 = main_pop.INDEX(767);
+    PRINT("[767]", tmp767.TRAIT("genome"), " ", tmp767.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 768){
+    OrgList tmp768 = main_pop.INDEX(768);
+    PRINT("[768]", tmp768.TRAIT("genome"), " ", tmp768.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 769){
+    OrgList tmp769 = main_pop.INDEX(769);
+    PRINT("[769]", tmp769.TRAIT("genome"), " ", tmp769.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 770){
+    OrgList tmp770 = main_pop.INDEX(770);
+    PRINT("[770]", tmp770.TRAIT("genome"), " ", tmp770.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 771){
+    OrgList tmp771 = main_pop.INDEX(771);
+    PRINT("[771]", tmp771.TRAIT("genome"), " ", tmp771.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 772){
+    OrgList tmp772 = main_pop.INDEX(772);
+    PRINT("[772]", tmp772.TRAIT("genome"), " ", tmp772.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 773){
+    OrgList tmp773 = main_pop.INDEX(773);
+    PRINT("[773]", tmp773.TRAIT("genome"), " ", tmp773.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 774){
+    OrgList tmp774 = main_pop.INDEX(774);
+    PRINT("[774]", tmp774.TRAIT("genome"), " ", tmp774.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 775){
+    OrgList tmp775 = main_pop.INDEX(775);
+    PRINT("[775]", tmp775.TRAIT("genome"), " ", tmp775.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 776){
+    OrgList tmp776 = main_pop.INDEX(776);
+    PRINT("[776]", tmp776.TRAIT("genome"), " ", tmp776.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 777){
+    OrgList tmp777 = main_pop.INDEX(777);
+    PRINT("[777]", tmp777.TRAIT("genome"), " ", tmp777.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 778){
+    OrgList tmp778 = main_pop.INDEX(778);
+    PRINT("[778]", tmp778.TRAIT("genome"), " ", tmp778.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 779){
+    OrgList tmp779 = main_pop.INDEX(779);
+    PRINT("[779]", tmp779.TRAIT("genome"), " ", tmp779.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 780){
+    OrgList tmp780 = main_pop.INDEX(780);
+    PRINT("[780]", tmp780.TRAIT("genome"), " ", tmp780.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 781){
+    OrgList tmp781 = main_pop.INDEX(781);
+    PRINT("[781]", tmp781.TRAIT("genome"), " ", tmp781.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 782){
+    OrgList tmp782 = main_pop.INDEX(782);
+    PRINT("[782]", tmp782.TRAIT("genome"), " ", tmp782.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 783){
+    OrgList tmp783 = main_pop.INDEX(783);
+    PRINT("[783]", tmp783.TRAIT("genome"), " ", tmp783.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 784){
+    OrgList tmp784 = main_pop.INDEX(784);
+    PRINT("[784]", tmp784.TRAIT("genome"), " ", tmp784.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 785){
+    OrgList tmp785 = main_pop.INDEX(785);
+    PRINT("[785]", tmp785.TRAIT("genome"), " ", tmp785.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 786){
+    OrgList tmp786 = main_pop.INDEX(786);
+    PRINT("[786]", tmp786.TRAIT("genome"), " ", tmp786.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 787){
+    OrgList tmp787 = main_pop.INDEX(787);
+    PRINT("[787]", tmp787.TRAIT("genome"), " ", tmp787.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 788){
+    OrgList tmp788 = main_pop.INDEX(788);
+    PRINT("[788]", tmp788.TRAIT("genome"), " ", tmp788.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 789){
+    OrgList tmp789 = main_pop.INDEX(789);
+    PRINT("[789]", tmp789.TRAIT("genome"), " ", tmp789.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 790){
+    OrgList tmp790 = main_pop.INDEX(790);
+    PRINT("[790]", tmp790.TRAIT("genome"), " ", tmp790.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 791){
+    OrgList tmp791 = main_pop.INDEX(791);
+    PRINT("[791]", tmp791.TRAIT("genome"), " ", tmp791.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 792){
+    OrgList tmp792 = main_pop.INDEX(792);
+    PRINT("[792]", tmp792.TRAIT("genome"), " ", tmp792.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 793){
+    OrgList tmp793 = main_pop.INDEX(793);
+    PRINT("[793]", tmp793.TRAIT("genome"), " ", tmp793.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 794){
+    OrgList tmp794 = main_pop.INDEX(794);
+    PRINT("[794]", tmp794.TRAIT("genome"), " ", tmp794.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 795){
+    OrgList tmp795 = main_pop.INDEX(795);
+    PRINT("[795]", tmp795.TRAIT("genome"), " ", tmp795.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 796){
+    OrgList tmp796 = main_pop.INDEX(796);
+    PRINT("[796]", tmp796.TRAIT("genome"), " ", tmp796.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 797){
+    OrgList tmp797 = main_pop.INDEX(797);
+    PRINT("[797]", tmp797.TRAIT("genome"), " ", tmp797.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 798){
+    OrgList tmp798 = main_pop.INDEX(798);
+    PRINT("[798]", tmp798.TRAIT("genome"), " ", tmp798.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 799){
+    OrgList tmp799 = main_pop.INDEX(799);
+    PRINT("[799]", tmp799.TRAIT("genome"), " ", tmp799.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 800){
+    OrgList tmp800 = main_pop.INDEX(800);
+    PRINT("[800]", tmp800.TRAIT("genome"), " ", tmp800.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 801){
+    OrgList tmp801 = main_pop.INDEX(801);
+    PRINT("[801]", tmp801.TRAIT("genome"), " ", tmp801.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 802){
+    OrgList tmp802 = main_pop.INDEX(802);
+    PRINT("[802]", tmp802.TRAIT("genome"), " ", tmp802.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 803){
+    OrgList tmp803 = main_pop.INDEX(803);
+    PRINT("[803]", tmp803.TRAIT("genome"), " ", tmp803.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 804){
+    OrgList tmp804 = main_pop.INDEX(804);
+    PRINT("[804]", tmp804.TRAIT("genome"), " ", tmp804.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 805){
+    OrgList tmp805 = main_pop.INDEX(805);
+    PRINT("[805]", tmp805.TRAIT("genome"), " ", tmp805.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 806){
+    OrgList tmp806 = main_pop.INDEX(806);
+    PRINT("[806]", tmp806.TRAIT("genome"), " ", tmp806.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 807){
+    OrgList tmp807 = main_pop.INDEX(807);
+    PRINT("[807]", tmp807.TRAIT("genome"), " ", tmp807.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 808){
+    OrgList tmp808 = main_pop.INDEX(808);
+    PRINT("[808]", tmp808.TRAIT("genome"), " ", tmp808.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 809){
+    OrgList tmp809 = main_pop.INDEX(809);
+    PRINT("[809]", tmp809.TRAIT("genome"), " ", tmp809.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 810){
+    OrgList tmp810 = main_pop.INDEX(810);
+    PRINT("[810]", tmp810.TRAIT("genome"), " ", tmp810.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 811){
+    OrgList tmp811 = main_pop.INDEX(811);
+    PRINT("[811]", tmp811.TRAIT("genome"), " ", tmp811.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 812){
+    OrgList tmp812 = main_pop.INDEX(812);
+    PRINT("[812]", tmp812.TRAIT("genome"), " ", tmp812.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 813){
+    OrgList tmp813 = main_pop.INDEX(813);
+    PRINT("[813]", tmp813.TRAIT("genome"), " ", tmp813.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 814){
+    OrgList tmp814 = main_pop.INDEX(814);
+    PRINT("[814]", tmp814.TRAIT("genome"), " ", tmp814.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 815){
+    OrgList tmp815 = main_pop.INDEX(815);
+    PRINT("[815]", tmp815.TRAIT("genome"), " ", tmp815.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 816){
+    OrgList tmp816 = main_pop.INDEX(816);
+    PRINT("[816]", tmp816.TRAIT("genome"), " ", tmp816.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 817){
+    OrgList tmp817 = main_pop.INDEX(817);
+    PRINT("[817]", tmp817.TRAIT("genome"), " ", tmp817.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 818){
+    OrgList tmp818 = main_pop.INDEX(818);
+    PRINT("[818]", tmp818.TRAIT("genome"), " ", tmp818.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 819){
+    OrgList tmp819 = main_pop.INDEX(819);
+    PRINT("[819]", tmp819.TRAIT("genome"), " ", tmp819.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 820){
+    OrgList tmp820 = main_pop.INDEX(820);
+    PRINT("[820]", tmp820.TRAIT("genome"), " ", tmp820.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 821){
+    OrgList tmp821 = main_pop.INDEX(821);
+    PRINT("[821]", tmp821.TRAIT("genome"), " ", tmp821.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 822){
+    OrgList tmp822 = main_pop.INDEX(822);
+    PRINT("[822]", tmp822.TRAIT("genome"), " ", tmp822.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 823){
+    OrgList tmp823 = main_pop.INDEX(823);
+    PRINT("[823]", tmp823.TRAIT("genome"), " ", tmp823.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 824){
+    OrgList tmp824 = main_pop.INDEX(824);
+    PRINT("[824]", tmp824.TRAIT("genome"), " ", tmp824.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 825){
+    OrgList tmp825 = main_pop.INDEX(825);
+    PRINT("[825]", tmp825.TRAIT("genome"), " ", tmp825.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 826){
+    OrgList tmp826 = main_pop.INDEX(826);
+    PRINT("[826]", tmp826.TRAIT("genome"), " ", tmp826.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 827){
+    OrgList tmp827 = main_pop.INDEX(827);
+    PRINT("[827]", tmp827.TRAIT("genome"), " ", tmp827.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 828){
+    OrgList tmp828 = main_pop.INDEX(828);
+    PRINT("[828]", tmp828.TRAIT("genome"), " ", tmp828.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 829){
+    OrgList tmp829 = main_pop.INDEX(829);
+    PRINT("[829]", tmp829.TRAIT("genome"), " ", tmp829.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 830){
+    OrgList tmp830 = main_pop.INDEX(830);
+    PRINT("[830]", tmp830.TRAIT("genome"), " ", tmp830.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 831){
+    OrgList tmp831 = main_pop.INDEX(831);
+    PRINT("[831]", tmp831.TRAIT("genome"), " ", tmp831.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 832){
+    OrgList tmp832 = main_pop.INDEX(832);
+    PRINT("[832]", tmp832.TRAIT("genome"), " ", tmp832.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 833){
+    OrgList tmp833 = main_pop.INDEX(833);
+    PRINT("[833]", tmp833.TRAIT("genome"), " ", tmp833.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 834){
+    OrgList tmp834 = main_pop.INDEX(834);
+    PRINT("[834]", tmp834.TRAIT("genome"), " ", tmp834.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 835){
+    OrgList tmp835 = main_pop.INDEX(835);
+    PRINT("[835]", tmp835.TRAIT("genome"), " ", tmp835.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 836){
+    OrgList tmp836 = main_pop.INDEX(836);
+    PRINT("[836]", tmp836.TRAIT("genome"), " ", tmp836.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 837){
+    OrgList tmp837 = main_pop.INDEX(837);
+    PRINT("[837]", tmp837.TRAIT("genome"), " ", tmp837.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 838){
+    OrgList tmp838 = main_pop.INDEX(838);
+    PRINT("[838]", tmp838.TRAIT("genome"), " ", tmp838.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 839){
+    OrgList tmp839 = main_pop.INDEX(839);
+    PRINT("[839]", tmp839.TRAIT("genome"), " ", tmp839.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 840){
+    OrgList tmp840 = main_pop.INDEX(840);
+    PRINT("[840]", tmp840.TRAIT("genome"), " ", tmp840.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 841){
+    OrgList tmp841 = main_pop.INDEX(841);
+    PRINT("[841]", tmp841.TRAIT("genome"), " ", tmp841.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 842){
+    OrgList tmp842 = main_pop.INDEX(842);
+    PRINT("[842]", tmp842.TRAIT("genome"), " ", tmp842.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 843){
+    OrgList tmp843 = main_pop.INDEX(843);
+    PRINT("[843]", tmp843.TRAIT("genome"), " ", tmp843.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 844){
+    OrgList tmp844 = main_pop.INDEX(844);
+    PRINT("[844]", tmp844.TRAIT("genome"), " ", tmp844.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 845){
+    OrgList tmp845 = main_pop.INDEX(845);
+    PRINT("[845]", tmp845.TRAIT("genome"), " ", tmp845.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 846){
+    OrgList tmp846 = main_pop.INDEX(846);
+    PRINT("[846]", tmp846.TRAIT("genome"), " ", tmp846.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 847){
+    OrgList tmp847 = main_pop.INDEX(847);
+    PRINT("[847]", tmp847.TRAIT("genome"), " ", tmp847.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 848){
+    OrgList tmp848 = main_pop.INDEX(848);
+    PRINT("[848]", tmp848.TRAIT("genome"), " ", tmp848.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 849){
+    OrgList tmp849 = main_pop.INDEX(849);
+    PRINT("[849]", tmp849.TRAIT("genome"), " ", tmp849.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 850){
+    OrgList tmp850 = main_pop.INDEX(850);
+    PRINT("[850]", tmp850.TRAIT("genome"), " ", tmp850.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 851){
+    OrgList tmp851 = main_pop.INDEX(851);
+    PRINT("[851]", tmp851.TRAIT("genome"), " ", tmp851.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 852){
+    OrgList tmp852 = main_pop.INDEX(852);
+    PRINT("[852]", tmp852.TRAIT("genome"), " ", tmp852.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 853){
+    OrgList tmp853 = main_pop.INDEX(853);
+    PRINT("[853]", tmp853.TRAIT("genome"), " ", tmp853.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 854){
+    OrgList tmp854 = main_pop.INDEX(854);
+    PRINT("[854]", tmp854.TRAIT("genome"), " ", tmp854.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 855){
+    OrgList tmp855 = main_pop.INDEX(855);
+    PRINT("[855]", tmp855.TRAIT("genome"), " ", tmp855.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 856){
+    OrgList tmp856 = main_pop.INDEX(856);
+    PRINT("[856]", tmp856.TRAIT("genome"), " ", tmp856.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 857){
+    OrgList tmp857 = main_pop.INDEX(857);
+    PRINT("[857]", tmp857.TRAIT("genome"), " ", tmp857.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 858){
+    OrgList tmp858 = main_pop.INDEX(858);
+    PRINT("[858]", tmp858.TRAIT("genome"), " ", tmp858.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 859){
+    OrgList tmp859 = main_pop.INDEX(859);
+    PRINT("[859]", tmp859.TRAIT("genome"), " ", tmp859.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 860){
+    OrgList tmp860 = main_pop.INDEX(860);
+    PRINT("[860]", tmp860.TRAIT("genome"), " ", tmp860.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 861){
+    OrgList tmp861 = main_pop.INDEX(861);
+    PRINT("[861]", tmp861.TRAIT("genome"), " ", tmp861.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 862){
+    OrgList tmp862 = main_pop.INDEX(862);
+    PRINT("[862]", tmp862.TRAIT("genome"), " ", tmp862.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 863){
+    OrgList tmp863 = main_pop.INDEX(863);
+    PRINT("[863]", tmp863.TRAIT("genome"), " ", tmp863.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 864){
+    OrgList tmp864 = main_pop.INDEX(864);
+    PRINT("[864]", tmp864.TRAIT("genome"), " ", tmp864.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 865){
+    OrgList tmp865 = main_pop.INDEX(865);
+    PRINT("[865]", tmp865.TRAIT("genome"), " ", tmp865.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 866){
+    OrgList tmp866 = main_pop.INDEX(866);
+    PRINT("[866]", tmp866.TRAIT("genome"), " ", tmp866.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 867){
+    OrgList tmp867 = main_pop.INDEX(867);
+    PRINT("[867]", tmp867.TRAIT("genome"), " ", tmp867.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 868){
+    OrgList tmp868 = main_pop.INDEX(868);
+    PRINT("[868]", tmp868.TRAIT("genome"), " ", tmp868.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 869){
+    OrgList tmp869 = main_pop.INDEX(869);
+    PRINT("[869]", tmp869.TRAIT("genome"), " ", tmp869.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 870){
+    OrgList tmp870 = main_pop.INDEX(870);
+    PRINT("[870]", tmp870.TRAIT("genome"), " ", tmp870.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 871){
+    OrgList tmp871 = main_pop.INDEX(871);
+    PRINT("[871]", tmp871.TRAIT("genome"), " ", tmp871.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 872){
+    OrgList tmp872 = main_pop.INDEX(872);
+    PRINT("[872]", tmp872.TRAIT("genome"), " ", tmp872.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 873){
+    OrgList tmp873 = main_pop.INDEX(873);
+    PRINT("[873]", tmp873.TRAIT("genome"), " ", tmp873.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 874){
+    OrgList tmp874 = main_pop.INDEX(874);
+    PRINT("[874]", tmp874.TRAIT("genome"), " ", tmp874.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 875){
+    OrgList tmp875 = main_pop.INDEX(875);
+    PRINT("[875]", tmp875.TRAIT("genome"), " ", tmp875.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 876){
+    OrgList tmp876 = main_pop.INDEX(876);
+    PRINT("[876]", tmp876.TRAIT("genome"), " ", tmp876.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 877){
+    OrgList tmp877 = main_pop.INDEX(877);
+    PRINT("[877]", tmp877.TRAIT("genome"), " ", tmp877.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 878){
+    OrgList tmp878 = main_pop.INDEX(878);
+    PRINT("[878]", tmp878.TRAIT("genome"), " ", tmp878.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 879){
+    OrgList tmp879 = main_pop.INDEX(879);
+    PRINT("[879]", tmp879.TRAIT("genome"), " ", tmp879.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 880){
+    OrgList tmp880 = main_pop.INDEX(880);
+    PRINT("[880]", tmp880.TRAIT("genome"), " ", tmp880.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 881){
+    OrgList tmp881 = main_pop.INDEX(881);
+    PRINT("[881]", tmp881.TRAIT("genome"), " ", tmp881.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 882){
+    OrgList tmp882 = main_pop.INDEX(882);
+    PRINT("[882]", tmp882.TRAIT("genome"), " ", tmp882.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 883){
+    OrgList tmp883 = main_pop.INDEX(883);
+    PRINT("[883]", tmp883.TRAIT("genome"), " ", tmp883.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 884){
+    OrgList tmp884 = main_pop.INDEX(884);
+    PRINT("[884]", tmp884.TRAIT("genome"), " ", tmp884.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 885){
+    OrgList tmp885 = main_pop.INDEX(885);
+    PRINT("[885]", tmp885.TRAIT("genome"), " ", tmp885.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 886){
+    OrgList tmp886 = main_pop.INDEX(886);
+    PRINT("[886]", tmp886.TRAIT("genome"), " ", tmp886.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 887){
+    OrgList tmp887 = main_pop.INDEX(887);
+    PRINT("[887]", tmp887.TRAIT("genome"), " ", tmp887.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 888){
+    OrgList tmp888 = main_pop.INDEX(888);
+    PRINT("[888]", tmp888.TRAIT("genome"), " ", tmp888.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 889){
+    OrgList tmp889 = main_pop.INDEX(889);
+    PRINT("[889]", tmp889.TRAIT("genome"), " ", tmp889.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 890){
+    OrgList tmp890 = main_pop.INDEX(890);
+    PRINT("[890]", tmp890.TRAIT("genome"), " ", tmp890.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 891){
+    OrgList tmp891 = main_pop.INDEX(891);
+    PRINT("[891]", tmp891.TRAIT("genome"), " ", tmp891.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 892){
+    OrgList tmp892 = main_pop.INDEX(892);
+    PRINT("[892]", tmp892.TRAIT("genome"), " ", tmp892.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 893){
+    OrgList tmp893 = main_pop.INDEX(893);
+    PRINT("[893]", tmp893.TRAIT("genome"), " ", tmp893.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 894){
+    OrgList tmp894 = main_pop.INDEX(894);
+    PRINT("[894]", tmp894.TRAIT("genome"), " ", tmp894.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 895){
+    OrgList tmp895 = main_pop.INDEX(895);
+    PRINT("[895]", tmp895.TRAIT("genome"), " ", tmp895.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 896){
+    OrgList tmp896 = main_pop.INDEX(896);
+    PRINT("[896]", tmp896.TRAIT("genome"), " ", tmp896.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 897){
+    OrgList tmp897 = main_pop.INDEX(897);
+    PRINT("[897]", tmp897.TRAIT("genome"), " ", tmp897.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 898){
+    OrgList tmp898 = main_pop.INDEX(898);
+    PRINT("[898]", tmp898.TRAIT("genome"), " ", tmp898.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 899){
+    OrgList tmp899 = main_pop.INDEX(899);
+    PRINT("[899]", tmp899.TRAIT("genome"), " ", tmp899.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 900){
+    OrgList tmp900 = main_pop.INDEX(900);
+    PRINT("[900]", tmp900.TRAIT("genome"), " ", tmp900.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 901){
+    OrgList tmp901 = main_pop.INDEX(901);
+    PRINT("[901]", tmp901.TRAIT("genome"), " ", tmp901.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 902){
+    OrgList tmp902 = main_pop.INDEX(902);
+    PRINT("[902]", tmp902.TRAIT("genome"), " ", tmp902.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 903){
+    OrgList tmp903 = main_pop.INDEX(903);
+    PRINT("[903]", tmp903.TRAIT("genome"), " ", tmp903.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 904){
+    OrgList tmp904 = main_pop.INDEX(904);
+    PRINT("[904]", tmp904.TRAIT("genome"), " ", tmp904.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 905){
+    OrgList tmp905 = main_pop.INDEX(905);
+    PRINT("[905]", tmp905.TRAIT("genome"), " ", tmp905.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 906){
+    OrgList tmp906 = main_pop.INDEX(906);
+    PRINT("[906]", tmp906.TRAIT("genome"), " ", tmp906.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 907){
+    OrgList tmp907 = main_pop.INDEX(907);
+    PRINT("[907]", tmp907.TRAIT("genome"), " ", tmp907.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 908){
+    OrgList tmp908 = main_pop.INDEX(908);
+    PRINT("[908]", tmp908.TRAIT("genome"), " ", tmp908.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 909){
+    OrgList tmp909 = main_pop.INDEX(909);
+    PRINT("[909]", tmp909.TRAIT("genome"), " ", tmp909.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 910){
+    OrgList tmp910 = main_pop.INDEX(910);
+    PRINT("[910]", tmp910.TRAIT("genome"), " ", tmp910.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 911){
+    OrgList tmp911 = main_pop.INDEX(911);
+    PRINT("[911]", tmp911.TRAIT("genome"), " ", tmp911.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 912){
+    OrgList tmp912 = main_pop.INDEX(912);
+    PRINT("[912]", tmp912.TRAIT("genome"), " ", tmp912.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 913){
+    OrgList tmp913 = main_pop.INDEX(913);
+    PRINT("[913]", tmp913.TRAIT("genome"), " ", tmp913.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 914){
+    OrgList tmp914 = main_pop.INDEX(914);
+    PRINT("[914]", tmp914.TRAIT("genome"), " ", tmp914.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 915){
+    OrgList tmp915 = main_pop.INDEX(915);
+    PRINT("[915]", tmp915.TRAIT("genome"), " ", tmp915.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 916){
+    OrgList tmp916 = main_pop.INDEX(916);
+    PRINT("[916]", tmp916.TRAIT("genome"), " ", tmp916.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 917){
+    OrgList tmp917 = main_pop.INDEX(917);
+    PRINT("[917]", tmp917.TRAIT("genome"), " ", tmp917.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 918){
+    OrgList tmp918 = main_pop.INDEX(918);
+    PRINT("[918]", tmp918.TRAIT("genome"), " ", tmp918.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 919){
+    OrgList tmp919 = main_pop.INDEX(919);
+    PRINT("[919]", tmp919.TRAIT("genome"), " ", tmp919.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 920){
+    OrgList tmp920 = main_pop.INDEX(920);
+    PRINT("[920]", tmp920.TRAIT("genome"), " ", tmp920.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 921){
+    OrgList tmp921 = main_pop.INDEX(921);
+    PRINT("[921]", tmp921.TRAIT("genome"), " ", tmp921.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 922){
+    OrgList tmp922 = main_pop.INDEX(922);
+    PRINT("[922]", tmp922.TRAIT("genome"), " ", tmp922.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 923){
+    OrgList tmp923 = main_pop.INDEX(923);
+    PRINT("[923]", tmp923.TRAIT("genome"), " ", tmp923.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 924){
+    OrgList tmp924 = main_pop.INDEX(924);
+    PRINT("[924]", tmp924.TRAIT("genome"), " ", tmp924.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 925){
+    OrgList tmp925 = main_pop.INDEX(925);
+    PRINT("[925]", tmp925.TRAIT("genome"), " ", tmp925.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 926){
+    OrgList tmp926 = main_pop.INDEX(926);
+    PRINT("[926]", tmp926.TRAIT("genome"), " ", tmp926.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 927){
+    OrgList tmp927 = main_pop.INDEX(927);
+    PRINT("[927]", tmp927.TRAIT("genome"), " ", tmp927.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 928){
+    OrgList tmp928 = main_pop.INDEX(928);
+    PRINT("[928]", tmp928.TRAIT("genome"), " ", tmp928.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 929){
+    OrgList tmp929 = main_pop.INDEX(929);
+    PRINT("[929]", tmp929.TRAIT("genome"), " ", tmp929.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 930){
+    OrgList tmp930 = main_pop.INDEX(930);
+    PRINT("[930]", tmp930.TRAIT("genome"), " ", tmp930.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 931){
+    OrgList tmp931 = main_pop.INDEX(931);
+    PRINT("[931]", tmp931.TRAIT("genome"), " ", tmp931.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 932){
+    OrgList tmp932 = main_pop.INDEX(932);
+    PRINT("[932]", tmp932.TRAIT("genome"), " ", tmp932.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 933){
+    OrgList tmp933 = main_pop.INDEX(933);
+    PRINT("[933]", tmp933.TRAIT("genome"), " ", tmp933.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 934){
+    OrgList tmp934 = main_pop.INDEX(934);
+    PRINT("[934]", tmp934.TRAIT("genome"), " ", tmp934.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 935){
+    OrgList tmp935 = main_pop.INDEX(935);
+    PRINT("[935]", tmp935.TRAIT("genome"), " ", tmp935.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 936){
+    OrgList tmp936 = main_pop.INDEX(936);
+    PRINT("[936]", tmp936.TRAIT("genome"), " ", tmp936.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 937){
+    OrgList tmp937 = main_pop.INDEX(937);
+    PRINT("[937]", tmp937.TRAIT("genome"), " ", tmp937.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 938){
+    OrgList tmp938 = main_pop.INDEX(938);
+    PRINT("[938]", tmp938.TRAIT("genome"), " ", tmp938.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 939){
+    OrgList tmp939 = main_pop.INDEX(939);
+    PRINT("[939]", tmp939.TRAIT("genome"), " ", tmp939.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 940){
+    OrgList tmp940 = main_pop.INDEX(940);
+    PRINT("[940]", tmp940.TRAIT("genome"), " ", tmp940.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 941){
+    OrgList tmp941 = main_pop.INDEX(941);
+    PRINT("[941]", tmp941.TRAIT("genome"), " ", tmp941.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 942){
+    OrgList tmp942 = main_pop.INDEX(942);
+    PRINT("[942]", tmp942.TRAIT("genome"), " ", tmp942.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 943){
+    OrgList tmp943 = main_pop.INDEX(943);
+    PRINT("[943]", tmp943.TRAIT("genome"), " ", tmp943.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 944){
+    OrgList tmp944 = main_pop.INDEX(944);
+    PRINT("[944]", tmp944.TRAIT("genome"), " ", tmp944.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 945){
+    OrgList tmp945 = main_pop.INDEX(945);
+    PRINT("[945]", tmp945.TRAIT("genome"), " ", tmp945.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 946){
+    OrgList tmp946 = main_pop.INDEX(946);
+    PRINT("[946]", tmp946.TRAIT("genome"), " ", tmp946.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 947){
+    OrgList tmp947 = main_pop.INDEX(947);
+    PRINT("[947]", tmp947.TRAIT("genome"), " ", tmp947.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 948){
+    OrgList tmp948 = main_pop.INDEX(948);
+    PRINT("[948]", tmp948.TRAIT("genome"), " ", tmp948.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 949){
+    OrgList tmp949 = main_pop.INDEX(949);
+    PRINT("[949]", tmp949.TRAIT("genome"), " ", tmp949.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 950){
+    OrgList tmp950 = main_pop.INDEX(950);
+    PRINT("[950]", tmp950.TRAIT("genome"), " ", tmp950.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 951){
+    OrgList tmp951 = main_pop.INDEX(951);
+    PRINT("[951]", tmp951.TRAIT("genome"), " ", tmp951.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 952){
+    OrgList tmp952 = main_pop.INDEX(952);
+    PRINT("[952]", tmp952.TRAIT("genome"), " ", tmp952.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 953){
+    OrgList tmp953 = main_pop.INDEX(953);
+    PRINT("[953]", tmp953.TRAIT("genome"), " ", tmp953.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 954){
+    OrgList tmp954 = main_pop.INDEX(954);
+    PRINT("[954]", tmp954.TRAIT("genome"), " ", tmp954.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 955){
+    OrgList tmp955 = main_pop.INDEX(955);
+    PRINT("[955]", tmp955.TRAIT("genome"), " ", tmp955.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 956){
+    OrgList tmp956 = main_pop.INDEX(956);
+    PRINT("[956]", tmp956.TRAIT("genome"), " ", tmp956.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 957){
+    OrgList tmp957 = main_pop.INDEX(957);
+    PRINT("[957]", tmp957.TRAIT("genome"), " ", tmp957.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 958){
+    OrgList tmp958 = main_pop.INDEX(958);
+    PRINT("[958]", tmp958.TRAIT("genome"), " ", tmp958.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 959){
+    OrgList tmp959 = main_pop.INDEX(959);
+    PRINT("[959]", tmp959.TRAIT("genome"), " ", tmp959.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 960){
+    OrgList tmp960 = main_pop.INDEX(960);
+    PRINT("[960]", tmp960.TRAIT("genome"), " ", tmp960.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 961){
+    OrgList tmp961 = main_pop.INDEX(961);
+    PRINT("[961]", tmp961.TRAIT("genome"), " ", tmp961.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 962){
+    OrgList tmp962 = main_pop.INDEX(962);
+    PRINT("[962]", tmp962.TRAIT("genome"), " ", tmp962.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 963){
+    OrgList tmp963 = main_pop.INDEX(963);
+    PRINT("[963]", tmp963.TRAIT("genome"), " ", tmp963.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 964){
+    OrgList tmp964 = main_pop.INDEX(964);
+    PRINT("[964]", tmp964.TRAIT("genome"), " ", tmp964.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 965){
+    OrgList tmp965 = main_pop.INDEX(965);
+    PRINT("[965]", tmp965.TRAIT("genome"), " ", tmp965.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 966){
+    OrgList tmp966 = main_pop.INDEX(966);
+    PRINT("[966]", tmp966.TRAIT("genome"), " ", tmp966.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 967){
+    OrgList tmp967 = main_pop.INDEX(967);
+    PRINT("[967]", tmp967.TRAIT("genome"), " ", tmp967.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 968){
+    OrgList tmp968 = main_pop.INDEX(968);
+    PRINT("[968]", tmp968.TRAIT("genome"), " ", tmp968.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 969){
+    OrgList tmp969 = main_pop.INDEX(969);
+    PRINT("[969]", tmp969.TRAIT("genome"), " ", tmp969.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 970){
+    OrgList tmp970 = main_pop.INDEX(970);
+    PRINT("[970]", tmp970.TRAIT("genome"), " ", tmp970.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 971){
+    OrgList tmp971 = main_pop.INDEX(971);
+    PRINT("[971]", tmp971.TRAIT("genome"), " ", tmp971.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 972){
+    OrgList tmp972 = main_pop.INDEX(972);
+    PRINT("[972]", tmp972.TRAIT("genome"), " ", tmp972.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 973){
+    OrgList tmp973 = main_pop.INDEX(973);
+    PRINT("[973]", tmp973.TRAIT("genome"), " ", tmp973.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 974){
+    OrgList tmp974 = main_pop.INDEX(974);
+    PRINT("[974]", tmp974.TRAIT("genome"), " ", tmp974.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 975){
+    OrgList tmp975 = main_pop.INDEX(975);
+    PRINT("[975]", tmp975.TRAIT("genome"), " ", tmp975.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 976){
+    OrgList tmp976 = main_pop.INDEX(976);
+    PRINT("[976]", tmp976.TRAIT("genome"), " ", tmp976.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 977){
+    OrgList tmp977 = main_pop.INDEX(977);
+    PRINT("[977]", tmp977.TRAIT("genome"), " ", tmp977.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 978){
+    OrgList tmp978 = main_pop.INDEX(978);
+    PRINT("[978]", tmp978.TRAIT("genome"), " ", tmp978.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 979){
+    OrgList tmp979 = main_pop.INDEX(979);
+    PRINT("[979]", tmp979.TRAIT("genome"), " ", tmp979.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 980){
+    OrgList tmp980 = main_pop.INDEX(980);
+    PRINT("[980]", tmp980.TRAIT("genome"), " ", tmp980.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 981){
+    OrgList tmp981 = main_pop.INDEX(981);
+    PRINT("[981]", tmp981.TRAIT("genome"), " ", tmp981.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 982){
+    OrgList tmp982 = main_pop.INDEX(982);
+    PRINT("[982]", tmp982.TRAIT("genome"), " ", tmp982.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 983){
+    OrgList tmp983 = main_pop.INDEX(983);
+    PRINT("[983]", tmp983.TRAIT("genome"), " ", tmp983.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 984){
+    OrgList tmp984 = main_pop.INDEX(984);
+    PRINT("[984]", tmp984.TRAIT("genome"), " ", tmp984.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 985){
+    OrgList tmp985 = main_pop.INDEX(985);
+    PRINT("[985]", tmp985.TRAIT("genome"), " ", tmp985.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 986){
+    OrgList tmp986 = main_pop.INDEX(986);
+    PRINT("[986]", tmp986.TRAIT("genome"), " ", tmp986.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 987){
+    OrgList tmp987 = main_pop.INDEX(987);
+    PRINT("[987]", tmp987.TRAIT("genome"), " ", tmp987.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 988){
+    OrgList tmp988 = main_pop.INDEX(988);
+    PRINT("[988]", tmp988.TRAIT("genome"), " ", tmp988.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 989){
+    OrgList tmp989 = main_pop.INDEX(989);
+    PRINT("[989]", tmp989.TRAIT("genome"), " ", tmp989.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 990){
+    OrgList tmp990 = main_pop.INDEX(990);
+    PRINT("[990]", tmp990.TRAIT("genome"), " ", tmp990.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 991){
+    OrgList tmp991 = main_pop.INDEX(991);
+    PRINT("[991]", tmp991.TRAIT("genome"), " ", tmp991.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 992){
+    OrgList tmp992 = main_pop.INDEX(992);
+    PRINT("[992]", tmp992.TRAIT("genome"), " ", tmp992.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 993){
+    OrgList tmp993 = main_pop.INDEX(993);
+    PRINT("[993]", tmp993.TRAIT("genome"), " ", tmp993.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 994){
+    OrgList tmp994 = main_pop.INDEX(994);
+    PRINT("[994]", tmp994.TRAIT("genome"), " ", tmp994.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 995){
+    OrgList tmp995 = main_pop.INDEX(995);
+    PRINT("[995]", tmp995.TRAIT("genome"), " ", tmp995.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 996){
+    OrgList tmp996 = main_pop.INDEX(996);
+    PRINT("[996]", tmp996.TRAIT("genome"), " ", tmp996.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 997){
+    OrgList tmp997 = main_pop.INDEX(997);
+    PRINT("[997]", tmp997.TRAIT("genome"), " ", tmp997.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 998){
+    OrgList tmp998 = main_pop.INDEX(998);
+    PRINT("[998]", tmp998.TRAIT("genome"), " ", tmp998.TRAIT("child_merit"));
+  }
+  IF(main_pop.SIZE() > 999){
+    OrgList tmp999 = main_pop.INDEX(999);
+    PRINT("[999]", tmp999.TRAIT("genome"), " ", tmp999.TRAIT("child_merit"));
+  }
+
+  IF(avg_gen >= max_gens) EXIT();
+};
+

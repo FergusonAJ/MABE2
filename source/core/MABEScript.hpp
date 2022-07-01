@@ -294,6 +294,18 @@ namespace mabe {
         },
         "Produce OrgList with just the orgs that pass through the filter criteria.");
 
+      pop_type.AddMemberFunction("INDEX",
+        [this](Population & pop, const size_t idx) -> Collection {
+          Collection out_collect;
+          auto it = pop.begin();
+          for(size_t i = 0; i < idx; i++){
+            it++;
+          }
+          out_collect.Insert(it);
+          return out_collect;
+        },
+        "Return the organism at the given index.");
+
       // ------ DEPRECATED FUNCTION NAMES ------
       Deprecate("EVAL", "EXEC");
       Deprecate("exit", "EXIT");
