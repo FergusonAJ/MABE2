@@ -140,6 +140,18 @@ namespace mabe {
     // --- Tools to setup runs ---
     bool Setup();
 
+    emp::Datum Execute(std::string_view statement) {
+      return config_script.Execute(statement);
+    }
+
+    void LoadStatements(const emp::vector<std::string> & statements, const std::string & name)
+    {
+      config_script.LoadStatements(statements, name);
+    }
+    void Load(std::istream & stream, const std::string & name){
+      config_script.Load(stream, name);
+    }
+
     /// Build a placeholder organism for "empty" positions in a Population
     template <typename EMPTY_MANAGER_T> void SetupEmpty();
 

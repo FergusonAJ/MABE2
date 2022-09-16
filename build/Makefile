@@ -21,12 +21,13 @@ CFLAGS_native_noblock := $(CFLAGS_all) $(OFLAGS_native_opt) -DEMP_NO_BLOCK
 CFLAGS_native_debug := $(CFLAGS_all) $(OFLAGS_native_debug)
 CFLAGS_native_grumpy := $(CFLAGS_all) $(OFLAGS_native_grumpy)
 
-CFLAGS_web_debug := $(CFLAGS_all) $(OFLAGS_web_debug) --js-library $(EMP_DIR)/web/library_emp.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s NO_EXIT_RUNTIME=1
-CFLAGS_web_opt := $(CFLAGS_all) $(OFLAGS_web_opt) --js-library $(EMP_DIR)/web/library_emp.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s NO_EXIT_RUNTIME=1
-#CFLAGS_web := $(CFLAGS_all) $(OFLAGS_web) --js-library $(EMP_DIR)/web/library_emp.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s DISABLE_EXCEPTION_CATCHING=1 -s NO_EXIT_RUNTIME=1
+CFLAGS_web_debug := $(CFLAGS_all) $(OFLAGS_web_debug) --js-library $(EMP_DIR)/web/library_emp.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s NO_EXIT_RUNTIME=1 -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "stringToUTF8"]'
+CFLAGS_web_opt := $(CFLAGS_all) $(OFLAGS_web_opt) --js-library $(EMP_DIR)/web/library_emp.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s NO_EXIT_RUNTIME=1 -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "stringToUTF8"]'
+CFLAGS_web := $(CFLAGS_all) $(OFLAGS_web) --js-library $(EMP_DIR)/emp/web/library_emp.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s DISABLE_EXCEPTION_CATCHING=1 -s NO_EXIT_RUNTIME=1 -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "stringToUTF8"]'
 
 # TARGETS := MABE NK AllOnes
 TARGETS := MABE
+JS_TARGETS := MABE_web
 
 default: native
 
@@ -47,7 +48,7 @@ grumpy: all
 
 web: CXX := $(CXX_web)
 web: CFLAGS := $(CFLAGS_web_opt)
-web: all
+web: $(JS_TARGETS)
 
 web-debug: CXX := $(CXX_web)
 web-debug: CFLAGS := $(CFLAGS_web_debug)
@@ -60,15 +61,15 @@ all: $(TARGETS)
 $(TARGETS): % : %.cpp ../source/modules.hpp
 	$(CXX) $(CFLAGS_version) $(CFLAGS) $< -o $@
 
-$(JS_TARGETS): %.js : %.cpp
-	$(CXX_web) $(CFLAGS_web) $< -o $@
+$(JS_TARGETS): % : %.cpp
+	$(CXX_web) $(CFLAGS_version) $(CFLAGS_web) $< -o web/$@.js
 
 debug-%: $*.cpp
 	$(CXX) $(CFLAGS_version) $(CFLAGS_native_debug) $< -o $@
 
 clean:
 	rm -rf debug-* *~ *.dSYM $(TARGETS)
-#	rm -rf debug-* *~ *.dSYM $(JS_TARGETS)
+	rm -rf debug-* *~ *.dSYM web/$(JS_TARGETS)
 
 new: clean
 new: native

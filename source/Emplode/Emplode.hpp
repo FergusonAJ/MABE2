@@ -255,10 +255,14 @@ namespace emplode {
 
     // Load a single, specified configuration file.
     void Load(const std::string & filename) {
-      std::ifstream file(filename);           // Load the provided file.
-      emp::TokenStream tokens = lexer.Tokenize(file, filename);          // Convert to more-usable tokens.
-      file.close();                           // Close the file (now that it's converted)
-      pos_t pos = tokens.begin();             // Start at the beginning of the file.
+      std::ifstream file(filename); // Load the provided file.
+      Load(file, filename);
+      file.close();
+    }
+    void Load(std::istream & stream, const std::string& name) {
+      // Convert to more-usable tokens.
+      emp::TokenStream tokens = lexer.Tokenize(stream, name);
+      pos_t pos = tokens.begin();   // Start at the beginning of the stream 
 
       // Parse and run the program, starting from the outer scope.
       ParseState state{pos, symbol_table, symbol_table.GetRootScope(), lexer};
@@ -279,7 +283,8 @@ namespace emplode {
     // Load a single, specified configuration file.
     // @param statements List is statements to be parsed.
     // @param name Name of statement group (for error messages)
-    void LoadStatements(const emp::vector<std::string> & statements, const std::string & name) {
+    void LoadStatements(const emp::vector<std::string> & statements, const std::string & name)
+    {
       emp::TokenStream tokens = lexer.Tokenize(statements, name);    // Convert to tokens.
       pos_t pos = tokens.begin();
 
