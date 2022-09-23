@@ -23,7 +23,7 @@ CFLAGS_native_grumpy := $(CFLAGS_all) $(OFLAGS_native_grumpy)
 
 CFLAGS_web_debug := $(CFLAGS_all) $(OFLAGS_web_debug) --js-library $(EMP_DIR)/web/library_emp.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s NO_EXIT_RUNTIME=1 -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "stringToUTF8"]'
 CFLAGS_web_opt := $(CFLAGS_all) $(OFLAGS_web_opt) --js-library $(EMP_DIR)/web/library_emp.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s NO_EXIT_RUNTIME=1 -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "stringToUTF8"]'
-CFLAGS_web := $(CFLAGS_all) $(OFLAGS_web) --js-library $(EMP_DIR)/emp/web/library_emp.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s DISABLE_EXCEPTION_CATCHING=1 -s NO_EXIT_RUNTIME=1 -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "stringToUTF8"]'
+CFLAGS_web := $(CFLAGS_all) $(OFLAGS_web) --js-library $(EMP_DIR)/emp/web/library_emp.js --js-library $(EMP_DIR)/emp/web/d3/library_d3.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s DISABLE_EXCEPTION_CATCHING=1 -s NO_EXIT_RUNTIME=1 -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "stringToUTF8"]' -sALLOW_MEMORY_GROWTH
 
 # TARGETS := MABE NK AllOnes
 TARGETS := MABE

@@ -114,6 +114,7 @@ namespace mabe {
     emp::Random & GetRandom() { return random; }
     size_t GetUpdate() const noexcept { return update; }
     bool GetVerbose() const { return verbose; }
+    virtual bool IsWeb() { return false; }
 
     /// Trigger exit from run.
     void RequestExit() { exit_now = true; }

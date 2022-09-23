@@ -278,6 +278,9 @@ namespace mabe {
     emp::Ptr<OBJ_T> Make(emp::Random & random) {
       return Make_impl(random).template DynamicCast<OBJ_T>();
     }
+
+    // ---=== Web ===---
+    virtual void WebInit(){ ; }
   };
 
   struct ModuleInfo {

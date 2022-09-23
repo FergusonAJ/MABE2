@@ -9,54 +9,47 @@
 
 #include <iostream>
 
-// Empirical tools
-#include "emp/bits/BitVector.hpp"
-#include "emp/config/ArgManager.hpp"
-#include "emp/math/Random.hpp"
-#include "emp/web/web.hpp"
-
 // Framework
-#include "../source/core/MABE.hpp"
-#include "../source/core/EmptyOrganism.hpp"
+#include "../source/core/MABEWebController.hpp"
 
 // Include the full set of available modules.
 #include "../source/modules.hpp"
 
-class MABEWebController : public emp::web::Animate{
-  private:
-  emp::web::Document doc;   // Div that contains all our web elements
-  mabe::MABE control;
-  emp::web::TextArea config_input;
+//class MABEWebController : public emp::web::Animate{
+//  private:
+//  emp::web::Document doc;   // Div that contains all our web elements
+//  mabe::MABE control;
+//  emp::web::TextArea config_input;
+//
+//  void SetupWebpage(){
+//    config_input = emp::web::TextArea("config_input");
+//    doc << config_input;
+//    doc << "<br/>";
+//    doc << emp::web::Button([this](){
+//        std::string input_str = config_input.GetText();
+//        std::stringstream sstr;
+//        sstr << input_str;
+//        control.Load(sstr, "Web input");
+//        // Setup all of the modules
+//        if (control.Setup() == false){
+//          std::cout << "Error! Setup() failed on MABE object!" << std::endl;
+//        }
+//        // Print to the console to make sure MABE object was initialized correctly
+//        control.Execute("PRINT(\"Main MABE control object created and setup!\");");
+//      }, "Load config", "config_load_button");
+//    doc << emp::web::Button([this](){
+//        control.Update(1000000);
+//      }, "Run", "run_button");
+//  }
+//
+//  public:
+//  MABEWebController(): doc("emp_base"), control(0, NULL){
+//    control.SetupEmpty<mabe::EmptyOrganismManager>();
+//    SetupWebpage();
+//  }
+//
+//};
 
-  void SetupWebpage(){
-    config_input = emp::web::TextArea("config_input");
-    doc << config_input;
-    doc << "<br/>";
-    doc << emp::web::Button([this](){
-        std::string input_str = config_input.GetText();
-        std::stringstream sstr;
-        sstr << input_str;
-        control.Load(sstr, "Web input");
-        // Setup all of the modules
-        if (control.Setup() == false){
-          std::cout << "Error! Setup() failed on MABE object!" << std::endl;
-        }
-        // Print to the console to make sure MABE object was initialized correctly
-        control.Execute("PRINT(\"Main MABE control object created and setup!\");");
-      }, "Load config", "config_load_button");
-    doc << emp::web::Button([this](){
-        control.Update(1000000);
-      }, "Run", "run_button");
-  }
-
-  public:
-  MABEWebController(): doc("emp_base"), control(0, NULL){
-    control.SetupEmpty<mabe::EmptyOrganismManager>();
-    SetupWebpage();
-  }
-
-};
-
-MABEWebController controller;
+mabe::MABEWebController controller(0, NULL);
 int main(){
 }
