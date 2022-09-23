@@ -9,11 +9,14 @@
 
 // Analyze Modules
 #include "analyze/SystematicsModule.hpp"
+#include "analyze/VirtualCPUOrg_WebAnalyzer.hpp"
+#include "analyze/WebPlot.hpp"
 
 // Evaluation Modules
 #include "evaluate/games/EvalMancala.hpp"
 #include "evaluate/games/EvalPathFollow.hpp"
 #include "evaluate/games/EvalDoors.hpp"
+#include "evaluate/games/EvalDoors_Web.hpp"
 #include "evaluate/static/EvalCountBits.hpp"
 #include "evaluate/static/EvalDiagnostic.hpp"
 #include "evaluate/static/EvalMatchBits.hpp"

@@ -255,7 +255,12 @@ namespace mabe {
       // Create the ancestor, either randomly or from a genome file
       if(SharedData().init_random) FillRandom(SharedData().init_length, random);
       else{
-        Load(SharedData().initial_genome_filename);
+        emp::vector<std::string> name_vec;
+        emp::slice(SharedData().initial_genome_filename, name_vec, ';');
+        for(std::string inst_name : name_vec){
+          PushInst(inst_name);
+        }
+        //Load(SharedData().initial_genome_filename);
         SharedData().init_length = GetGenomeSize();
       }
       // Set traits that are specific to the ancestor (others are in ResetTraits) 
@@ -457,16 +462,19 @@ namespace mabe {
 
     /// Load from the file the instruction to use and what order to include them in
     emp::vector<std::string> LoadInstSetFromFile(){
-      emp::File file(SharedData().inst_set_input_filename);
-      file.RemoveComments("//");
-      file.RemoveComments("#");
-      file.RemoveWhitespace();
-      file.RemoveEmpty();
-      if(file.GetNumLines() == 0){
-        emp_error("Error! VirtualCPUOrg instruction set file is either empty or missing: ", 
-            SharedData().inst_set_input_filename);
-      }
-      return file.GetAllLines();
+      emp::vector<std::string> name_vec;
+      emp::slice(SharedData().inst_set_input_filename, name_vec, ';');
+      return name_vec;
+      //emp::File file(SharedData().inst_set_input_filename);
+      //file.RemoveComments("//");
+      //file.RemoveComments("#");
+      //file.RemoveWhitespace();
+      //file.RemoveEmpty();
+      //if(file.GetNumLines() == 0){
+      //  emp_error("Error! VirtualCPUOrg instruction set file is either empty or missing: ", 
+      //      SharedData().inst_set_input_filename);
+      //}
+      //return file.GetAllLines();
     }
 
     /// Load external instructions that were added via the configuration file
