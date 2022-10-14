@@ -10,6 +10,8 @@
 #ifndef MABE_EVAL_DIAGNOSTIC_H
 #define MABE_EVAL_DIAGNOSTIC_H
 
+#include <cmath>
+
 #include "../../core/MABE.hpp"
 #include "../../core/Module.hpp"
 
@@ -22,6 +24,7 @@ namespace mabe {
     std::string total_trait = "total";         // A single value totalling all of the scores.
     std::string first_trait = "first_active";  // Location of first activation position.
     std::string count_trait = "active_count";  // Number of activation positions.
+    emp::vector<size_t> sawtooth_vals;
 
     enum Type {
       EXPLOIT,                  // Must drive values as close to 100 as possible.
@@ -29,6 +32,7 @@ namespace mabe {
       EXPLORE,                  // Start at max value; keep counting values if less than previous.
       DIVERSITY,                // ONLY count max value; all others are max - their current value.
       WEAK_DIVERSITY,           // ONLY count max value; all others don't count (and can drift)
+      SAWTOOTH,                 // Score for each treat follows a sawtooth pattern
       NUM_DIAGNOSTICS,
       UNKNOWN
     };
@@ -65,8 +69,28 @@ namespace mabe {
                STRUCT_EXPLOIT, "struct_exploit", "Fitness = sum of descending values from start",
                EXPLORE,        "explore",        "Fitness = sum of descending values from max",
                DIVERSITY,      "diversity",      "Fitness = max value minus all others",
-               WEAK_DIVERSITY, "weak_diversity", "Fitness = max value"
+               WEAK_DIVERSITY, "weak_diversity", "Fitness = max value",
+               SAWTOOTH, "sawtooth", "Each trait follows a sawtooth pattern"
       );
+    }
+
+    void SetupSawtooth(){
+      sawtooth_vals.clear();
+      int next_val = 1;
+      int old_val = -1;
+      int step = 1;
+      std::cout << "Sawtooth peaks: [";
+      for(int i = 0; i < 100; i++){
+        if(i == next_val){
+          old_val = next_val;
+          next_val = old_val + step;
+          step++;
+        } 
+        if(i != 0) std::cout << ", ";
+        std::cout << old_val;
+        sawtooth_vals.push_back(old_val);
+      }
+      std::cout << "]" << std::endl;
     }
 
     void SetupModule() override {
@@ -75,6 +99,7 @@ namespace mabe {
       AddOwnedTrait<double>(total_trait, "Combined score for current diagnostic.", 0.0);
       AddOwnedTrait<size_t>(first_trait, "First activated position.", 0.0);
       AddOwnedTrait<size_t>(count_trait, "Total number of activated positions.", 0.0);
+      SetupSawtooth();
     }
 
     double Evaluate(Collection orgs) {
@@ -115,6 +140,17 @@ namespace mabe {
           // Use values as long as they are monotonically decreasing.
           for (pos = 1; pos < vals.size() && vals[pos] <= vals[pos-1]; ++pos) {
             total_score += (scores[pos] = vals[pos]);
+          }
+          active_count = pos;
+
+          // Clear out the remaining values.
+          while (pos < scores.size()) { scores[pos] = 0.0; ++pos; }
+          break;
+        case SAWTOOTH:
+          // Iterate over all values 
+          for (pos = 0; pos < vals.size(); ++pos) {
+            const int peak= sawtooth_vals[std::floor(vals[pos])];
+            total_score += (scores[pos] = (peak - (vals[pos] - peak)));
           }
           active_count = pos;
 

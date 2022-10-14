@@ -25,13 +25,14 @@ ValsOrg vals_org {              // Organism consisting of a series of N floating
                                 // - "rebound": Make high values 'bounce' back down.
   output_name = "vals";         // Name of variable to contain set of values.
   total_name = "total";         // Name of variable to contain total of all values.
+  init_random = 0;              // Should we randomize ancestor?  (0 = all 0.0)
 };
 
 EvalDiagnostic diagnostics {    // Evaluate set of values with a specified diagnostic problem.
   vals_trait = "vals";          // Which trait stores the values to evaluate?
   scores_trait = "scores";      // Which trait should we store revised scores in?
   total_trait = "fitness";      // Which trait should we store the total score in?
-  diagnostic = "explore";       // Which Diagnostic should we use?
+  diagnostic = "sawtooth";       // Which Diagnostic should we use?
                                 // "exploit": Fitness = sum of all values
                                 // "struct_exploit": Fitness = sum of descending values from start
                                 // "explore": Fitness = sum of descending values from max
