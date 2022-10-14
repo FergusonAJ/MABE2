@@ -25,6 +25,7 @@ namespace mabe {
     std::string first_trait = "first_active";  // Location of first activation position.
     std::string count_trait = "active_count";  // Number of activation positions.
     emp::vector<size_t> sawtooth_vals;
+    const int sawtooth_min_peak = 8;           // First peak in the sawtooth diagnostic
 
     enum Type {
       EXPLOIT,                  // Must drive values as close to 100 as possible.
@@ -76,7 +77,7 @@ namespace mabe {
 
     void SetupSawtooth(){
       sawtooth_vals.clear();
-      int next_val = 1;
+      int next_val = sawtooth_min_peak;
       int old_val = -1;
       int step = 1;
       std::cout << "Sawtooth peaks: [";
@@ -150,7 +151,12 @@ namespace mabe {
           // Iterate over all values 
           for (pos = 0; pos < vals.size(); ++pos) {
             const int peak= sawtooth_vals[std::floor(vals[pos])];
-            total_score += (scores[pos] = (peak - (vals[pos] - peak)));
+            if(vals[pos] < sawtooth_min_peak) {
+              total_score += (scores[pos] = vals[pos]);
+            }
+            else {
+              total_score += (scores[pos] = (peak - (vals[pos] - peak)));
+            }
           }
           active_count = pos;
 
