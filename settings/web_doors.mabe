@@ -104,8 +104,8 @@ VirtualCPUOrg_WebAnalyzer web_analyzer{
   pop = "main_pop";
 };
 WebPlot pop_plot{
-  //x_axis_label = "Update";
-  //y_axis_label = "Population size";
+  x_axis_label = "Update";
+  y_axis_label = "Generated merit";
 };
 
 Var dominant_genome;
@@ -151,10 +151,23 @@ max_file.ADD_COLUMN("doors_correct_1", "best_org.TRAIT('doors_correct_1')" );
 max_file.ADD_COLUMN("doors_taken_2", "best_org.TRAIT('doors_taken_2')" );
 max_file.ADD_COLUMN("doors_correct_2", "best_org.TRAIT('doors_correct_2')" );
 
+@ONLOAD() {
+  WEB_MAKE_ROW();
+  web_analyzer.ASSIGN_DIV(WEB_MAKE_COL(0, 6));
+  pop_plot.ASSIGN_DIV(WEB_MAKE_COL(0, 6));
+  WEB_MAKE_ROW();
+  eval_doors.ASSIGN_DIV(WEB_MAKE_COL(1, 4));
+  PRINT("FOURTH COLUMN: ", WEB_MAKE_COL(1, 4));
+  PRINT("FIFTH COLUMN: ", WEB_MAKE_COL(1, 4));
+  WEB_MAKE_ROW();
+  WEB_MAKE_ROW();
+  WEB_MAKE_ROW();
+  WEB_MAKE_ROW();
+};
 @START() {
   PRINT("random_seed = ", random_seed, "\n");  // Print seed at run start.
   main_pop.INJECT("avida_org", 1);             // Inject ancestor organism 
-};;
+};
 
 Var avg_gen; 
 @UPDATE(Var ud) {
@@ -177,9 +190,9 @@ Var avg_gen;
   fit_file.WRITE();
   max_file.WRITE();
   avg_gen = main_pop.CALC_MEAN("generation");
-  //IF(ud % 10 == 0){
-  //  pop_plot.ADD_POINT(ud, main_pop.SIZE());
-  //}
+  IF(ud % 10 == 0){
+    pop_plot.ADD_POINT(ud, main_pop.CALC_MEAN("child_merit"));
+  }
   IF(avg_gen >= max_gens) EXIT();
 };
 
