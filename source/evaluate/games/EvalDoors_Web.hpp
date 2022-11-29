@@ -30,6 +30,8 @@ namespace mabe {
     emp::Ptr<MABEWebController> web_control_ptr = nullptr;
     emp::web::Div div;
     bool is_web_enabled = false;
+    std::string div_id = "";
+    std::string div_class = "";
 
   public:
     EvalDoors_Web(mabe::MABE & control,
@@ -40,12 +42,21 @@ namespace mabe {
     }
     ~EvalDoors_Web() { }
 
+    void AssignDiv(const std::string& id){
+      div_id = id;
+    }
+
     void WebInit() override {
       is_web_enabled = true;
       emp::Ptr<MABE> ptr = emp::Ptr<MABE>(&control);
       web_control_ptr = ptr.DynamicCast<MABEWebController>();
-      div = emp::web::Div("eval_doors_web");
-      web_control_ptr->GetDocument() << div;
+      if(div_id.size() == 0){
+        div = emp::web::Div("eval_doors_web");
+        div.SetAttr("class", "");
+        web_control_ptr->GetDocument() << div;
+      }
+      else div = web_control_ptr->GetDocument().Div(div_id);
+      div_class = div.GetAttr("class");
     }
     
     double Render(){
@@ -53,6 +64,7 @@ namespace mabe {
       VirtualCPUOrg& org = *dynamic_cast<VirtualCPUOrg*>(&pop[0]);
       DoorsState& state = org.GetTrait<DoorsState>(trait_names.state_trait);
       div.Clear();
+      div.SetAttr("class", div_class);
       if(!state.initialized){
         div << "State of EvalDoors has not been initialized for this organism.<br/>";
       }
@@ -77,6 +89,14 @@ namespace mabe {
             return 0.0;
           },
           "Perform one round of scheduling");
+      
+      info.AddMemberFunction(
+          "ASSIGN_DIV",
+          [](EvalDoors_Web & mod, const std::string& div_id) {
+            mod.AssignDiv(div_id);
+            return 0.0;
+          },
+          "Assign module to use an existing div");
     }
     bool IsWebEnabled() { return is_web_enabled; }
 

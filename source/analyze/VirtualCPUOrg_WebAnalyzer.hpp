@@ -28,6 +28,8 @@ namespace mabe {
     emp::Ptr<MABEWebController> web_control_ptr = nullptr;
     emp::web::Div ip_div;
     bool is_web_enabled = false;
+    std::string div_id = "";
+    std::string div_class = ""; 
   public:
     VirtualCPUOrg_WebAnalyzer(mabe::MABE & control,
                      const std::string & name="VirtualCPUOrg_WebAnalyzer",
@@ -50,14 +52,28 @@ namespace mabe {
       is_web_enabled = true;
       emp::Ptr<MABE> ptr = emp::Ptr<MABE>(&control);
       web_control_ptr = ptr.DynamicCast<MABEWebController>();
-      ip_div = emp::web::Div("vcpu_analyzer_ip");
-      web_control_ptr->GetDocument() << ip_div;
+      if(div_id.size() == 0){
+        ip_div = emp::web::Div("vcpu_analyzer_ip");
+        ip_div.SetAttr("class", "");
+        web_control_ptr->GetDocument() << ip_div;
+      }
+      else ip_div = web_control_ptr->GetDocument().Div(div_id);
+      div_class = ip_div.GetAttr("class");
+    }
+
+    void AssignDiv(const std::string& id){
+      div_id = id;
     }
 
     void Render(){
       Population & pop = control.GetPopulation(pop_id);
       VirtualCPUOrg& org = *dynamic_cast<VirtualCPUOrg*>(&pop[0]);
       ip_div.Clear();
+      ip_div.SetAttr("class", div_class);
+      ip_div.SetCSS("height", "500px");
+      ip_div.SetCSS("overflow-y", "auto");
+      ip_div.SetCSS("outline-style", "solid");
+      ip_div.SetCSS("outline-width", "1px");
       ip_div << "IP: " << org.inst_ptr << "<br/>"; 
       ip_div << "RH: " << org.read_head << "<br/>"; 
       ip_div << "WH: " << org.write_head << "<br/>"; 
@@ -107,6 +123,13 @@ namespace mabe {
             return 0.0;
           },
           "Perform one round of scheduling");
+      info.AddMemberFunction(
+          "ASSIGN_DIV",
+          [](VirtualCPUOrg_WebAnalyzer & mod, const std::string& div_id) {
+            mod.AssignDiv(div_id);
+            return 0.0;
+          },
+          "Assign module to use an existing div");
     }
     bool IsWebEnabled() { return is_web_enabled; }
   };

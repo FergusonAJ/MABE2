@@ -35,6 +35,8 @@ namespace mabe {
     emp::web::LineGraph<emp::array<double, 2>, D3::LinearScale, D3::LinearScale> plot;
     std::string x_axis_label = "x";
     std::string y_axis_label = "y";
+    std::string div_id = "";
+    std::string div_class = "";
     size_t id = 0;
 #endif
   public:
@@ -61,24 +63,36 @@ namespace mabe {
       is_web_enabled = true;
       emp::Ptr<MABE> ptr = emp::Ptr<MABE>(&control);
       web_control_ptr = ptr.DynamicCast<MABEWebController>();
-      std::stringstream sstr;
-      sstr << "mabe_web_plot_" << id;
-      while(web_control_ptr->GetDocument().HasChild(sstr.str())){
-        id++;
-        sstr.str("");
+      if(div_id.size() == 0){
+        std::stringstream sstr;
         sstr << "mabe_web_plot_" << id;
+        while(web_control_ptr->GetDocument().HasChild(sstr.str())){
+          id++;
+          sstr.str("");
+          sstr << "mabe_web_plot_" << id;
+        }
+        div_id = sstr.str();
+        div = emp::web::Div(div_id);
+        div.SetAttr("class", "");
+        web_control_ptr->GetDocument() << div;
       }
-      div = emp::web::Div(sstr.str());
-      web_control_ptr->GetDocument() << div;
+      else div = web_control_ptr->GetDocument().Div(div_id);
+      div_class = div.GetAttr("class");
       plot.variables[0] = x_axis_label;
       plot.variables[1] = y_axis_label;
-      web_control_ptr->GetDocument() << plot;
+      div << plot;
+    }
+
+    void AssignDiv(const std::string& id){
+      div_id = id;
     }
 
     void Render(){
       if(is_web_enabled){
-        div.Clear();
-        div << "Points: " << coordinate_vec.size() << "<br/>"; 
+        //div.Clear();
+        //div.SetAttr("class", div_class);
+        //div << "Points: " << coordinate_vec.size() << "<br/>"; 
+        //div << plot;
       }
     }
 
@@ -97,6 +111,13 @@ namespace mabe {
             return 0.0;
           },
           "Add a new point to the plot");
+      info.AddMemberFunction(
+          "ASSIGN_DIV",
+          [](WebPlot & mod, const std::string& div_id) {
+            mod.AssignDiv(div_id);
+            return 0.0;
+          },
+          "Assign module to use an existing div");
     }
     bool IsWebEnabled() { return is_web_enabled; }
 #endif
