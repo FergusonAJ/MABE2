@@ -6,5 +6,7 @@
 *.mabe 
 # MABE Executable
 MABE   
+web/MABE_web.js
+web/MABE_web.wasm
 # Systematics/phylogeny output
 phylo/ 
