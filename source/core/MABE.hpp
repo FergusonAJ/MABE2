@@ -604,6 +604,7 @@ namespace mabe {
     Setup_Traits();     // Make sure module traits do not clash.
     UpdateSignals();    // Setup the appropriate modules to be linked with each signal.
     SetupBase();        // Call Setup on MABEBase (which will report errors)
+    config_script.Trigger("ONLOAD");
 
     return true;
   }

@@ -312,6 +312,7 @@ namespace mabe {
 
       // Add in built-in event triggers; these are used to indicate when events should happen.
       AddSignal("START");   // Triggered at the beginning of a run.
+      AddSignal("ONLOAD");  // Triggered when config is loaded 
       AddSignal("UPDATE");  // Tested every update.
       AddSignal("BEFORE_REPRO"); // Triggered when an organism is about to reproduce
     }
