@@ -144,7 +144,9 @@ namespace mabe {
     template <typename EMPTY_MANAGER_T> void SetupEmpty();
 
     /// Update MABE a single time step.
-    void Update(size_t num_updates=1);
+    virtual void Update(size_t num_updates=1);
+    virtual void Update_Start(size_t num_updates=1);
+    virtual void Update_Step(size_t num_updates=1);
 
     // --- Population Management ---
 
@@ -597,18 +599,24 @@ namespace mabe {
   }
 
   /// Update MABE world.
-  void MABE::Update(size_t num_updates) {
-    if (update == 0) config_script.Trigger("START");
+  void MABE::Update(size_t num_updates){
+    if (update == 0) Update_Start(num_updates);
 
     const size_t target_update = update + num_updates;
     while (update < target_update && !exit_now) {
-      emp_assert(OK(), update);                 // In debug mode, keep checking MABE integrity
-      if (rescan_signals) UpdateSignals();      // If we have reason to, update module signals
-      before_update_sig.Trigger(update);        // Signal that a new update is about to begin
-      update++;                                 // Increment 'update' to start new update
-      on_update_sig.Trigger(update);            // Signal all modules about the new update
-      config_script.Trigger("UPDATE", update);  // Trigger any updated-based events
+      Update_Step(num_updates);
     }
+  }
+  void MABE::Update_Start(size_t num_updates){
+    config_script.Trigger("START");
+  }
+  void MABE::Update_Step(size_t num_updates){
+    emp_assert(OK(), update);                 // In debug mode, keep checking MABE integrity
+    if (rescan_signals) UpdateSignals();      // If we have reason to, update module signals
+    before_update_sig.Trigger(update);        // Signal that a new update is about to begin
+    update++;                                 // Increment 'update' to start new update
+    on_update_sig.Trigger(update);            // Signal all modules about the new update
+    config_script.Trigger("UPDATE", update);  // Trigger any updated-based events
   }
 
   /// Setup an organism as a placeholder for all "empty" positions in the population.
