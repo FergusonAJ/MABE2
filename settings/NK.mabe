@@ -53,7 +53,15 @@ max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('bits')" );
 // @BEFOREDIVIDE(OrgList parent IN altruists) PRINT("Altruist Birth!");
 
 @UPDATE(Var ud) {
-  IF (ud == max_ud) EXIT();
+  IF (ud == max_ud){
+    Var idx = 0;
+    WHILE(idx < main_pop.NUM_ORGS()){
+      OrgList tmp_list = main_pop.INDEX(idx);
+      PRINT("[", idx, "] ", tmp_list.TRAIT("bits"), " ", tmp_list.TRAIT("fitness"));
+      idx = idx + 1;
+    }
+    EXIT();
+  }
 
   eval_nk.EVAL(main_pop);
   Var mode_fit = main_pop.CALC_MODE("fitness");
