@@ -121,6 +121,8 @@ AnalyzeSystematics sys{
   store_outside = 0;            // Store all taxa that ever existed.(1 = TRUE)
   taxon_info = "genome";        // Which trait should we identify unique taxa based on
 };
+StringUtils string_utils;
+MutantGenerator mutant_gen;
 
 Var dominant_genome;
 DataFile fit_file { filename="fitness.csv"; };
@@ -168,29 +170,79 @@ max_file.ADD_COLUMN("doors_correct_2", "best_org.TRAIT('doors_correct_2')" );
 @START() {
   PRINT("random_seed = ", random_seed, "\n");  // Print seed at run start.
   main_pop.INJECT("avida_org", 1);             // Inject ancestor organism 
-};;
+  PRINT("## REMOVE_CHAR_AT");
+  PRINT(string_utils.REMOVE_CHAR_AT("austin", 0));
+  PRINT(string_utils.REMOVE_CHAR_AT("austin", 1));
+  PRINT(string_utils.REMOVE_CHAR_AT("austin", 2));
+  PRINT(string_utils.REMOVE_CHAR_AT("austin", 3));
+  PRINT(string_utils.REMOVE_CHAR_AT("austin", 4));
+  PRINT(string_utils.REMOVE_CHAR_AT("austin", 5));
+  PRINT("## REPLACE");
+  PRINT(string_utils.REPLACE("austin", 0, 1, "!FOO!"));
+  PRINT(string_utils.REPLACE("austin", 1, 1, "!FOO!"));
+  PRINT(string_utils.REPLACE("austin", 2, 1, "!FOO!"));
+  PRINT(string_utils.REPLACE("austin", 3, 1, "!FOO!"));
+  PRINT(string_utils.REPLACE("austin", 4, 1, "!FOO!"));
+  PRINT(string_utils.REPLACE("austin", 5, 1, "!FOO!"));
+  PRINT("## MUTANTS");
+  Var genome = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+  //Var genome = "austin_is_cool";
+  Var alphabet_size = 45;
+  Var num_point = mutant_gen.GET_NUM_POINT_MUTATIONS(genome, alphabet_size);
+  Var num_del = mutant_gen.GET_NUM_DELETION_MUTATIONS(genome);
+  Var num_ins = mutant_gen.GET_NUM_INSERTION_MUTATIONS(genome, alphabet_size);
+  PRINT("Point: ", num_point);
+  PRINT("Del: ", num_del);
+  PRINT("Ins: ", num_ins);
+  PRINT("Num total: ", num_point + num_del + num_ins);
+  PRINT("");
+  PRINT("");
+  PRINT("## POINT");
+  Var mut_seed = 0;
+  WHILE(mut_seed < num_point){
+    PRINT(mut_seed, " ", mutant_gen.GET_POINT_MUTATION(genome, alphabet_size, mut_seed));
+    mut_seed = mut_seed + 1;
+  }
+  PRINT("");
+  PRINT("");
+  PRINT("## DELETION");
+  mut_seed = 0;
+  WHILE(mut_seed < num_del){
+    PRINT(mut_seed, " ", mutant_gen.GET_DELETION_MUTATION(genome, mut_seed));
+    mut_seed = mut_seed + 1;
+  }
+  PRINT("");
+  PRINT("");
+  PRINT("## INSERTION");
+  Var mut_seed = 0;
+  WHILE(mut_seed < num_ins){
+    PRINT(mut_seed, " ", mutant_gen.GET_INSERTION_MUTATION(genome, alphabet_size, mut_seed));
+    mut_seed = mut_seed + 1;
+  }
+  EXIT();
+};
 
 Var avg_gen; 
 @UPDATE(Var ud) {
-  scheduler.SCHEDULE();
-  PRINT("UD:", GET_UPDATE(),
-        //"  pop_size=", main_pop.SIZE(),
-        "  num_orgs=", main_pop.NUM_ORGS(),
-        "  merit_mean=", main_pop.CALC_MEAN("child_merit"),
-        "  merit_max=", main_pop.CALC_MAX("child_merit"),
-        "  gen_mean=", main_pop.CALC_MEAN("generation"),
-        //"  gen_max=", main_pop.CALC_MAX("generation"),
-        //"  genome_length_max=", main_pop.CALC_MAX("genome_length"),
-        "\n\tlength_mean=", main_pop.CALC_MEAN("genome_length"),
-        "  mean_accuracy=", main_pop.CALC_MEAN("accuracy"),
-        "  mean_cor=", main_pop.CALC_MEAN("correct_doors"),
-        "  max_cor=", main_pop.CALC_MAX("correct_doors"),
-        "\n\tmean_cor_left=", main_pop.CALC_MEAN("doors_correct_1"),
-        "  mean_cor_right=", main_pop.CALC_MEAN("doors_correct_2")
-       );
-  fit_file.WRITE();
-  max_file.WRITE();
-  avg_gen = main_pop.CALC_MEAN("generation");
-  IF(avg_gen >= max_gens) EXIT();
+  //scheduler.SCHEDULE();
+  //PRINT("UD:", GET_UPDATE(),
+  //      //"  pop_size=", main_pop.SIZE(),
+  //      "  num_orgs=", main_pop.NUM_ORGS(),
+  //      "  merit_mean=", main_pop.CALC_MEAN("child_merit"),
+  //      "  merit_max=", main_pop.CALC_MAX("child_merit"),
+  //      "  gen_mean=", main_pop.CALC_MEAN("generation"),
+  //      //"  gen_max=", main_pop.CALC_MAX("generation"),
+  //      //"  genome_length_max=", main_pop.CALC_MAX("genome_length"),
+  //      "\n\tlength_mean=", main_pop.CALC_MEAN("genome_length"),
+  //      "  mean_accuracy=", main_pop.CALC_MEAN("accuracy"),
+  //      "  mean_cor=", main_pop.CALC_MEAN("correct_doors"),
+  //      "  max_cor=", main_pop.CALC_MAX("correct_doors"),
+  //      "\n\tmean_cor_left=", main_pop.CALC_MEAN("doors_correct_1"),
+  //      "  mean_cor_right=", main_pop.CALC_MEAN("doors_correct_2")
+  //     );
+  //fit_file.WRITE();
+  //max_file.WRITE();
+  //avg_gen = main_pop.CALC_MEAN("generation");
+  //IF(avg_gen >= max_gens) EXIT();
 };
 
