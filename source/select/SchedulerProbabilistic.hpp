@@ -35,6 +35,7 @@ namespace mabe {
                                                               organism has executed. **/
     std::string genome_length_trait = "genome_length"; /**< Name of the trait storing the 
                                                               length of the org's genome **/
+    size_t eval_update = 0; ///< The current update when evaluating an organism
   
   public:
     SchedulerProbabilistic(mabe::MABE & control,
@@ -85,15 +86,18 @@ namespace mabe {
       mabe::Collection alive_orgs( orgs.GetAlive() );
       for (Organism & org : alive_orgs) {
         const size_t original_pop_size = alive_orgs.GetFirstPop()->GetSize();
-        for(size_t update = 0; update < max_updates; ++update){
+        for(eval_update = 0; eval_update < max_updates; ++eval_update){
           org.ProcessStep();
           if(stop_at_birth && alive_orgs.GetFirstPop()->GetSize() > original_pop_size){
-            return update; 
+            return eval_update; 
           }
         }
       }
       return max_updates;
     }
+    
+    /// Fetch the current evaluation update
+    size_t GetEvalUpdate(){ return eval_update; }
     
     /// Set up member functions associated with this class.
     static void InitType(emplode::TypeInfo & info) {
@@ -109,7 +113,13 @@ namespace mabe {
                 bool stop_at_birth){ 
               return mod.Evaluate(list, num_updates, stop_at_birth); 
           }, "Run orgs in OrgList a certain number of updates or until one reproduces.");
+      info.AddMemberFunction(
+          "GET_EVAL_UPDATE",
+          [](SchedulerProbabilistic & mod){
+              return mod.GetEvalUpdate(); 
+          }, "Fetch the current update, only useful if using EVAL.");
     }
+
 
     /// Ration out updates to members of the population
     double Schedule() {
