@@ -30,6 +30,9 @@ namespace mabe {
     double merit_scale_factor = 1; ///< Fitness = base_value + (merit * this value)
     int death_age = -1; /**< Organisms that execute death_age * genome length instructions die
                                 -1 for no death from old age */
+    int fixed_death_age = -1; /**< Organisms that execute fixed_death_age instructions die
+                                regardless of their genome length.  
+                                -1 for no death from old age */
     std::string insts_executed_trait = "insts_executed"; /**< Name of the trait storing the 
                                                               number of instructions the 
                                                               organism has executed. **/
@@ -64,7 +67,11 @@ namespace mabe {
       LinkVar(merit_scale_factor, "merit_scale_factor", "How should the scheduler scale merit?");
       LinkVar(death_age, "death_age", 
           "Organisms die from old age after executing death_age * genome length instructions."
-          " -1 for no death from old age");
+          " -1 to turn off");
+      LinkVar(fixed_death_age, "fixed_death_age", 
+          "Organisms die from old age after executing fixed_death_age instructions"
+          " regardless of their genome length."
+          " -1 to turn off");
       LinkVar(insts_executed_trait, "insts_executed_trait", 
           "The number of instructions this organism has executed");
     }
@@ -146,7 +153,14 @@ namespace mabe {
         // TODO: Handle the case where we have < 0 total weight AND empty orgs in population
         else selected_idx = random.GetUInt(pop.GetSize()); // No weights -> pick randomly 
         pop[selected_idx].ProcessStep();
-        if(death_age >= 0){
+        if(fixed_death_age >= 0){
+          const size_t num_insts_executed = 
+              pop[selected_idx].GetTrait<size_t>(insts_executed_trait);
+          if(num_insts_executed >= fixed_death_age){
+            control.ClearOrgAt({pop, selected_idx});
+          }
+        }
+        if(death_age >= 0){ // Not exclusive. You can use both death_age and fixed_death_age
           const size_t num_insts_executed = 
               pop[selected_idx].GetTrait<size_t>(insts_executed_trait);
           const size_t genome_length = 
