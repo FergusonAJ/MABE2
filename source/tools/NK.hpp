@@ -145,6 +145,22 @@ namespace mabe {
         SetState(random.GetUInt(N), random.GetUInt(state_count), random.GetDouble());
       }
     }
+    
+    size_t GetOptimal(){
+      double best_fitness = 0;
+      size_t best_idx = 0;
+      emp::BitVector bit_vec(N);
+      for(size_t i = 0; i < (1 << N); ++i){
+        bit_vec.Clear();
+        bit_vec.SetUInt64(0, i);
+        double fitness = GetFitness(bit_vec);
+        if(fitness > best_fitness){
+          best_idx = i; 
+          best_fitness = fitness;
+        }
+      }
+      return best_idx;
+    }
 
   };
 

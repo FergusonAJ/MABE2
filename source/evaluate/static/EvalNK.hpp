@@ -49,6 +49,26 @@ namespace mabe {
       info.AddMemberFunction("RESET",
                              [](EvalNK & mod) { mod.landscape.Config(mod.N, mod.K, mod.control.GetRandom()); return 0; },
                              "Regenerate the NK landscape with current N and K.");
+      info.AddMemberFunction("RESET_WITH_SEED",
+                            [](EvalNK & mod, int seed) { 
+                              emp::Random tmp_rand(seed);
+                              mod.landscape.Config(mod.N, mod.K, tmp_rand); 
+                              return 0; 
+                            },
+                             "Regenerate the NK landscape with current N and K and a seed");
+      info.AddMemberFunction("GET_OPTIMAL",
+                            [](EvalNK & mod) { 
+                              return mod.landscape.GetOptimal(); 
+                            },
+                             "Fetch the optimal position as a size_t");
+      info.AddMemberFunction("GET_OPTIMAL_FITNESS",
+                            [](EvalNK & mod) { 
+                              size_t optimal_idx = mod.landscape.GetOptimal(); 
+                              emp::BitVector bit_vec(mod.N);
+                              bit_vec.SetUInt(0, optimal_idx);
+                              return mod.landscape.GetFitness(bit_vec);
+                            },
+                             "Fetch the optimal position as a size_t");
     }
 
     void SetupConfig() override {

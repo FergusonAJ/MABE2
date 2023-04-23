@@ -64,3 +64,4 @@
 
 // Tools
 #include "tools/MutantGenerator.hpp"
+#include "tools/StringUtils.hpp"
