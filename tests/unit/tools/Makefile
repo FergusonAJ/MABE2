@@ -1,4 +1,4 @@
-TEST_NAMES= NK NK-const Resource StateGrid 
+TEST_NAMES= NK-MultiAllele NK NK-const Resource StateGrid 
 
 MABE_DIR= ../../../source/
 EMP_DIR= ../../../source/third-party/empirical
