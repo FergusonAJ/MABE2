@@ -48,3 +48,8 @@ examples/NK
 # R history
 *.Rhistory
 
+# Generated files
+build/MABE
+build/fitness.csv
+build/max_org.csv
+
