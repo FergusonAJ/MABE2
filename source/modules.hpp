@@ -18,6 +18,7 @@
 #include "evaluate/static/EvalDiagnostic.hpp"
 #include "evaluate/static/EvalMatchBits.hpp"
 #include "evaluate/static/EvalNK.hpp"
+#include "evaluate/static/EvalNK-MultiAllele.hpp"
 #include "evaluate/static/EvalRoyalRoad.hpp"
 #include "evaluate/callable/EvalTaskNot.hpp"
 #include "evaluate/callable/EvalTaskNand.hpp"
@@ -46,6 +47,7 @@
 
 // Organism Types
 #include "orgs/BitsOrg.hpp"
+#include "orgs/MultiAlleleOrg.hpp"
 #include "orgs/BitSummaryOrg.hpp"
 #include "orgs/ValsOrg.hpp"
 #include "orgs/AvidaGPOrg.hpp"
