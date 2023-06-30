@@ -59,6 +59,7 @@
 
 // Organism Types
 #include "orgs/BitsOrg.hpp"
+#include "orgs/MultiAlleleOrg.hpp"
 #include "orgs/BitSummaryOrg.hpp"
 #include "orgs/IntsOrg.hpp"
 #include "orgs/GenericIntsOrg.hpp"
