@@ -176,6 +176,13 @@ namespace mabe {
     /// Add one or more organisms of a specified type (provide the type name; the MABE controller
     /// will create instances of it.)  Returns the positions the organisms were placed.
     Collection Inject(Population & pop, const std::string & type_name, size_t copy_count=1);
+   
+    /// Injects N organisms with the given genome 
+    Collection InjectGenome(
+        Population & pop, 
+        const std::string & type_name, 
+        const std::string & genome, 
+        size_t copy_count=1);
 
     /// Add an organism of a specified type and population (provide names of both and they
     /// will be properly setup.)
@@ -539,14 +546,27 @@ namespace mabe {
   {
     // Updates to scripting language that require full controller functionality.
 
-    // 'INJECT' allows a user to add an organism to a population; returns collection of added orgs.
+    // 'INJECT' allows a user to add an organism to a population; 
+    //    returns collection of added orgs.
     emplode::TypeInfo & pop_type = config_script.GetType("Population");
     std::function<Collection(Population &, const std::string &, size_t)> inject_fun =
       [this](Population & pop, const std::string & org_type_name, size_t count) {
         return Inject(pop, org_type_name, count);
       };
     pop_type.AddMemberFunction("INJECT", inject_fun,
-      "Inject organisms into population.  Args: org_name, org_count; Return: OrgList of injected orgs.");
+      "Inject organisms into population.  "
+      "Args: org_name, org_count; Return: OrgList of injected orgs.");
+    // 'INJECT_GENOME' allows a user to add organisms with a specific genome to a population;
+    //    returns collection of added orgs.
+    std::function<Collection(Population &, const std::string &, 
+        const std::string &, size_t)> inject_genome_fun =
+      [this](Population & pop, const std::string & org_type_name, 
+          const std::string & genome, size_t count) {
+        return InjectGenome(pop, org_type_name, genome, count);
+      };
+    pop_type.AddMemberFunction("INJECT_GENOME", inject_genome_fun,
+      "Inject organisms with a given genome into population.  "
+      "Args: org_name, genome, org_count; Return: OrgList of injected orgs.");
 
     // Setup all known modules as available types in the config file.
     for (auto & [type_name,mod] : GetModuleMap()) {
@@ -696,6 +716,25 @@ namespace mabe {
     }
 
     return placement_set;                                 // Return last position injected.
+  }
+
+  /// Add an organsim of a specified type and genome to the world (provide the type name and 
+  /// the MABE controller will create instances of it.)  Returns the position of the last
+  /// organism placed.
+  Collection MABE::InjectGenome(
+      Population & pop, 
+      const std::string & type_name, 
+      const std::string& genome, 
+      size_t copy_count) {
+    Verbose("Injecting ", copy_count, " orgs of type '", type_name, 
+            "' with genome '", genome,
+            "' into population ", pop.GetID());
+
+    auto & org_manager = GetModule(type_name);            // Look up type of organism.
+    Collection placement_set;                             // Track set of positions placed.
+    auto org_ptr = org_manager.Make<Organism>(random);  // ...Build an org of this type.
+    org_ptr->GenomeFromString(genome);
+    return Inject(pop, *org_ptr, copy_count);
   }
 
   /// Add an organism of a specified type and population (provide names of both and they
