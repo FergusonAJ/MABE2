@@ -15,6 +15,7 @@
 #include "evaluate/games/EvalPathFollow.hpp"
 #include "evaluate/games/EvalPatchHarvest.hpp"
 #include "evaluate/games/EvalDoors.hpp"
+#include "evaluate/games/EvalCues.hpp"
 #include "evaluate/static/EvalCountBits.hpp"
 #include "evaluate/static/EvalDiagnostic.hpp"
 #include "evaluate/static/EvalMatchBits.hpp"
@@ -61,3 +62,7 @@
 #include "orgs/instructions/VirtualCPU_Inst_Label.hpp"
 #include "orgs/instructions/VirtualCPU_Inst_Manipulation.hpp"
 #include "orgs/instructions/VirtualCPU_Inst_Replication.hpp"
+#include "orgs/instructions/VirtualCPU_Inst_Dictionary.hpp"
+
+// Tools
+#include "tools/MutantGenerator.hpp"

@@ -116,6 +116,7 @@ namespace mabe {
     }
     size_t Mutate_Genome_Generic(
         std::function<void(size_t, emp::Random&)> mut_func, double prob, emp::Random& random){
+      if(prob <= 0) return 0; // Avoid rng call
       if(!random.P(prob)) return 0;
       const size_t pos = random.GetUInt(GetGenomeSize());
       mut_func(pos, random);
@@ -284,6 +285,7 @@ namespace mabe {
       Organism::SetTrait<size_t>(SharedData().genome_length_name, GetGenomeSize());
       Organism::SetTrait<double>(SharedData().child_merit_name, 
           SharedData().initial_merit); 
+      Organism::SetTrait<size_t>(SharedData().num_insts_executed_name, 0);
     }
 
     /// Create an ancestral organism and load in values from configuration file
@@ -343,6 +345,8 @@ namespace mabe {
           SharedData().genome_name, offspring->GetGenomeString());
       offspring->Organism::SetTrait<size_t>(
           SharedData().genome_length_name, offspring->GetGenomeSize());
+      offspring->Organism::SetTrait<size_t>(
+          SharedData().num_insts_executed_name, 0);
       offspring->Organism::GetTrait<emp::vector<data_t>>(SharedData().output_name).clear();
       offspring.DynamicCast<VirtualCPUOrg>()->ResetHardware();
       offspring.DynamicCast<VirtualCPUOrg>()->insts_speculatively_executed = 0;
@@ -449,6 +453,9 @@ namespace mabe {
                       "copy_influences_merit",
                       "If 1, the number of instructions copied (e.g., via HCopy instruction)"
                       "factor into offspring merit");
+      GetManager().LinkVar(SharedData().num_insts_executed_name, 
+                      "insts_executed_trait",
+                      "Name of the trait that holds the number of instructions executed");
     }
 
     /// Set up this organism type with the traits it need to track and initialize 
@@ -491,7 +498,7 @@ namespace mabe {
       for(size_t inst_offset = 0; inst_offset < GetInstLib().GetSize(); ++inst_offset){
         char inst_char = 'a' + inst_offset; 
         if(inst_offset > 25) inst_char = 'A' + (inst_offset - 26);
-        size_t inst_id = GetInstLib().GetID(inst_char);
+        size_t inst_id = GetInstLib().GetIDFromSymbol(inst_char);
         size_t inst_idx = GetInstLib().GetIndex(inst_id);
         ss << inst_idx << ", " << inst_id << ", " << inst_char << ", " 
            << GetInstLib().GetName(inst_idx); 
@@ -656,6 +663,16 @@ namespace mabe {
             SharedData().site_deletion_mut_prob, SharedData().init_length);
         SharedData().mut_sites.Resize(SharedData().init_length);
       }
+    }
+
+    /// Fetch a string representation of the genome
+    std::string ToString() const override { return  GetRawGenomeString(); }
+    
+    void GenomeFromString(const std::string & new_genome) override {
+      LoadFromChars(new_genome);
+      ResetHardware();
+      Organism::SetTrait<std::string>(SharedData().genome_name, GetGenomeString());
+      Organism::SetTrait<size_t>(SharedData().genome_length_name, GetGenomeSize());
     }
 
   };
