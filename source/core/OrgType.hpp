@@ -30,7 +30,7 @@ namespace mabe {
     Module & GetManager() { return (Module&) manager; }
     const Module & GetManager() const { return (Module&) manager; }
 
-    /// The class below is a placeholder for storing any manager-specific data that the organims
+    /// The class below is a placeholder for storing any manager-specific data that the organisms
     /// should have access to.  A derived organism class merely needs to shadow this one in order
     /// to include specialized data.
     struct ManagerData {
@@ -97,13 +97,17 @@ namespace mabe {
 
     /// Convert this organism into a string of characters.
     /// @note Required if we are going to print organisms to screen or to file).  If this function
-    /// is not overridden, try to the equivilent function in the organism manager.
+    /// is not overridden, try to the equivalent function in the organism manager.
     virtual std::string ToString() const { return "__unknown__"; }
 
     /// By default print an organism by triggering it's ToString() function.
     std::ostream & Print(std::ostream & os) const {
       os << ToString();
       return os;
+    }
+
+    virtual void GenomeFromString(const std::string & new_genome) {
+      emp_assert(false, "FromString() must be overridden before it can be called.");
     }
 
     /// Completely randomize a new organism (typically for initialization)

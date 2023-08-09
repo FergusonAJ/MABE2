@@ -9,7 +9,7 @@
  *
  *  All organism types or organism component types (e.g., brains or genomes) that can be
  *  individually configured in MABE must have mabe::OrgType as its ultimate base class.  A helper
- *  template mabe::OrganismTeplate<ORG_T> is derived from mabe::OrgType and should be used as
+ *  template mabe::OrganismTemplate<ORG_T> is derived from mabe::OrgType and should be used as
  *  the more immeidate base class for any user-defined organism types.  Providing this template
  *  with your new organism type as ORG_T will setup type-specific return values for ease of use.
  *
@@ -36,16 +36,30 @@
 
 namespace mabe {
 
+  class Population;
+
   class Organism : public OrgType, public emp::AnnotatedType {
+  private:
+    emp::Ptr<Population> pop_ptr = nullptr;
   public:
     Organism(ModuleBase & _man) : OrgType(_man) { ; }
-    virtual ~Organism() {}
+    virtual ~Organism() {
+      emp_assert(
+        pop_ptr.IsNull(),
+        "Organisms must be removed from populations before deletion; use MABE::ClearOrgAt()."
+      );
+    }
 
     /// Test if this organism represents an empty cell.
     virtual bool IsEmpty() const noexcept { return false; }
 
+    emp::Ptr<Population> GetPopPtr() const { return pop_ptr; }
+    Population & GetPopulation() { return *pop_ptr; }
+    void SetPopulation(Population & in) { pop_ptr = &in; }
+    void ClearPopulation() { pop_ptr = nullptr; }
+
     /// Specialty version of Clone to return an Organism type.
-    [[nodiscard]] emp::Ptr<Organism> CloneOrganism() const {
+    [[nodiscard]] virtual emp::Ptr<Organism> CloneOrganism() const {
       return OrgType::Clone().DynamicCast<Organism>();
     }
 
@@ -60,14 +74,13 @@ namespace mabe {
       return OrgType::Recombine(other_parents, random);
     }
 
-    /// Produce an asexual offspring WITH MUTATIONS.  By default, use Clone() and then Mutate().
-    [[nodiscard]] emp::Ptr<Organism> MakeOffspringOrganism(emp::Random & random) const {
+    /// Produce an asexual offspring WITH MUTATIONS.
+    [[nodiscard]] virtual emp::Ptr<Organism> MakeOffspringOrganism(emp::Random & random) const {
       return OrgType::MakeOffspring(random).DynamicCast<Organism>();
     }
 
-    /// Produce an sexual (two parent) offspring WITH MUTATIONS.  By default, use Recombine() and
-    /// then Mutate().
-    [[nodiscard]] emp::Ptr<Organism>
+    /// Produce an sexual (two parent) offspring WITH MUTATIONS.
+    [[nodiscard]] virtual emp::Ptr<Organism>
     MakeOffspringOrganism(emp::Ptr<Organism> parent2, emp::Random & random) const {
       return OrgType::MakeOffspring(parent2, random).DynamicCast<Organism>();
     }
@@ -75,7 +88,7 @@ namespace mabe {
     // @CAO: Need to clean this one up to use Organism...
     /// Produce one or more offspring from multiple parents WITH MUTATIONS.  By default, use
     /// Recombine() and then Mutate().
-    [[nodiscard]] emp::vector<emp::Ptr<OrgType>> 
+    [[nodiscard]] virtual emp::vector<emp::Ptr<OrgType>> 
     MakeOffspringOrganisms(emp::vector<emp::Ptr<OrgType>> other_parents, emp::Random & random) const {
       return OrgType::MakeOffspring(other_parents, random);
     }
@@ -83,7 +96,7 @@ namespace mabe {
 
 
 
-    // -- Also deal with some depricated functionality... --
+    // -- Also deal with some deprecated functionality... --
 
     [[deprecated("Use OrgType::HasTrait() instead of OrgType::HasVar()")]]
     bool HasVar(const std::string & name) const { return HasTrait(name); }
