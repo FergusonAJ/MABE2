@@ -11,6 +11,8 @@
 #include "analyze/SystematicsModule.hpp"
 
 // Evaluation Modules
+#include "evaluate/FixedTrait.hpp"
+#include "evaluate/AddTraits.hpp"
 #include "evaluate/games/EvalMancala.hpp"
 #include "evaluate/games/EvalPathFollow.hpp"
 #include "evaluate/games/EvalPatchHarvest.hpp"
