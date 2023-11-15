@@ -248,6 +248,13 @@ namespace mabe {
           return group.IteratorAt(trait_fun(group)).AsPosition();
         },
         "Produce OrgList with just the org with the maximum value of the provided function.");
+      // TODO: Make sure index isn't out of bounds
+      type_info.AddMemberFunction("INDEX",
+        [this](GROUP_T & group, size_t idx) -> Collection {
+          if (group.IsEmpty()) Collection{};
+          return group.IteratorAt(idx).AsPosition();
+        },
+        "Produce OrgList with just the org at Nth index.");
     }
 
   private:
