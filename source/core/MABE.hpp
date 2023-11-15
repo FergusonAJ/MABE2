@@ -173,6 +173,14 @@ namespace mabe {
     /// by MABE.  Return the position the organism was placed in.
     OrgPosition InjectInstance(Population & pop, emp::Ptr<Organism> org_ptr);
     
+    /// Inject given organism (no parent) at the specified place in the population
+    /// Also turn the pointer over to the population to be managed. 
+    /// Return the same position.
+    OrgPosition InjectInstanceAt(
+      Population & pop, 
+      emp::Ptr<Organism> org_ptr, 
+      OrgPosition pos);
+    
     /// Add one or more organisms of a specified type (provide the type name; the MABE controller
     /// will create instances of it.)  Returns the positions the organisms were placed.
     Collection Inject(Population & pop, const std::string & type_name, size_t copy_count=1);
@@ -183,6 +191,13 @@ namespace mabe {
         const std::string & type_name, 
         const std::string & genome, 
         size_t copy_count=1);
+  
+    /// Add an organsim of a specified type and genome to the specific world location
+    OrgPosition InjectGenomeAt(
+      Population & pop, 
+      const std::string & type_name, 
+      const std::string& genome, 
+      OrgPosition pos);
 
     /// Add an organism of a specified type and population (provide names of both and they
     /// will be properly setup.)
@@ -197,6 +212,21 @@ namespace mabe {
       on_inject_ready_sig.Trigger(*inject_org, GetPopulation(pos.PopID()));
       AddOrgAt( inject_org, pos);
     }
+
+    /// Write out the current population to a stream
+    bool SavePopulation(Population & pop, std::ostream& os);
+
+    /// Write out the current population to file
+    bool SavePopulationToFile(Population & pop, const std::string& filename){
+      std::ofstream ofs(filename);
+      return SavePopulation(pop, ofs);
+    }
+   
+    // Load a whole population from a given file
+    Collection LoadPopulationFromFile(
+        Population & pop, 
+        const std::string& org_type_name,
+        const std::string& filename);
 
     /// Give birth to one or more offspring; return position of last placed.
     /// Triggers 'before repro' signal on parent (once) and 'offspring ready' on each offspring.
@@ -567,6 +597,21 @@ namespace mabe {
     pop_type.AddMemberFunction("INJECT_GENOME", inject_genome_fun,
       "Inject organisms with a given genome into population.  "
       "Args: org_name, genome, org_count; Return: OrgList of injected orgs.");
+    pop_type.AddMemberFunction("SAVE_TO_FILE", 
+        [this](Population & pop, const std::string& filename){
+          return SavePopulationToFile(pop, filename);
+        }, 
+        "Save the population to the given file. " 
+        "Args: pop, filename; Return: Success boolean");
+    
+    pop_type.AddMemberFunction("LOAD_FROM_FILE", 
+        [this](Population & pop, 
+            const std::string& org_type_name, 
+            const std::string& filename){
+          return LoadPopulationFromFile(pop, org_type_name, filename);
+        }, 
+        "Load the population from the given file. " 
+        "Args: pop, org_type, filename; Return: Collection of orgs added");
 
     // Setup all known modules as available types in the config file.
     for (auto & [type_name,mod] : GetModuleMap()) {
@@ -645,25 +690,25 @@ namespace mabe {
   /// New populations must be given a name and an optional size.
   Population & MABE::AddPopulation(const std::string & name, size_t pop_size) {
     int pop_id = (int) pops.size();
-    emp::Ptr<Population> new_pop = emp::NewPtr<Population>(name, pop_id, pop_size, empty_org);
-    pops.push_back(new_pop);
+      emp::Ptr<Population> new_pop = emp::NewPtr<Population>(name, pop_id, pop_size, empty_org);
+      pops.push_back(new_pop);
 
-    // Setup default placement functions for the new population.
-    new_pop->SetPlaceBirthFun( [this,new_pop](Organism & /*org*/, OrgPosition /*ppos*/) {
-      return PushEmpty(*new_pop);
-    });
-    new_pop->SetPlaceInjectFun( [this,new_pop](Organism & /*org*/) {
-      return PushEmpty(*new_pop);
-    });
-    new_pop->SetFindNeighborFun( [this,new_pop](OrgPosition pos) {
-      if (pos.IsInPop(*new_pop)) return OrgPosition(); // Wrong pop!  No neighbor.
-      // Return a random org since no structure to population.
-      return OrgPosition(new_pop, GetRandom().GetUInt(new_pop->GetSize()));
-    });
-    action_maps.emplace_back();
+      // Setup default placement functions for the new population.
+      new_pop->SetPlaceBirthFun( [this,new_pop](Organism & /*org*/, OrgPosition /*ppos*/) {
+        return PushEmpty(*new_pop);
+      });
+      new_pop->SetPlaceInjectFun( [this,new_pop](Organism & /*org*/) {
+        return PushEmpty(*new_pop);
+      });
+      new_pop->SetFindNeighborFun( [this,new_pop](OrgPosition pos) {
+        if (pos.IsInPop(*new_pop)) return OrgPosition(); // Wrong pop!  No neighbor.
+        // Return a random org since no structure to population.
+        return OrgPosition(new_pop, GetRandom().GetUInt(new_pop->GetSize()));
+      });
+      action_maps.emplace_back();
 
-    return *new_pop;
-  }
+      return *new_pop;
+    }
 
   /// Inject a copy of the provided organism and return the position it was placed in;
   /// if more than one is added, return the position of the final injection.
@@ -685,8 +730,25 @@ namespace mabe {
     return placement_set;
   }
 
+  /// Inject given organism (no parent) at the specified place in the population
+  /// Also turn the pointer over to the population to be managed. 
+  /// Return the same position.
+  OrgPosition MABE::InjectInstanceAt(
+      Population & pop, 
+      emp::Ptr<Organism> org_ptr, 
+      OrgPosition pos){
+    emp_assert(org_ptr->GetDataMap().SameLayout(org_data_map));
+    on_inject_ready_sig.Trigger(*org_ptr, pop);
+    if (pos.IsValid()) AddOrgAt( org_ptr, pos);
+    else {
+      org_ptr.Delete();          
+      emp::notify::Error("Invalid position; failed to inject organism!");
+    }
+    return pos;
+  }
+
   /// Inject this specific instance of an organism and turn over the pointer to be managed
-  /// by MABE.  Teturn the position the organism was placed in.
+  /// by MABE.  Return the position the organism was placed in.
   OrgPosition MABE::InjectInstance(Population & pop, emp::Ptr<Organism> org_ptr) {
     emp_assert(org_ptr->GetDataMap().SameLayout(org_data_map));
     on_inject_ready_sig.Trigger(*org_ptr, pop);
@@ -718,6 +780,19 @@ namespace mabe {
     return placement_set;                                 // Return last position injected.
   }
 
+  /// Add an organsim of a specified type and genome to the specific world location
+  OrgPosition MABE::InjectGenomeAt(
+      Population & pop, 
+      const std::string & type_name, 
+      const std::string& genome, 
+      OrgPosition pos) {
+    auto & org_manager = GetModule(type_name);            // Look up type of organism.
+    Collection placement_set;                             // Track set of positions placed.
+    auto org_ptr = org_manager.Make<Organism>(random);  // ...Build an org of this type.
+    org_ptr->GenomeFromString(genome);
+    return InjectInstanceAt(pop, org_ptr, pos);
+  }
+
   /// Add an organsim of a specified type and genome to the world (provide the type name and 
   /// the MABE controller will create instances of it.)  Returns the position of the last
   /// organism placed.
@@ -734,7 +809,13 @@ namespace mabe {
     Collection placement_set;                             // Track set of positions placed.
     auto org_ptr = org_manager.Make<Organism>(random);  // ...Build an org of this type.
     org_ptr->GenomeFromString(genome);
-    return Inject(pop, *org_ptr, copy_count);
+    for(size_t org_idx = 0; org_idx < copy_count; org_idx++){
+      emp::Ptr<Organism> inject_org = org_ptr->CloneOrganism();
+      OrgPosition inject_pos = InjectInstance(pop, inject_org);
+      placement_set.Insert(inject_pos);
+    }
+    org_ptr.Delete();
+    return placement_set;
   }
 
   /// Add an organism of a specified type and population (provide names of both and they
@@ -751,6 +832,33 @@ namespace mabe {
     }
     Population & pop = GetPopulation(pop_id);
     return Inject(pop, type_name, copy_count); // Inject the organisms.
+  }
+    
+  /// Write out the current population to a stream
+  bool MABE::SavePopulation(Population & pop, std::ostream& os){
+    for(auto org_it = pop.begin(); org_it != pop.end(); org_it++){
+      if(org_it.IsEmpty()) std::cout << "<<EMPTY>>\n";
+      else os << (*org_it).ToString() << "\n";
+    }
+    os.flush();
+    return true;
+  }
+    
+  // Load a whole population from a file
+  Collection MABE::LoadPopulationFromFile(
+      Population & pop, 
+      const std::string& org_type_name,
+      const std::string& filename){
+    Collection placement_set;                             // Track set of positions placed.
+    emp::File file(filename);
+    for(size_t org_idx = 0; org_idx < file.GetNumLines(); ++org_idx){
+      OrgPosition pos = pop.PlaceInject(*empty_org);
+      if(file[org_idx] != "<<EMPTY>>" && file[org_idx].size() > 0){
+        InjectGenomeAt(pop, org_type_name, file[org_idx], pos);
+        placement_set.Insert(pos);                          // ...Record the position.
+      }
+    }
+    return placement_set;
   }
 
   /// Give birth to one or more offspring; return position of last placed.

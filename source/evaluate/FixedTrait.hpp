@@ -41,6 +41,18 @@ namespace mabe {
                                 return mod.Set_Int(list, val); 
                              },
                              "Set an int for the entire collection");
+      info.AddMemberFunction("SAVE_TO_FILE",
+                              [](FixedTrait& mod, mabe::Collection list, 
+                                  const std::string& filename){
+                                return mod.SaveToFile(list, filename);
+                              },
+                             "Save trait to file for each member in collection");
+      info.AddMemberFunction("LOAD_FROM_FILE",
+                              [](FixedTrait& mod, mabe::Collection list, 
+                                  const std::string& filename){
+                                return mod.LoadFromFile(list, filename);
+                              },
+                             "Load trait values from file for each member in collection");
     }
     
     void SetupConfig() override {
@@ -76,9 +88,47 @@ namespace mabe {
       }
       return val;
     }
+
+    bool SaveToFile(const mabe::Collection & orgs, const std::string& filename) {
+      std::ofstream ofs(filename);
+      mabe::Collection alive_orgs( orgs.GetAlive() );
+      if(trait_type == "int"){
+        for (Organism & org : alive_orgs) {
+          ofs << org.GetTrait<int>(trait_name) << "\n";
+        }
+      }
+      else if(trait_type == "double"){
+        for (Organism & org : alive_orgs) {
+          ofs << org.GetTrait<double>(trait_name) << "\n";
+        }
+      }
+      else return false;
+      return true;
+    }
+    
+    bool LoadFromFile(const mabe::Collection & orgs, const std::string& filename) {
+      std::ifstream ifs(filename);
+      mabe::Collection alive_orgs( orgs.GetAlive() );
+      if(trait_type == "int"){
+        int cur_val;
+        for (Organism & org : alive_orgs) {
+          ifs >> cur_val;
+          org.SetTrait<int>(trait_name, cur_val);
+        }
+      }
+      else if(trait_type == "double"){
+        double cur_val;
+        for (Organism & org : alive_orgs) {
+          ifs >> cur_val;
+          org.SetTrait<double>(trait_name, cur_val);
+        }
+      }
+      else return false;
+      return true;
+    }
   };
 
-  MABE_REGISTER_MODULE(FixedTrait, "Evaluate integer vectors on a sawtooth lanscape.");
+  MABE_REGISTER_MODULE(FixedTrait, "Manage a fixed trait in a population");
 }
 
 #endif
