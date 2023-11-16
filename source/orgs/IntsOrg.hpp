@@ -117,21 +117,13 @@ namespace mabe {
     
     void GenomeFromString(const std::string & new_genome) override {
       emp::vector<int>& ints = GetTrait<emp::vector<int>>(SharedData().output_name);
+      emp::vector<std::string> sliced_vec = emp::slice(new_genome, ' ');
+      emp_assert(sliced_vec.size() == SharedData().vec_size + 2); // +2 for [ and ]
       ints.resize(SharedData().vec_size);
-      if(SharedData().vec_size == 1){
-        ints[0] = std::stoi(new_genome);
-        emp_assert(ints[0] >= SharedData().min_val);
-        emp_assert(ints[0] <= SharedData().max_val);
-      }
-      else{
-        emp::vector<std::string> parts;
-        emp::slice(new_genome, parts, ',');
-        emp_assert(parts.size() == SharedData().vec_size);
-        for(size_t idx = 0; idx < SharedData().vec_size; ++idx){
-          ints[idx] = std::stoi(parts[idx]);
-          emp_assert(ints[idx] >= SharedData().min_val);
-          emp_assert(ints[idx] <= SharedData().max_val);
-        }
+      for(size_t idx = 0; idx < SharedData().vec_size; ++idx){
+        ints[idx] = std::stoi(sliced_vec[idx + 1]); // +1 to skip [
+        emp_assert(ints[idx] >= SharedData().min_val);
+        emp_assert(ints[idx] <= SharedData().max_val);
       }
     }
   };

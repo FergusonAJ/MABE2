@@ -93,7 +93,7 @@ max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('ints')" );
   PRINT(" Random seed:      ", random_seed, "\n");
   PRINT(" Num Generations:  ", num_gens, "\n");
   
-  main_pop.INJECT_GENOME("ints_org", "14", pop_size);       // Inject starting population.
+  main_pop.INJECT_GENOME("ints_org", "[ 14 ]", pop_size);       // Inject starting population.
   cur_bonus = 1;
   am_trait.SET_DOUBLE(main_pop, cur_bonus);
 }
