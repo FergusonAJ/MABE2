@@ -1,12 +1,12 @@
 random_seed = 0;                // Seed for random number generator; use 0 to base on time.
-Var pop_size = 4096;
+Var pop_size = 256;
 Var num_gens = 10000;
 Var num_vals = 1;
-Var print_step = 1;          // Interval for printing...
+Var print_step = 100;          // Interval for printing...
 Var bonus_step = 1000;
 Var max_val = 200;
 Var cur_bonus = 1;
-Var bonus_orgs = 10;
+Var bonus_orgs = 1;
 
 Population main_pop;
 Population next_pop;
@@ -54,22 +54,11 @@ AddTraits trait_adder {
   output_trait_name = "adj_fitness";
 };
 
-NeighborPlacement neighbor_placement{
+Spatial1DPlacement one_d_placement{
   target = "main_pop";
-  grid_width = 128;
-  grid_height = 128;
-  use_moore_neighborhood = 1;
+  grid_width = pop_size;
+  does_wrap = 0;
 };
-
-//AnalyzeSystematics sys{
-//  data_file_name = "phylo/phylogenetic_data.csv";// Filename for systematics data file.
-//  data_updates = "0:1:-1";      // Which updates should we output a data from the phylogeny?
-//  snapshot_file_root_name = "phylo/phylogeny";// Filename for snapshot files (will have update number and .csv appended to end)
-//  snapshot_updates = "0:0:0";   // Which updates should we output a snapshot of the phylogeny?
-//  store_ancestors = 1;          // Store all ancestors of extant taxa.(1 = TRUE)
-//  store_outside = 0;            // Store all taxa that ever existed.(1 = TRUE)
-//  taxon_info = "ints";        // Which trait should we identify unique taxa based on
-//};
 
 DataFile fit_file { filename="fitness.csv"; };
 fit_file.ADD_COLUMN( "fitness_raw_mean", "main_pop.CALC_MEAN('fitness')" );
@@ -94,6 +83,7 @@ max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('ints')" );
   PRINT(" Num Generations:  ", num_gens, "\n");
   
   main_pop.INJECT_GENOME("ints_org", "[ 14 ]", pop_size);       // Inject starting population.
+  one_d_placement.PRINT(main_pop);
   cur_bonus = 1;
   am_trait.SET_DOUBLE(main_pop, cur_bonus);
 }
@@ -102,7 +92,6 @@ max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('ints')" );
 
 @UPDATE(Var ud) {
   IF (ud == num_gens){
-    //sys.SNAPSHOT();
     EXIT();
   } 
 
@@ -111,20 +100,10 @@ max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('ints')" );
   
 
   IF (ud % print_step == 0) {
-    //PRINT("UD:", GET_UPDATE(),
-    //      "  MainPopSize=", main_pop.SIZE(),
-    //      "  AveFitness=", main_pop.CALC_MEAN("fitness"),
-    //      "  MaxFitness=", main_pop.CALC_MAX("fitness"),
-    //      "\nAveAdjFitness=", main_pop.CALC_MEAN("adj_fitness"),
-    //      "  MaxAdjFitness=", main_pop.CALC_MAX("adj_fitness"),
-    //      "\nAveBonus=", main_pop.CALC_MEAN("am_bonus"),
-    //      "  MaxBonus=", main_pop.CALC_MAX("am_bonus"),
-    //);
     fit_file.WRITE();
     max_file.WRITE();
   }
   IF (ud % bonus_step == 0) {
-    //cur_bonus = cur_bonus * 1.5;
     cur_bonus = cur_bonus + 3;
     PRINT("Bonus increases to: ", cur_bonus);
     Var tmp_counter = 0;
@@ -134,9 +113,6 @@ max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('ints')" );
     }
   }
 
-  // select_e.SELECT(main_pop, next_pop, pop_size);
-  //select_r.SELECT(main_pop, next_pop, pop_size);
-  // select_l.SELECT(main_pop, next_pop, pop_size);
-  select_t.SELECT(main_pop, next_pop, pop_size);
+  select_t.SELECT_SPATIAL(main_pop, next_pop);
   main_pop.REPLACE_WITH(next_pop);
 }
