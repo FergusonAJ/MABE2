@@ -60,6 +60,43 @@ namespace mabe {
 
       return placement_list;
     }
+    
+    Collection SelectSpatial(Population & select_pop, Population & birth_pop) {
+      emp::Random & random = control.GetRandom();
+      const size_t N = select_pop.GetSize();
+
+      if (select_pop.GetNumOrgs() == 0) {
+        emp::notify::Error("Trying to run Tournament Selection on an Empty Population.");
+        return Collection();
+      }
+
+      // Setup the fitness function - redo this each time in case it changes.
+      auto fit_fun = control.BuildTraitEquation(select_pop, fit_equation);
+
+      // Track where all organisms are placed.
+      Collection placement_list;
+
+      for(size_t idx = 0; idx < N; idx++){
+        emp::vector<size_t> best_ids;
+        best_ids.push_back(idx);
+        double best_fit = fit_fun(select_pop[idx]);
+        for(OrgPosition& neighbor_pos : 
+            select_pop.FindAllNeighbors(OrgPosition(select_pop, idx))){
+          double test_fit = fit_fun(select_pop[neighbor_pos.Pos()]);          
+          if(test_fit > best_fit){
+            best_ids.clear();
+            best_ids.push_back(neighbor_pos.Pos());
+            best_fit = test_fit;
+          }
+          else if (test_fit == best_fit){
+            best_ids.push_back(neighbor_pos.Pos());
+          }
+        }
+        size_t best_id = best_ids[random.GetUInt(best_ids.size())];
+        placement_list += control.Replicate(select_pop.IteratorAt(best_id), birth_pop, 1);
+      }
+      return placement_list;
+    }
 
   public:
     SelectTournament(mabe::MABE & control,
@@ -82,6 +119,12 @@ namespace mabe {
           return mod.Select(from,to,count);
         },
         "Perform tournament selection on the provided organisms.");
+      info.AddMemberFunction(
+        "SELECT_SPATIAL",
+        [](SelectTournament & mod, Population & from, Population & to) {
+          return mod.SelectSpatial(from,to);
+        },
+        "Perform tournament selection for each index of the population using its neighborhood");
     }
 
     void SetupConfig() override {

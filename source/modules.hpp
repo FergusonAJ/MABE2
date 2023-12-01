@@ -41,6 +41,7 @@
 #include "placement/RandomReplacement.hpp"
 #include "placement/MaxSizePlacement.hpp"
 #include "placement/NeighborPlacement.hpp"
+#include "placement/Spatial1DPlacement.hpp"
 
 // Selection Modules
 #include "select/SelectElite.hpp"
