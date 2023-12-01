@@ -613,6 +613,13 @@ namespace mabe {
         "Load the population from the given file. " 
         "Args: pop, org_type, filename; Return: Collection of orgs added");
 
+    pop_type.AddMemberFunction("CLEAR", 
+        [this](Population& pop){
+          ResizePop(pop, 0);
+          return 0;
+        }, 
+        "Removes all organisms from the population. No args.");
+
     // Setup all known modules as available types in the config file.
     for (auto & [type_name,mod] : GetModuleMap()) {
       auto mod_init_fun = [this,mod=&mod](const std::string & name) -> emp::Ptr<emplode::EmplodeType> {
