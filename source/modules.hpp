@@ -23,6 +23,7 @@
 #include "evaluate/static/EvalMatchBits.hpp"
 #include "evaluate/static/EvalNK.hpp"
 #include "evaluate/static/EvalSawtooth.hpp"
+#include "evaluate/static/EvalSawtooth_Regular.hpp"
 #include "evaluate/static/EvalRoyalRoad.hpp"
 #include "evaluate/callable/EvalTaskNot.hpp"
 #include "evaluate/callable/EvalTaskNand.hpp"
