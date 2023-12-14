@@ -219,7 +219,7 @@ namespace mabe {
       bool has_been_visited = state.visited_tiles.Get(
           state.status.GetIndex(GetCurPath(state).grid));
       if(verbose){
-        std::cout << "Current tile: " << tile_id << 
+        std::cout << "[HARVEST] Current tile: " << tile_id << 
             "; visited: " << has_been_visited << std::endl;
       }
       if(!has_been_visited && (tile_id == Tile::NUTRIENT || tile_id == Tile::NUTRIENT_EDGE)){
@@ -240,7 +240,7 @@ namespace mabe {
       if(score == 1) state.nutrients_consumed++;
       else if(score == -1) state.moves_off_path++;
       state.raw_score += score;
-      if(verbose) std::cout << "Score: " << state.raw_score << std::endl;
+      if(verbose) std::cout << "[HARVEST] Score: " << state.raw_score << std::endl;
       return GetNormalizedExponentialScore(state);
     }
     
