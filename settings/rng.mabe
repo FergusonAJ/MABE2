@@ -1,0 +1,19 @@
+random_seed = 0;                // Seed for random number generator; use 0 to base on time.
+
+Var max_updates = 10;
+
+RandomNumberGenerator rng;
+
+@START() {
+}
+
+
+@UPDATE(Var ud) {
+  PRINT("Update: ", ud, 
+    "; Random uint (1,100): ", rng.GET_UINT(1, 101), 
+    "; Random double (0,1): ", rng.GET_DOUBLE(0, 1));
+  IF(ud >= max_updates){
+    EXIT();
+  }
+}
+

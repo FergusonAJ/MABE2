@@ -70,3 +70,4 @@
 
 // Tools
 #include "tools/MutantGenerator.hpp"
+#include "tools/RandomNumberGenerator.hpp"
