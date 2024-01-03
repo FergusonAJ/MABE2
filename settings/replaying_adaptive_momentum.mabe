@@ -1,12 +1,14 @@
 random_seed = 0;                // Seed for random number generator; use 0 to base on time.
-Var pop_size = 256;
+Var pop_size = 64;
 Var num_gens = 10000;
 Var num_vals = 1;
-Var print_step = 100;          // Interval for printing...
+Var print_step = 1;          // Interval for printing...
 Var bonus_step = 1000;
 Var max_val = 200;
-Var cur_bonus = 1;
-Var bonus_orgs = 1;
+Var cur_bonus = 6;
+Var bonus_orgs = 5;
+Var cur_update = 0;
+Var pop_snapshot_dir = "pop_snapshots";
 
 Population main_pop;
 Population next_pop;
@@ -20,12 +22,20 @@ IntsOrg ints_org {
   init_random = 0;
 };
 
-EvalSawtooth sawtooth {
+//EvalSawtooth sawtooth {
+//  N = num_vals;
+//  ints_trait = "ints";
+//  fitness_trait = "fitness";
+//  sawtooth_min_peak = 8;
+//  max_val = max_val;
+//};
+EvalSawtooth_Regular sawtooth {
   N = num_vals;
   ints_trait = "ints";
   fitness_trait = "fitness";
-  sawtooth_min_peak = 8;
-  max_val = max_val;
+  valley_width = 7;
+  step_decrease = 1;
+  offset = 2;
 };
 
 SelectElite select_e {          // Choose the top fitness organisms for replication.
@@ -39,7 +49,7 @@ SelectTournament select_t {     // Replicate top fitness organisms from random s
 };
 
 SelectRoulette select_r {     // Replicate top fitness organisms via roulette selection
-  fitness_fun = "adj_fitness";      // Which trait provides the fitness value to use?
+  fitness_fun = "1.1**adj_fitness";      // Which trait provides the fitness value to use?
 };
 
 FixedTrait am_trait {
@@ -61,6 +71,7 @@ Spatial1DPlacement one_d_placement{
 };
 
 DataFile fit_file { filename="fitness.csv"; };
+fit_file.ADD_COLUMN( "update", "cur_update");
 fit_file.ADD_COLUMN( "fitness_raw_mean", "main_pop.CALC_MEAN('fitness')" );
 fit_file.ADD_COLUMN( "fitness_raw_max", "main_pop.CALC_MAX('fitness')" );
 fit_file.ADD_COLUMN( "fitness_adj_mean", "main_pop.CALC_MEAN('adj_fitness')" );
@@ -84,13 +95,13 @@ max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('ints')" );
   
   main_pop.INJECT_GENOME("ints_org", "[ 14 ]", pop_size);       // Inject starting population.
   one_d_placement.PRINT(main_pop);
-  cur_bonus = 1;
-  am_trait.SET_DOUBLE(main_pop, cur_bonus);
+  am_trait.SET_DOUBLE(main_pop, 0);
 }
 
 // Actions to perform every update.
 
 @UPDATE(Var ud) {
+  cur_update = ud;
   IF (ud == num_gens){
     EXIT();
   } 
@@ -102,17 +113,25 @@ max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('ints')" );
   IF (ud % print_step == 0) {
     fit_file.WRITE();
     max_file.WRITE();
+    //main_pop.SAVE_TO_FILE(pop_snapshot_dir + "/ud_" + ud + ".pop");
+    //am_trait.SAVE_TO_FILE(main_pop, pop_snapshot_dir + "/ud_" + ud + ".popt");
   }
   IF (ud % bonus_step == 0) {
-    cur_bonus = cur_bonus + 3;
+    //cur_bonus = cur_bonus + 3;
     PRINT("Bonus increases to: ", cur_bonus);
     Var tmp_counter = 0;
+    WHILE(tmp_counter < pop_size){
+      am_trait.SET_DOUBLE(main_pop.INDEX(tmp_counter), 0);
+      tmp_counter = tmp_counter + 1;
+    }
+    tmp_counter = 0;
     WHILE(tmp_counter < bonus_orgs){
       am_trait.SET_DOUBLE(main_pop.INDEX(tmp_counter), cur_bonus);
       tmp_counter = tmp_counter + 1;
     }
   }
 
-  select_t.SELECT_SPATIAL(main_pop, next_pop);
+  //select_t.SELECT_SPATIAL(main_pop, next_pop);
+  select_r.SELECT_SPATIAL(main_pop, next_pop);
   main_pop.REPLACE_WITH(next_pop);
 }

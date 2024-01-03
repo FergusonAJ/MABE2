@@ -47,6 +47,44 @@ namespace mabe {
 
       return placement_list;
     }
+    
+    Collection SelectSpatial(Population & select_pop, Population & birth_pop) {
+      // Do some quick error checking
+      if (select_pop.GetID() == birth_pop.GetID()) {
+        emp::notify::Error("SelectRoulette currently requires birth_pop and select_pop to be different.");
+        return Collection{};
+      }
+      if (select_pop.GetNumOrgs() == 0) {
+        emp::notify::Error("Trying to run Roulette Selection on an Empty Population.");
+        return Collection();
+      }
+
+      emp::Random & random = control.GetRandom();
+      const size_t N = select_pop.GetSize();
+
+      // Setup the fitness function - redo this each time in case it changes.
+      auto fit_fun = control.BuildTraitEquation(select_pop, fit_equation);
+
+      // Track where all organisms are placed.
+      Collection placement_list;
+  
+      for(size_t idx = 0; idx < N; idx++){
+        auto neighbor_pos_vec = select_pop.FindAllNeighbors(OrgPosition(select_pop, idx));
+        emp::IndexMap fit_map(N, 0.0); // Still use full pop size, but most will be 0
+        // Add self first
+        if (!select_pop.IsEmpty(idx)){
+          fit_map[idx] = fit_fun(select_pop[idx]);
+        }
+        for(OrgPosition& neighbor_pos : neighbor_pos_vec){
+          if (select_pop.IsEmpty(neighbor_pos.Pos())) continue;
+          fit_map[neighbor_pos.Pos()] = fit_fun(select_pop[neighbor_pos.Pos()]);
+        }
+        size_t org_id = fit_map.Index( random.GetDouble(fit_map.GetWeight()) );
+        placement_list += control.Replicate(select_pop.IteratorAt(org_id), birth_pop);
+
+      }
+      return placement_list;
+    }
 
   public:
     SelectRoulette(
@@ -67,6 +105,12 @@ namespace mabe {
           return mod.Select(from,to,count);
         },
         "Perform roulette selection on the provided organisms.");
+      info.AddMemberFunction(
+        "SELECT_SPATIAL",
+        [](SelectRoulette & mod, Population & from, Population & to) {
+          return mod.SelectSpatial(from,to);
+        },
+        "Perform roulette selection on the provided organisms using a spatial structure");
     }
 
     // Set up variables for configuration file
