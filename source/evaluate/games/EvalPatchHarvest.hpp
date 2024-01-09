@@ -219,7 +219,7 @@ namespace mabe {
       bool has_been_visited = state.visited_tiles.Get(
           state.status.GetIndex(GetCurPath(state).grid));
       if(verbose){
-        std::cout << "Current tile: " << tile_id << 
+        std::cout << "[HARVEST] Current tile: " << tile_id << 
             "; visited: " << has_been_visited << std::endl;
       }
       if(!has_been_visited && (tile_id == Tile::NUTRIENT || tile_id == Tile::NUTRIENT_EDGE)){
@@ -234,27 +234,36 @@ namespace mabe {
       if(!state.initialized) InitializeState(state);
       // Mark *old* tile as visited
       MarkVisited(state);
-      if(verbose) std::cout << "[HARVEST] move" << std::endl;
+      if(verbose){
+          std::cout << "[HARVEST] move" << std::endl;
+          PrintVerboseState(state);
+      }
       state.status.Move(GetCurPath(state).grid, scale_factor);
       double score = GetCurrentPosScore(state);
       if(score == 1) state.nutrients_consumed++;
       else if(score == -1) state.moves_off_path++;
       state.raw_score += score;
-      if(verbose) std::cout << "Score: " << state.raw_score << std::endl;
+      if(verbose) std::cout << "[HARVEST] Accumulated score: " << state.raw_score << std::endl;
       return GetNormalizedExponentialScore(state);
     }
     
     /// Rotate the organism clockwise by 45 degrees
     void RotateRight(PatchHarvestState& state){
       if(!state.initialized) InitializeState(state);
-      if(verbose) std::cout << "[HARVEST] rot_right" << std::endl;
+      if(verbose){
+          std::cout << "[HARVEST] rot_right" << std::endl;
+          PrintVerboseState(state);
+      }
       state.status.Rotate(1);
     }
 
     /// Rotate the organism counterclockwise by 45 degrees
     void RotateLeft(PatchHarvestState& state){
       if(!state.initialized) InitializeState(state);
-      if(verbose) std::cout << "[HARVEST] rot_left" << std::endl;
+      if(verbose){
+          std::cout << "[HARVEST] rot_left" << std::endl;
+          PrintVerboseState(state);
+      }
       state.status.Rotate(-1);
     }
 
@@ -280,6 +289,16 @@ namespace mabe {
           return 0; 
           break;
       }
+    }
+
+    /// Print out some useful debugging information 
+    void PrintVerboseState(PatchHarvestState& state){
+        std::cout << "[HARVEST][STATE] "
+                  << "position: " << state.status.GetIndex(GetCurPath(state).grid) 
+                  << " (" << state.status.GetX() 
+                  << ", " << state.status.GetX() 
+                  << "); facing: " << state.status.GetFacing()
+                  << "\n";
     }
   };
 
