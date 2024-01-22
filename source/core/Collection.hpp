@@ -478,12 +478,19 @@ namespace mabe {
       emp_error("ShiftPosition() not yet implemented for CollectionIterator.");
     }
 
-    CollectionIterator begin() { return CollectionIterator(this); }
+    CollectionIterator begin() {
+      return CollectionIterator(this, pos_map.at(GetFirstPop()).GetFirstPos() );
+    }
     CollectionIterator end() { return CollectionIterator(this, nullptr); }
-    ConstCollectionIterator begin() const { return ConstCollectionIterator(this); }
+    ConstCollectionIterator begin() const {
+      return ConstCollectionIterator(this, pos_map.at(pos_map.begin()->first).GetFirstPos() );
+    }
     ConstCollectionIterator end() const { return ConstCollectionIterator(this, nullptr); }
-    ConstCollectionIterator cbegin() const { return ConstCollectionIterator(this); }
+    ConstCollectionIterator cbegin() const {
+      return ConstCollectionIterator(this, pos_map.at(pos_map.begin()->first).GetFirstPos() );
+    }
     ConstCollectionIterator cend() const { return ConstCollectionIterator(this, nullptr); }
+
 
     /// Remove all entries from a collection.
     Collection & Clear() { pos_map.clear(); return *this; }
