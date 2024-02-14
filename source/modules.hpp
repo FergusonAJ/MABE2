@@ -18,6 +18,7 @@
 #include "evaluate/games/EvalPatchHarvest.hpp"
 #include "evaluate/games/EvalDoors.hpp"
 #include "evaluate/games/EvalCues.hpp"
+#include "evaluate/static/Eval2DGrid.hpp"
 #include "evaluate/static/EvalCountBits.hpp"
 #include "evaluate/static/EvalDiagnostic.hpp"
 #include "evaluate/static/EvalMatchBits.hpp"
