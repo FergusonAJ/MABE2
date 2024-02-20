@@ -1,0 +1,60 @@
+random_seed = 0;                // Seed for random number generator; use 0 to base on time.
+Var pop_size = 100;            // Number of organisms to evaluate in the population.
+Var num_gens = 1000;
+
+Population main_pop;            // Main population for managing candidate solutions.
+Population next_pop;            // Temp. population while constructing the next generation.
+
+SignalGPOrg sgp_org {           
+  output_name = "fitness";         // Name of variable to contain bit sequence.
+  mut_prob = 0.01;              // Probability of each bit mutating on reproduction.
+  init_random = 1;              // Should we randomize ancestor?  (0 = all zeros)
+  eval_steps = 100;
+};
+
+SelectElite elite {             // Choose the top fitness organisms for replication.
+  top_count = 5;                // Number of top-fitness orgs to be replicated
+  fitness_fun = "fitness";      // Which trait provides the fitness value to use?
+};
+
+SelectTournament tournament {   // Select the top fitness organisms from random subgroups for replication.
+  tournament_size = 7;          // Number of orgs in each tournament
+  fitness_fun = "fitness";      // Which trait provides the fitness value to use?
+};
+
+EvalNone eval;
+
+DataFile fit_file { filename="fitness.csv"; };
+fit_file.ADD_COLUMN( "Average Fitness", "main_pop.CALC_MEAN('fitness')" );
+fit_file.ADD_COLUMN( "Maximum Fitness", "main_pop.CALC_MAX('fitness')" );
+fit_file.ADD_COLUMN( "Dominant Fitness", "main_pop.CALC_MODE('fitness')" );
+
+@START() {
+  PRINT("random_seed = ", random_seed, "\n");  // Print seed at run start.
+  main_pop.INJECT("sgp_org", pop_size);       // Inject starting population.
+}
+
+// Actions to perform every update.
+
+// @UPDATE(Var ud IN [100:100]) OrgList altruists = main_pop.FILTER("altruism > 0");
+// @BEFOREDIVIDE(OrgList parent IN altruists) PRINT("Altruist Birth!");
+
+@UPDATE(Var ud) {
+  IF (ud == num_gens) EXIT();
+
+  eval.EVAL(main_pop);
+
+  PRINT("UD:", GET_UPDATE(),
+        "  MainPopSize=", main_pop.SIZE(),
+        "  AveFitness=", main_pop.CALC_MEAN("fitness"),
+        "  MaxFitness=", main_pop.CALC_MAX("fitness")
+       );
+  fit_file.WRITE();
+
+  OrgList elite_offspring = elite.SELECT(main_pop, next_pop, 5);
+
+  Var num_tournaments = pop_size - elite_offspring.SIZE();  // Calc number of tournaments to run
+  OrgList tourny_offspring = tournament.SELECT(main_pop, next_pop, num_tournaments);
+
+  main_pop.REPLACE_WITH(next_pop);
+}

@@ -1,8 +1,9 @@
 EMP_DIR := ../source/third-party/empirical/include
+SGP_DIR := ../source/third-party/SignalGP/include
 MABE_DIR := ../source
 
 # Flags to use regardless of compiler
-CFLAGS_all := -Wall -Wextra -Wno-unused-function -I$(EMP_DIR)/ -I$(MABE_DIR)/
+CFLAGS_all := -Wall -Wextra -Wno-unused-function -I$(EMP_DIR)/ -I$(MABE_DIR)/ -I$(SGP_DIR)/
 CFLAGS_version := -std=c++17
 
 # Emscripten compiler information
