@@ -21,6 +21,7 @@ namespace mabe {
     size_t valley_width = 4;
     double step_decrease = 1;
     int offset = 0;
+    double scale_factor = 1;
 
     std::string ints_trait = "ints";
     std::string fitness_trait = "fitness";
@@ -48,6 +49,7 @@ namespace mabe {
       LinkVar(ints_trait, "ints_trait", "Which trait stores the bit sequence to evaluate?");
       LinkVar(fitness_trait, "fitness_trait", "Which trait should we store NK fitness in?");
       LinkVar(valley_width, "valley_width", "Number of steps from one peak to the next");
+      LinkVar(scale_factor, "scale_factor", "Scale factor. At 1, peaks are on y = x.");
       LinkVar(step_decrease, "step_decrease", 
           "Fitness penalty for each step into the valley");
       LinkVar(offset, "offset", "X offset of the sawtooth (changes which values are peaks)");
@@ -60,7 +62,8 @@ namespace mabe {
     }
 
     double GetSawtoothValue(int val){
-      return val - (2 * step_decrease * ((val - offset) % valley_width));
+      const int overshoot = (val - offset) % valley_width;
+      return scale_factor * (val - overshoot) - (step_decrease * overshoot);
     }
 
     double Evaluate(const Collection & orgs) {
