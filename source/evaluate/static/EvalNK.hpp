@@ -26,6 +26,9 @@ namespace mabe {
 
     std::string bits_trait;
     std::string fitness_trait;
+    std::string loci_fitness_trait = "loci_fitnesses";
+    
+    bool calculate_loci_fitnesses = false;
 
   public:
     EvalNK(mabe::MABE & control,
@@ -56,12 +59,15 @@ namespace mabe {
       LinkVar(K, "K", "Number of bits used in each gene");
       LinkVar(bits_trait, "bits_trait", "Which trait stores the bit sequence to evaluate?");
       LinkVar(fitness_trait, "fitness_trait", "Which trait should we store NK fitness in?");
+      LinkVar(loci_fitness_trait, "loci_fitness_trait", "Which trait should we store NK fitness of each loci?");
+      LinkVar(calculate_loci_fitnesses, "calculate_loci_fitnesses", "Should we calculate and store the fitness of each loci?");
     }
 
     void SetupModule() override {
       // Setup the traits.
       AddRequiredTrait<emp::BitVector>(bits_trait);
       AddOwnedTrait<double>(fitness_trait, "NK fitness value", 0.0);
+      AddOwnedTrait<emp::vector<double>>(loci_fitness_trait, "NK fitness value for each loci", { });
 
       // Setup the fitness landscape.
       landscape.Config(N, K, control.GetRandom());  // Setup the fitness landscape.
@@ -80,9 +86,20 @@ namespace mabe {
                              N, " bits needed for NK landscape.",
                              "\nOrg: ", org.ToString());
         }
-        double fitness = landscape.GetFitness(bits);
+        double fitness = 0; // Calculated in either branch of this if
+        if(calculate_loci_fitnesses){
+          auto & loci_fitnesses = org.GetTrait<emp::vector<double>>(loci_fitness_trait);
+          if(loci_fitnesses.size() != N) loci_fitnesses.resize(N, 0);
+          for(size_t locus_index = 0; locus_index < N; ++locus_index){
+            const double locus_fitness = landscape.GetFitnessOfLocus(bits, locus_index);
+            loci_fitnesses[locus_index] = locus_fitness;
+            fitness += locus_fitness;
+          }
+        } 
+        else{
+          fitness = landscape.GetFitness(bits);
+        }
         org.SetTrait<double>(fitness_trait, fitness);
-
         if (fitness > max_fitness || !max_org) {
           max_fitness = fitness;
           max_org = &org;

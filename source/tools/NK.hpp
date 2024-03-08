@@ -137,6 +137,18 @@ namespace mabe {
       }
       return total;
     }
+    
+    /// Get the fitness of a specific "gene" in a bitstring (pass by value so can be modified.)
+    double GetFitnessOfLocus(emp::BitVector genome, size_t locus_index) const {
+      // Use a double-length genome to easily handle wrap-around.
+      genome.Resize(N*2);
+      genome |= (genome << N);
+
+      double total = 0.0;
+      size_t mask = emp::MaskLow<size_t>(K+1);
+      const size_t cur_val = (genome >> locus_index).GetUInt(0) & mask;
+	    return GetFitness(locus_index, cur_val);
+    }
 
     void SetState(size_t n, size_t state, double in_fit) { landscape[n][state] = in_fit; }
 
