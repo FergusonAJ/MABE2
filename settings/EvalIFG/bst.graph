@@ -1,0 +1,18 @@
+add, start, 1
+
+add, L, 5
+connect, start, L, 30
+add, R, 5
+connect, start, R, 30
+
+add, LL, 20, 
+connect, L, LL, 30
+add, LR, 10
+connect, L, LR, 30
+
+add, RL, 10, 
+connect, R, RL, 30
+add, RR, 10
+connect, R, RR, 30
+
+

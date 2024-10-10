@@ -36,6 +36,7 @@
 #include "evaluate/callable/EvalTaskEqu.hpp"
 #include "evaluate/static/EvalPacking.hpp"
 #include "evaluate/static/EvalRandom.hpp"
+#include "evaluate/static/EvalInterpolatedFitnessGraph.hpp"
 
 // Placement Modules
 #include "placement/AnnotatePlacement_Position.hpp"
@@ -56,6 +57,7 @@
 #include "orgs/BitsOrg.hpp"
 #include "orgs/BitSummaryOrg.hpp"
 #include "orgs/IntsOrg.hpp"
+#include "orgs/GenericIntsOrg.hpp"
 #include "orgs/ValsOrg.hpp"
 #include "orgs/AvidaGPOrg.hpp"
 #include "orgs/VirtualCPUOrg.hpp"
