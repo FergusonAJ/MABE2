@@ -157,6 +157,11 @@ namespace mabe {
           std::advance(iterator, selected_option);
           genotype[1] = iterator->first;
           genotype[2] = 1;
+          size_t num_steps = connection_maps[genotype[0]][genotype[1]];
+          if(genotype[2] > num_steps){
+            genotype[0] = genotype[1];
+            genotype[2] = 0;
+          }
         } 
         else {
           if(random.P(0.5)){
