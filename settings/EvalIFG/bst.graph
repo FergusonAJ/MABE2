@@ -5,7 +5,7 @@ connect, start, L, 30
 add, R, 5
 connect, start, R, 30
 
-add, LL, 20, 
+add, LL, 10, 
 connect, L, LL, 30
 add, LR, 10
 connect, L, LR, 30

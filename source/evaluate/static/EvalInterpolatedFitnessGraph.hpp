@@ -17,6 +17,7 @@
 #include "emp/tools/string_utils.hpp"
 #include "emp/tools/value_utils.hpp"
 #include "emp/datastructs/map_utils.hpp"
+#include "emp/bits/BitVector.hpp"
 
 namespace mabe {
 
@@ -174,26 +175,49 @@ namespace mabe {
           }
           else {
             genotype[2]--;
-            if(genotype[2] == 0){
+            if(genotype[2] <= 0){
               genotype[1] = genotype[0];
+              genotype[2] = 0;
             }
           }
 
         }
         return 1;
       }
+
+      size_t GetNumNodes(){
+        return name_map.size();
+      }
+
+      const std::string & GetName(size_t idx){
+        return name_vec[idx];
+      }
+
+      const std::unordered_map<size_t, size_t>& GetConnectionMap(size_t idx){
+        return connection_maps[idx];
+      }
+
+      void PrintNodeDetails(size_t idx){
+        std::cout << "Node details: " << idx << std::endl;
+        std::cout << "  Name: " << name_vec[idx] << std::endl;
+        std::cout << "  Fitness: " << fitness_vec[idx] << std::endl;
+        std::cout << "  Connections: " << connection_maps[idx].size() << std::endl;
+        for(auto it = connection_maps[idx].begin(); it != connection_maps[idx].end(); it++){
+          std::cout << "    Node: " << it->first << ", steps: " << it->second << std::endl;
+        }
+      }
   };
 
   class EvalInterpolatedFitnessGraph : public Module {
   private:
     std::string graph_filename;
-
     std::string genotype_trait;
     std::string fitness_trait;
 
     double mut_prob;
 
     InterpolatedFitnessGraph graph;
+    emp::BitVector visited_nodes;
 
   public:
     EvalInterpolatedFitnessGraph(mabe::MABE & control,
@@ -227,6 +251,11 @@ namespace mabe {
                                 return mod.Evaluate(a, b, num_steps); 
                               },
                              "Calculate fitness at a given step"); 
+      info.AddMemberFunction("DETECT_DISCOVERIES",
+                             [](EvalInterpolatedFitnessGraph & mod, Collection list) { 
+                                return mod.DetectDiscoveries(list); 
+                              },
+                             "Check to see if any new nodes were reached in this OrgList.");
     }
 
     void SetupConfig() override {
@@ -242,6 +271,7 @@ namespace mabe {
       AddOwnedTrait<double>(fitness_trait, "Interpolated fitness value", 0.0);
 
       graph.LoadFile(graph_filename);
+      visited_nodes.resize(graph.GetNumNodes());
       
       ActionMap& action_map = control.GetActionMap(0);
       std::function<size_t(emp::vector<int>&, emp::Random&)> mutate_func = 
@@ -249,6 +279,27 @@ namespace mabe {
             return graph.Mutate(genotype, rand, mut_prob);
           };
       action_map.AddFunc<size_t, emp::vector<int>&, emp::Random&>("Mutate", mutate_func);
+    }
+
+    size_t DetectDiscoveries(const Collection & orgs){
+      std::unordered_map<size_t, bool> discovered_sites;
+      size_t discovery_count = 0;
+      for(size_t org_idx = 0; org_idx < orgs.size(); ++org_idx){
+        const Organism& org = orgs[org_idx];
+        const auto & genotype = org.GetTrait<emp::vector<int>>(genotype_trait);
+        if(genotype[0] == genotype[1]){
+          if(!visited_nodes[genotype[0]]){
+            discovered_sites[genotype[0]] = true;
+            std::cout << "Node " << genotype[0] << " (" << graph.GetName(genotype[0])  
+                      << ") discovered at site " << org_idx << std::endl;
+            discovery_count++;
+          }
+        }
+      }  
+      for(auto it = discovered_sites.begin(); it != discovered_sites.end(); it++){
+        visited_nodes[it->first] = 1;
+      }
+      return discovery_count;
     }
 
     double Evaluate(size_t idx_a, size_t idx_b, size_t steps){
@@ -275,7 +326,6 @@ namespace mabe {
           max_org = &org;
         }
       }
-
       return max_fitness;
     }
 

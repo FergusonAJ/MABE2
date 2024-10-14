@@ -1,0 +1,43 @@
+add, start, 1
+
+add, B, 9
+connect, start, B, 7
+
+add, finish, 10 
+connect, B, finish, 0
+
+add, N1, 1
+connect, start, N1, 7
+connect, N1, finish, 0
+
+add, N2, 1
+connect, start, N2, 7
+connect, N2, finish, 0
+
+add, N3, 1
+connect, start, N3, 7
+connect, N3, finish, 0
+
+add, N4, 1
+connect, start, N4, 7
+connect, N4, finish, 0
+
+add, N5, 1
+connect, start, N5, 7
+connect, N5, finish, 0
+
+add, N6, 1
+connect, start, N6, 7
+connect, N6, finish, 0
+
+add, N7, 1
+connect, start, N7, 7
+connect, N7, finish, 0
+
+add, N8, 1
+connect, start, N8, 7
+connect, N8, finish, 0
+
+add, N9, 1
+connect, start, N9, 7
+connect, N9, finish, 0
