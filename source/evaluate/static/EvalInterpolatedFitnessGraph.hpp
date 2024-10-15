@@ -1,4 +1,4 @@
-/**
+/*
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
  *  @date 2024.
@@ -17,6 +17,7 @@
 #include "emp/tools/string_utils.hpp"
 #include "emp/tools/value_utils.hpp"
 #include "emp/datastructs/map_utils.hpp"
+#include "emp/datastructs/UnorderedIndexMap.hpp"
 #include "emp/bits/BitVector.hpp"
 
 namespace mabe {
@@ -29,11 +30,12 @@ namespace mabe {
       std::unordered_map<std::string, size_t> name_map;
       emp::vector<std::string> name_vec;
       emp::vector<double> fitness_vec;
-      emp::vector<std::unordered_map<size_t, size_t>> connection_maps;
+      emp::vector<std::map<size_t, size_t>> connection_maps;
+      emp::vector<emp::UnorderedIndexMap> weighted_connection_maps;
 
 
     public:
-      InterpolatedFitnessGraph(){ ; }
+      InterpolatedFitnessGraph() { ; }
 
       size_t GetIndex(const std::string& name){
         emp_assert(emp::Has(name_map, name), "IFG does not have node by name: ", name);
@@ -50,9 +52,10 @@ namespace mabe {
         name_vec.push_back(node_name);
         fitness_vec.push_back(fitness);
         connection_maps.emplace_back();
+        weighted_connection_maps.emplace_back(1);
       }
       
-      void ConnectNodes(size_t idx_a, size_t idx_b, size_t num_steps){
+      void ConnectNodes(size_t idx_a, size_t idx_b, size_t num_steps, double weight_a_b = 1.0, double weight_b_a = 1.0){
         std::cout << "Connecting nodes by idx: " << idx_a << " and " << idx_b << std::endl;
         if(emp::Has(connection_maps[idx_a], idx_b)){
           emp::notify::Error("InterpolatedFitnessMap error! Node '", 
@@ -68,11 +71,22 @@ namespace mabe {
                             name_vec[idx_a], 
                             "'. You cannot connect them more than once.");
         }
+        // We store the map offset (order in map) in our IndexMap
+        size_t offset_a = connection_maps[idx_b].size();
+        size_t offset_b = connection_maps[idx_a].size();
         connection_maps[idx_a][idx_b] = num_steps;
         connection_maps[idx_b][idx_a] = num_steps;
+        if(weighted_connection_maps[idx_a].GetSize() <= offset_b){
+          weighted_connection_maps[idx_a].Resize(offset_b + 1, 0);
+        }
+        if(weighted_connection_maps[idx_b].GetSize() <= offset_a){
+          weighted_connection_maps[idx_b].Resize(offset_a + 1, 0);
+        }
+        weighted_connection_maps[idx_a].Adjust(offset_b, weight_a_b);
+        weighted_connection_maps[idx_b].Adjust(offset_a, weight_b_a);
       }
 
-      void ConnectNodes(std::string & node_a, std::string & node_b, size_t num_steps) {
+      void ConnectNodes(std::string & node_a, std::string & node_b, size_t num_steps, double weight_a_b = 1.0, double weight_b_a = 1.0) {
         std::cout << "Connecting nodes by name: " << node_a << " and " << node_b << std::endl;
         if(!emp::Has(name_map, node_a)){
           emp::notify::Error("InterpolatedFitnessMap does not have node named '",
@@ -84,7 +98,7 @@ namespace mabe {
         }
         size_t idx_a = GetIndex(node_a);
         size_t idx_b = GetIndex(node_b);
-        ConnectNodes(idx_a, idx_b, num_steps);
+        ConnectNodes(idx_a, idx_b, num_steps, weight_a_b, weight_b_a);
       }
 
       void LoadFile(const std::string & _filename){ 
@@ -115,16 +129,23 @@ namespace mabe {
             AddNode(node_name, fitness);
           }
           else if(string_parts[0] == "connect" || string_parts[0] == "c"){
-            if(string_parts.size() != 4){
-              emp::notify::Error("IFG error: 'connect' line should contain exactly ",
-                                " three values: ",
-                                "'connect, name_1, name_2, num_intermediate_nodes' ",
+            if(string_parts.size() < 4 || string_parts.size() > 6){
+              emp::notify::Error("IFG error: 'connect' line should contain between ",
+                                " three and five values: ",
+                                "'connect, name_1, name_2, num_intermediate_nodes,",
+                                " weight_a_b, weight_b_a' ",
                                 "You passed: ", *it);
             }
             std::string & node_a_name = string_parts[1];
             std::string & node_b_name = string_parts[2];
             size_t num_steps = std::stoll(string_parts[3]);
-            ConnectNodes(node_a_name, node_b_name, num_steps);
+            double weight_a_b = 1.0;
+            double weight_b_a = 1.0;
+            if(string_parts.size() >= 5) weight_a_b = emp::ToDouble(string_parts[4]);
+            if(string_parts.size() >= 6) weight_b_a = emp::ToDouble(string_parts[5]);
+            
+
+            ConnectNodes(node_a_name, node_b_name, num_steps, weight_a_b, weight_b_a);
           }
         }
       }
@@ -152,8 +173,11 @@ namespace mabe {
       size_t Mutate(emp::vector<int>& genotype, emp::Random& random, double mut_prob){
         if(!random.P(mut_prob)) return 0;
         if(genotype[0] == genotype[1]){
-          size_t num_options = connection_maps[genotype[0]].size();
-          size_t selected_option = random.GetUInt(num_options);
+          const double max_weight = weighted_connection_maps[genotype[0]].GetWeight();
+          const double rand_index = random.GetDouble() * max_weight;
+          size_t selected_option = weighted_connection_maps[genotype[0]].Index(rand_index);
+          //size_t num_options = connection_maps[genotype[0]].size();
+          //size_t selected_option = random.GetUInt(num_options);
           auto iterator = connection_maps[genotype[0]].begin();
           std::advance(iterator, selected_option);
           genotype[1] = iterator->first;
@@ -193,7 +217,7 @@ namespace mabe {
         return name_vec[idx];
       }
 
-      const std::unordered_map<size_t, size_t>& GetConnectionMap(size_t idx){
+      const std::map<size_t, size_t>& GetConnectionMap(size_t idx){
         return connection_maps[idx];
       }
 

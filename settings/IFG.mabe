@@ -1,4 +1,4 @@
-random_seed = 2;                // Seed for random number generator; use 0 to base on time.
+random_seed = 0;                // Seed for random number generator; use 0 to base on time.
 Var pop_size = 1000;            // Number of organisms to evaluate in the population.
 Var num_gens = 5000;
 
@@ -14,7 +14,8 @@ EvalInterpolatedFitnessGraph eval_ifg {
   //graph_filename = "../settings/EvalIFG/haystack.graph";
   //graph_filename = "../settings/EvalIFG/haystack_100.graph";
   //graph_filename = "../settings/EvalIFG/haystack_100_del.graph";
-  graph_filename = "../settings/EvalIFG/adaptive_momentum.graph";
+  //graph_filename = "../settings/EvalIFG/adaptive_momentum.graph";
+  graph_filename = "../settings/EvalIFG/bst_weighted.graph";
   mut_prob = 0.0125;
 };
 
