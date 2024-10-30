@@ -64,6 +64,11 @@ namespace mabe {
 
       // Setup the fitness function - redo this each time in case it changes.
       auto fit_fun = control.BuildTraitEquation(select_pop, fit_equation);
+      emp::vector<double> fitness_vec;
+      fitness_vec.resize(N, 0);
+      for(size_t idx = 0; idx < N; idx++){
+        fitness_vec[idx] = fit_fun(select_pop[idx]);
+      }
 
       // Track where all organisms are placed.
       Collection placement_list;
@@ -73,11 +78,11 @@ namespace mabe {
         emp::IndexMap fit_map(N, 0.0); // Still use full pop size, but most will be 0
         // Add self first
         if (!select_pop.IsEmpty(idx)){
-          fit_map[idx] = fit_fun(select_pop[idx]);
+          fit_map[idx] = fitness_vec[idx];
         }
         for(OrgPosition& neighbor_pos : neighbor_pos_vec){
           if (select_pop.IsEmpty(neighbor_pos.Pos())) continue;
-          fit_map[neighbor_pos.Pos()] = fit_fun(select_pop[neighbor_pos.Pos()]);
+          fit_map[neighbor_pos.Pos()] = fitness_vec[neighbor_pos.Pos()];
         }
         size_t org_id = fit_map.Index( random.GetDouble(fit_map.GetWeight()) );
         placement_list += control.Replicate(select_pop.IteratorAt(org_id), birth_pop);
