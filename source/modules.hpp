@@ -44,6 +44,7 @@
 #include "placement/MaxSizePlacement.hpp"
 #include "placement/NeighborPlacement.hpp"
 #include "placement/Spatial1DPlacement.hpp"
+#include "placement/AdjacencyPlacement.hpp"
 
 // Selection Modules
 #include "select/SelectElite.hpp"
