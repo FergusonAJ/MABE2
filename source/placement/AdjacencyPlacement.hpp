@@ -40,12 +40,7 @@ namespace mabe {
       for(auto it = file.begin(); it != file.end(); it++){
         string_parts.clear();
         emp::slice(*it, string_parts, ' ');
-        if(string_parts.size() < 2){
-            emp::notify::Error("AdjacencyPlacement error: adjacency list line should contain "                                  "at least two values. The first is the source node, "
-                                  "followed by a space-separated list of the nodes it is "
-                                  "connected to. You passed: ", *it); 
-            continue;
-        }
+        if(string_parts.size() < 2) continue;
         const size_t source_node = std::stoull(string_parts[0]);
         if(adj_map.size() <= source_node) adj_map.resize(source_node + 1);
         for(size_t idx = 1; idx < string_parts.size(); ++idx){
