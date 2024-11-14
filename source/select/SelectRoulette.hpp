@@ -73,9 +73,13 @@ namespace mabe {
       // Track where all organisms are placed.
       Collection placement_list;
   
+      emp::UnorderedIndexMap fit_map(N, 0.0); // Still use full pop size, but most will be 0
       for(size_t idx = 0; idx < N; idx++){
-        auto neighbor_pos_vec = select_pop.FindAllNeighbors(OrgPosition(select_pop, idx));
-        emp::IndexMap fit_map(N, 0.0); // Still use full pop size, but most will be 0
+        fit_map.Clear();
+        auto neighbor_pos_vec = select_pop.HasStaticNeighbors() 
+          ? select_pop.FindStaticNeighbors(OrgPosition(select_pop, idx)) 
+          : select_pop.FindAllNeighbors(OrgPosition(select_pop, idx));
+        //emp::IndexMap fit_map(N, 0.0); // Still use full pop size, but most will be 0
         // Add self first
         if (!select_pop.IsEmpty(idx)){
           fit_map[idx] = fitness_vec[idx];

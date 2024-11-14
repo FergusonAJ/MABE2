@@ -101,6 +101,7 @@ namespace mabe {
     std::function<OrgPosition(Organism &)> place_inject_fun;
     std::function<OrgPosition(OrgPosition)> find_neighbor_fun;
     std::function<emp::vector<OrgPosition>(OrgPosition)> find_all_neighbors_fun;
+    std::function<emp::vector<OrgPosition>&(OrgPosition)> find_static_neighbors_fun;
 
   public:
     using iterator_t = PopIterator;
@@ -153,6 +154,9 @@ namespace mabe {
     template <typename FUN_T> void SetFindAllNeighborsFun(FUN_T fun) { 
       find_all_neighbors_fun = fun; 
     }
+    template <typename FUN_T> void SetFindStaticNeighborsFun(FUN_T fun) { 
+      find_static_neighbors_fun = fun; 
+    }
 
     Organism & operator[](size_t org_id) { return *(orgs[org_id]); }
     const Organism & operator[](size_t org_id) const { return *(orgs[org_id]); }
@@ -172,6 +176,12 @@ namespace mabe {
     OrgPosition FindNeighbor(OrgPosition pos) { return find_neighbor_fun(pos); }
     emp::vector<OrgPosition> FindAllNeighbors(OrgPosition pos) { 
       return find_all_neighbors_fun(pos); 
+    }
+    bool HasStaticNeighbors(){
+      return (bool)find_static_neighbors_fun;
+    }
+    emp::vector<OrgPosition> FindStaticNeighbors(OrgPosition pos) { 
+      return find_static_neighbors_fun(pos); 
     }
 
   private:  // ---== To be used by friend class MABEBase only! ==---

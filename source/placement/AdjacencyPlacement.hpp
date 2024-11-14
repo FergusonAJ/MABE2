@@ -25,6 +25,7 @@ namespace mabe {
   private:
     Collection target_collect;    ///< Collection of populations to manage
     emp::vector<emp::vector<size_t>> adj_map;
+    emp::vector<emp::vector<OrgPosition>> neighbor_vecs;
     bool bidirectional_edges = true;
     std::string adj_filename;
 
@@ -54,6 +55,15 @@ namespace mabe {
       }
     }
 
+    void ConstructNeighborVecs(Population & target_pop) {
+      neighbor_vecs.resize(adj_map.size());
+      for(size_t i = 0; i < adj_map.size(); i++){
+        for(size_t j : adj_map[i]){
+          neighbor_vecs[i].emplace_back(target_pop, j);
+        }
+      }
+    }
+
   public:
     AdjacencyPlacement(mabe::MABE & control,
         const std::string & name="AdjacencyPlacement",
@@ -73,6 +83,7 @@ namespace mabe {
 
     /// Set birth and inject functions for the specified populations
     void SetupModule() override {
+      LoadFile();
       for(size_t pop_id = 0; pop_id < control.GetNumPopulations(); ++pop_id){
         Population& pop = control.GetPopulation(pop_id);
         if(target_collect.HasPopulation(pop)){
@@ -91,9 +102,14 @@ namespace mabe {
               return FindAllNeighbors(ppos, pop);
             }
           );
+          pop.SetFindStaticNeighborsFun(
+            [this, &pop](OrgPosition ppos) -> emp::vector<OrgPosition>&{
+              return FindStaticNeighbors(ppos, pop);
+            }
+          );
+          ConstructNeighborVecs(pop);
         }
       }
-      LoadFile();
     }
 
     /// Place a birth. Most be located next to parent
@@ -131,6 +147,11 @@ namespace mabe {
         emp::vector<OrgPosition> result_vec;
         for(size_t idx : adj_map[parent_idx]) result_vec.emplace_back(target_pop, idx);
         return result_vec;
+    }
+    
+    emp::vector<OrgPosition>& FindStaticNeighbors(OrgPosition ppos, Population & target_pop) {
+        const size_t parent_idx = ppos.Pos();
+        return neighbor_vecs[parent_idx];
     }
 
     size_t GetNumNodes(){
