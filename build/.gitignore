@@ -8,6 +8,8 @@
 MABE   
 # Systematics/phylogeny output
 phylo/ 
+# Population snapshots
+snapshots/
 # Instruction set output
 inst_set.txt
 inst_set_output.txt
