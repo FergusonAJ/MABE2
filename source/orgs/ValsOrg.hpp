@@ -69,8 +69,17 @@ namespace mabe {
 
     emp::String ToString() const override {
       std::span<const double> vals = GetTrait<double>(SharedData().genome_name, SharedData().num_vals);
-      const double total = GetTrait<double>(SharedData().total_name);
-      return emp::MakeString(vals, ":(TOTAL=", total, ")");
+      return emp::MakeString(vals);
+    }
+    
+    void GenomeFromString(const std::string & new_genome) override {
+      std::span<double> vals = GetTrait<double>(SharedData().genome_name, SharedData().num_vals);
+      emp::vector<std::string> sliced_vec = emp::slice(new_genome, ' ');
+      emp_assert(sliced_vec.size() == vals.size());
+      for(size_t idx = 0; idx < SharedData().num_vals; ++idx){
+        vals[idx] = std::stod(sliced_vec[idx]);
+      }
+      SharedData().ApplyBounds(vals); // Make sure the values are in the allowed range.
     }
 
     size_t Mutate(emp::Random & random) override {
