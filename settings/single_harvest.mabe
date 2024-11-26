@@ -80,13 +80,6 @@ VirtualCPUOrg avida_org {       // Organism consisting of Avida instructions.
   N = 0;                        // Initial number of instructions in genome
   init_random = 0;              // Should we randomize ancestor?  (0 = "blank" default)
   eval_time = 200;              // How many CPU cycles should we give organisms to run?
-  input_name = "input";         // Name of variable to load inputs from.
-  output_name = "old_output";   // Name of variable to output results.
-  genome_name = "genome";       // Where to store the genome?.
-  genome_length_name = "genome_length";   // Where to store the genome's length? 
-  position_name = "org_pos";    // Where to store the organism's position?.
-  merit_name = "merit";         // Name of variable corresponding to the organism's task performance.
-  child_merit_name = "child_merit";// Name of variable corresponding to the organism's task performance that will be used to calculate CPU cylces given to offspring.
   initial_merit = 0.01;       // Initial value for merit (task performance)
   verbose = 0;
   //initial_genome_filename = "../settings/VirtualCPUOrg/example_patch_harvest.org";

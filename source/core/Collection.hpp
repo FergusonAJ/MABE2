@@ -1,15 +1,51 @@
 /**
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
- *  @date 2020-2022.
+ *  @date 2020-2024.
  *
  *  @file  Collection.hpp
  *  @brief A collection of organisms or whole populations; not owner.
  *
- *  While organisms must be managed by Population objects, collections are an easy way
- *  to represent and manipulate groups of organisms (by their position).  Organisms can be
- *  added individually or as whole populations.
+ *  While organisms are managed by Population objects, collections provide an easy way
+ *  to represent and manipulate groups (by position).  Organisms can be added individually
+ *  or as whole populations.
  * 
+ *  -- Usage in C++ --
+ *  Construction:
+ *    Default collections are empty; both copy and move constructors exist.  A collection can
+ *    also be constructed using one ore more populations or organism positions.
+ * 
+ *  .GetSize() or .IsEmpty() returns size information about this collection.
+ * 
+ *  .At(size_t pos) or .ConstAt(size_t) returns the organism at the specified position in
+ *  the collection.  Operator [] can be used for the same effect.
+ * 
+ *  .IteratorAt(size_t pos) or .ConstIteratorAt(size_t pos) returns an iterator to a
+ *  specified position.
+ * 
+ *  .HasPopulation(const Population & pop) or .HasPosition(const OrgPosition & pos) indicate
+ *  the contents of the collection.
+ * 
+ *  .ToString() provides a string version of this collection for human readability.
+ * 
+ *  .Insert(item) will allow you to insert an organism position, a populaiton, or another
+ *  collection into this collection.
+ * 
+ *  .Clear() empties this collection.
+ * 
+ *  Collections can also be modified with |= (or, equivalently +=) or &=.
+ * 
+ *  .GetAlive() returns a new collection with just the living organisms from this one.
+ * 
+ *  -- Usage in MABEScript --
+ *   Collections have various MABEScript member functions:
+ *    SET_ORG or SET_POP can be used to initialize the contents of a collection.
+ *    ADD_COLLECT, ADD_ORG, or ADD_POP can be used to expand a collection.
+ *    CLEAR will remove all individuals from a collection.
+ *    HAS_ORG or HAS_POP can be used to test the contents of a collection.
+ *    SIZE will return the number of organisms within a collection.
+ * 
+ *  -- Implementation --
  *  Internally, a Collection is represented by a map; keys are pointers to the included Populations
  *  and values are a PopInfo class (a flag for "do we included the whole population" and a
  *  BitVector indicating the positions that are included if not the whole population).
@@ -17,18 +53,21 @@
  *  A CollectionIterator will track the current population being iterated through, and the position
  *  currently indicated.  When an iterator reached the end, it's population pointer is set to 
  *  nullptr.
+ * 
+ *  -- TODO ---
+ *  + Add a Remove() function.
  */
 
 #ifndef MABE_COLLECTION_H
 #define MABE_COLLECTION_H
 
 #include <set>
-#include <string>
 #include <sstream>
 
 #include "emp/base/Ptr.hpp"
 #include "emp/base/vector.hpp"
 #include "emp/bits/BitVector.hpp"
+#include "emp/tools/String.hpp"
 
 #include "Population.hpp"
 
@@ -36,7 +75,7 @@ namespace mabe {
 
   class Collection;
 
-  // A curtiously recursive template to create a base class for all collection iterators.
+  // A curiously recursive template to create a base class for all collection iterators.
   template <typename DERIVED_T, typename ORG_T, typename COLLECTION_T=Collection>
   class CollectionIterator_Interface
     : public OrgIterator_Interface<DERIVED_T, ORG_T, emp::match_const_t<Population,COLLECTION_T>>
@@ -130,7 +169,7 @@ namespace mabe {
       /// Identify how many positions we have.
       size_t GetSize(pop_ptr_t pop_ptr) const {
         if (full_pop) return pop_ptr->GetSize();
-        emp_assert(pop_ptr->GetSize() >= pos_set.GetSize());
+        emp_assert(pop_ptr->GetSize() >= pos_set.GetSize(), pop_ptr->GetSize(), pos_set.GetSize());
         return pos_set.CountOnes();
       }
 
@@ -305,7 +344,8 @@ namespace mabe {
       );
     }
 
-    template <typename OUT_T, typename IN_T> static OUT_T MakeRValueFrom(IN_T && in) {
+    template <typename OUT_T, typename IN_T>
+    static OUT_T MakeRValueFrom(IN_T && in) {
       static_assert(std::is_same<OUT_T, Collection>(),
                     "Internal error: type mis-match for MakeRValueFrom()");
       // using decay_T = std::decay_t<IN_T>;
@@ -318,7 +358,7 @@ namespace mabe {
         // Currently, no other EmplodeTypes to convert from...
       }
       // Conversion from string requires MABE controller...
-      // else if constexpr (std::is_same<decay_T, std::string>()) {
+      // else if constexpr (std::is_same<decay_T, emp::String>()) {
       // }
       // Cannot convert from double.
       // else if constexpr (std::is_same<decay_T, double>()) {
@@ -400,7 +440,7 @@ namespace mabe {
 
     // Convert this Collection into a string that can be used in configuration files.  For example:
     //   main_pop,special_pop[0-99],next_pop
-    std::string ToString() const override {
+    emp::String ToString() const override {
       std::stringstream ss;
       bool first = true;
       for (auto [pop_ptr, pop_info] : pos_map) {
@@ -423,7 +463,7 @@ namespace mabe {
 
     pop_ptr_t GetFirstPop() {
       if (pos_map.size() == 0) return nullptr;
-      emp_assert(pos_map.begin()->second.is_mutable == true,
+      emp_assert(pos_map.begin()->second.is_mutable,
         "Cannot use GetFirstPop() for const Population in Collection; try ConstGetFirstPop().");
       return pos_map.begin()->first;
     }
@@ -652,7 +692,7 @@ namespace mabe {
       return *this;
     }
 
-    static std::string EMPGetTypeName() { return "mabe::Collection"; }
+    static emp::String EMPGetTypeName() { return "mabe::Collection"; }
   };
 
   // -------------------------------------------------------

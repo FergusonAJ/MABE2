@@ -71,7 +71,8 @@ namespace mabe {
         else{ // If population full, return a random org's position
           OrgPosition new_pos = 
               OrgPosition(target_pop, control.GetRandom().GetUInt(target_pop.GetSize()));
-          while(new_pos == ppos){ // Ensure we don't overwrite parent's position
+          // Ensure we don't overwrite parent's position
+          while(new_pos.PopPtr() == ppos.PopPtr() && new_pos.Pos() == ppos.Pos()){ 
             new_pos = OrgPosition(target_pop, control.GetRandom().GetUInt(target_pop.GetSize()));
           }
           return new_pos;

@@ -1,7 +1,7 @@
 /**
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
- *  @date 2019-2021.
+ *  @date 2019-2024.
  *
  *  @file  TraitInfo.hpp
  *  @brief Information about a single phenotypic trait.
@@ -11,7 +11,7 @@
  *
  *  The TARGET indicates what type of object the trait should be applied to.
  *    [ORGANISM]   - Every organism in MABE must have this trait.
- *    [POPULATION] - Collections of organsims must have this trait.
+ *    [POPULATION] - Collections of organisms must have this trait.
  *    [MODULE]     - Every module attached to MABE must have this trait.
  *    [MANAGER]    - Every OrganismManager must have this trait.
  * 
@@ -53,11 +53,11 @@
 #define MABE_TRAIT_INFO_H
 
 #include <set>
-#include <string>
 
 #include "emp/base/vector.hpp"
 #include "emp/data/DataMap.hpp"
 #include "emp/meta/TypeID.hpp"
+#include "emp/tools/String.hpp"
 
 namespace mabe {
 
@@ -65,10 +65,11 @@ namespace mabe {
 
   class TraitInfo {
   protected:
-    std::string name="";                 ///< Unique name for this trait.
-    std::string desc="";                 ///< Description of this trait.
+    emp::String name="";                 ///< Unique name for this trait.
+    emp::String desc="";                 ///< Description of this trait.
     emp::TypeID type;                    ///< Type identifier for this trait.
     emp::vector<emp::TypeID> alt_types;  ///< What other types should be allowed?
+    size_t val_count=1;                  ///< How many values are associated with this trait?
 
   public:
     /// Which modules are allowed to read or write this trait?
@@ -85,10 +86,10 @@ namespace mabe {
 
     /// How should this trait be initialized (via inheritance) in a newly-born organism?
     /// * Injected organisms always use the default value.
-    /// * Modules can moitor signals to make other changes at any time.
+    /// * Modules can monitor signals to make other changes at any time.
     enum class Init {
       DEFAULT=0, ///< Trait is initialized to a pre-set default value.
-      FIRST,     ///< Trait is inhereted (from first parent if more than one)
+      FIRST,     ///< Trait is inherited (from first parent if more than one)
       AVERAGE,   ///< Trait becomes average of all parents on birth.
       MINIMUM,   ///< Trait becomes lowest of all parents on birth.
       MAXIMUM,   ///< Trait becomes highest of all parents on birth.
@@ -123,6 +124,9 @@ namespace mabe {
       FULL,       ///< Store ALL current/final values for organisms.
     };
 
+    /// Special value count to represent ANY count is allowed.
+    static constexpr const size_t ANY_COUNT = static_cast<size_t>(-1);
+
   protected:
     Init init = Init::DEFAULT;
     bool reset_parent = false;  ///< Should the parent ALSO be reset on birth?
@@ -132,7 +136,7 @@ namespace mabe {
     // Track which modules are using this trait and what access they need.
     using mod_ptr_t = emp::Ptr<ModuleBase>;
     struct ModuleInfo {
-      std::string mod_name = "";
+      emp::String mod_name = "";
       mod_ptr_t mod_ptr = nullptr;
       Access access = Access::UNKNOWN;
       bool is_manager = false;
@@ -144,7 +148,7 @@ namespace mabe {
     emp::array<size_t, NUM_ACCESS> manager_access_counts = { 0, 0, 0, 0, 0, 0, 0 };
 
     // Helper functions
-    int GetInfoID(const std::string & mod_name) const {
+    int GetInfoID(const emp::String & mod_name) const {
       for (int i = 0; i < (int) access_info.size(); i++) {
         if (access_info[(size_t) i].mod_name == mod_name) return i;
       }
@@ -161,16 +165,20 @@ namespace mabe {
   public:
     virtual ~TraitInfo() { ; }
 
-    const std::string & GetName() const { return name; }
-    const std::string & GetDesc() const { return desc; }
+    const emp::String & GetName() const { return name; }
+    const emp::String & GetDesc() const { return desc; }
     emp::TypeID GetType() const { return type; }
     const emp::vector<emp::TypeID> & GetAltTypes() const { return alt_types; }
+    size_t GetValueCount() const { return val_count; }
+
+    virtual bool IsAnyType() const { return false; }
 
     template <typename... Ts>
     void SetAltTypes(const emp::vector<emp::TypeID> & in_alt_types) { alt_types = in_alt_types; }
     template <typename T> bool IsType() const { return GetType() == emp::GetTypeID<T>(); }
     bool IsAllowedType(emp::TypeID test_type) const { return Has(alt_types, test_type); };
     template <typename T> bool IsAllowedType() const { return IsAllowedType(emp::GetTypeID<T>()); }
+    void SetValueCount(size_t in_count) { val_count = in_count; }
 
     /// Determine what kind of access a module has.
     Access GetAccess(mod_ptr_t mod_ptr) const {
@@ -203,29 +211,29 @@ namespace mabe {
     size_t GetRequiredCount() const { return GetAccessCount(Access::REQUIRED); }
     size_t GetOptionalCount() const { return GetAccessCount(Access::OPTIONAL); }
 
-    emp::vector<std::string> GetModuleNames() const {
-      emp::vector<std::string> mod_names;
+    emp::vector<emp::String> GetModuleNames() const {
+      emp::vector<emp::String> mod_names;
       for (auto info : access_info) {
         mod_names.push_back(info.mod_name);
       }
       return mod_names;
     }
 
-    emp::vector<std::string> GetModuleNames(Access test_access) const {
-      emp::vector<std::string> mod_names;
+    emp::vector<emp::String> GetModuleNames(Access test_access) const {
+      emp::vector<emp::String> mod_names;
       for (auto info : access_info) {
         if (info.access == test_access) mod_names.push_back(info.mod_name);
       }
       return mod_names;
     }
 
-    emp::vector<std::string> GetUnknownNames() const { return GetModuleNames(Access::UNKNOWN); }
-    emp::vector<std::string> GetPrivateNames() const { return GetModuleNames(Access::PRIVATE); }
-    emp::vector<std::string> GetOwnedNames() const { return GetModuleNames(Access::OWNED); }
-    emp::vector<std::string> GetGeneratedNames() const { return GetModuleNames(Access::GENERATED); }
-    emp::vector<std::string> GetSharedNames() const { return GetModuleNames(Access::SHARED); }
-    emp::vector<std::string> GetRequiredNames() const { return GetModuleNames(Access::REQUIRED); }
-    emp::vector<std::string> GetOptionalNames() const { return GetModuleNames(Access::OPTIONAL); }
+    emp::vector<emp::String> GetUnknownNames() const { return GetModuleNames(Access::UNKNOWN); }
+    emp::vector<emp::String> GetPrivateNames() const { return GetModuleNames(Access::PRIVATE); }
+    emp::vector<emp::String> GetOwnedNames() const { return GetModuleNames(Access::OWNED); }
+    emp::vector<emp::String> GetGeneratedNames() const { return GetModuleNames(Access::GENERATED); }
+    emp::vector<emp::String> GetSharedNames() const { return GetModuleNames(Access::SHARED); }
+    emp::vector<emp::String> GetRequiredNames() const { return GetModuleNames(Access::REQUIRED); }
+    emp::vector<emp::String> GetOptionalNames() const { return GetModuleNames(Access::OPTIONAL); }
 
     /// Was a default value set for this trait (can only be done in overload that knows type)
     virtual bool HasDefault() const { return false; }
@@ -235,27 +243,37 @@ namespace mabe {
     Archive GetArchive() const { return archive; }
     Summary GetSummary() const { return summary; }
 
-    TraitInfo & SetName(const std::string & in_name) { name = in_name; return *this; }
-    TraitInfo & SetDesc(const std::string & in_desc) { desc = in_desc; return *this; }
+    TraitInfo & SetName(const emp::String & in_name) { name = in_name; return *this; }
+    TraitInfo & SetDesc(const emp::String & in_desc) { desc = in_desc; return *this; }
  
-    // Add a module that can access this trait.
-    TraitInfo & AddAccess(const std::string & in_name, mod_ptr_t in_mod, Access access, bool is_manager) {
+    /// Add a module that can access this trait.
+    TraitInfo & AddAccess(const emp::String & in_name, mod_ptr_t in_mod, Access access, bool is_manager) {
       access_info.push_back(ModuleInfo{ in_name, in_mod, access, is_manager });
       access_counts[access]++;
       if (is_manager) manager_access_counts[access]++;
       return *this;
     }
 
-    /// Set the current value of this trait to be automatically inthereted by offspring.
+    /// Add all of the accesses from a previous TraitInfo object.
+    TraitInfo & AddAccess(const TraitInfo & in) {
+      for (const auto & mod_info : in.access_info) access_info.push_back(mod_info);
+      for (size_t i = 0; i < NUM_ACCESS; ++i) {
+        access_counts[i] += in.access_counts[i];
+        manager_access_counts[i] += in.manager_access_counts[i];
+      }
+      return *this;
+    }
+
+    /// Set the current value of this trait to be automatically inherited by offspring.
     TraitInfo & SetInheritParent() { init = Init::FIRST; return *this; }
 
-    /// Set the average across parents for this trait to be automatically inthereted by offspring.
+    /// Set the average across parents for this trait to be automatically inherited by offspring.
     TraitInfo & SetInheritAverage() { init = Init::AVERAGE; return *this; }
 
-    /// Set the minimum across parents for this trait to be automatically inthereted by offspring.
+    /// Set the minimum across parents for this trait to be automatically inherited by offspring.
     TraitInfo & SetInheritMinimum() { init = Init::MINIMUM; return *this; }
 
-    /// Set the maximum across parents for this trait to be automatically inthereted by offspring.
+    /// Set the maximum across parents for this trait to be automatically inherited by offspring.
     TraitInfo & SetInheritMaximum() { init = Init::MAXIMUM; return *this; }
 
     /// Set the parent to ALSO reset to the same value as the offspring on divide.
@@ -268,10 +286,10 @@ namespace mabe {
     TraitInfo & SetArchiveAll() { archive = Archive::ALL_REPRO; return *this; }
 
     /// Register this trait in the provided DataMap.
-    virtual void Register(emp::DataMap & dm) const = 0;
+    virtual bool Register(emp::DataMap &) const { return false; }
     
     /// Reset this trait back to its default value.
-    virtual void ResetToDefault(emp::DataMap & dm) = 0;
+    virtual bool ResetToDefault(emp::DataMap &) { return false; }
   };
 
   // Information about this trait, including type information and alternate type options.
@@ -282,16 +300,18 @@ namespace mabe {
     bool has_default;
 
   public:
-    TypedTraitInfo(const std::string & in_name="") : has_default(false)
+    TypedTraitInfo(const emp::String & in_name="") : has_default(false)
     {
       name = in_name;
       type = emp::GetTypeID<T>();
+      val_count = 1;
     }
 
-    TypedTraitInfo(const std::string & in_name, const T & in_default)
+    TypedTraitInfo(const emp::String & in_name, const T & in_default, size_t in_count)
       : default_value(in_default), has_default(true)
     {
       name = in_name;
+      val_count = in_count;
       type = emp::GetTypeID<T>();
     }
 
@@ -305,21 +325,29 @@ namespace mabe {
       return *this;
     }
 
-    void ResetToDefault(emp::DataMap& dm) override{
+    bool ResetToDefault(emp::DataMap& dm) override {
       emp_assert(dm.HasName(GetName()));
       emp_assert(dm.IsType<T>(GetName()));
 
       T& val = dm.Get<T>(GetName());
       if(has_default) val = default_value;
       else val = { };
+      return true;
     }
     
-    void Register(emp::DataMap & dm) const override {
-      dm.AddVar(name, default_value, desc);
+    bool Register(emp::DataMap & dm) const override {
+      dm.AddVar(name, default_value, desc, "MABE Trait", val_count);
+      return true;
     }
 
   };
 
+  // Information about a trait that is currently only accessed as a string.
+  class TraitInfoAsString : public TraitInfo {
+  public:
+    TraitInfoAsString(const emp::String & in_name="") { name = in_name; }
+    bool IsAnyType() const override { return true; }
+  };
 }
 
 #endif

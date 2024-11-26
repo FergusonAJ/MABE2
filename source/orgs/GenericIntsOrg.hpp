@@ -21,11 +21,6 @@
 namespace mabe {
 
   class GenericIntsOrg : public OrganismTemplate<GenericIntsOrg> {
-  protected:
-    // Vector stored as trait on org
-    size_t Mutate(emp::vector<int>& vec, emp::Random& rand){
-    }
-    
   public:
     GenericIntsOrg(OrganismManager<GenericIntsOrg> & _manager)
       : OrganismTemplate<GenericIntsOrg>(_manager){ }
@@ -46,9 +41,9 @@ namespace mabe {
     };
 
     /// Use "to_string" to convert.
-    std::string ToString() const override { 
+    emp::String ToString() const override { 
       const emp::vector<int>& ints = GetTrait<emp::vector<int>>(SharedData().output_name);
-      return emp::to_string(ints); 
+      return emp::MakeString(ints); 
     }
 
     size_t Mutate(emp::Random & random) override {
@@ -101,7 +96,7 @@ namespace mabe {
                                 emp::vector<int>(0));
       // All instructions are stored in the populations ActionMap
       ActionMap& action_map = GetManager().GetControl().GetActionMap(0);
-      std::unordered_map<std::string, mabe::Action>& typed_action_map =
+      std::unordered_map<emp::String, mabe::Action>& typed_action_map =
         action_map.GetFuncs<size_t, emp::vector<int>&, emp::Random&>();
       if(emp::Has(typed_action_map, "Mutate")){
         mabe::Action& action = typed_action_map["Mutate"];

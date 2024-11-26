@@ -1,7 +1,7 @@
 /**
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
- *  @date 2022.
+ *  @date 2022-2024.
  *
  *  @file  Batch.hpp
  *  @brief Manager for batches of MABE runs.
@@ -11,33 +11,32 @@
 #define MABE_BATCH_HPP
 
 #include <cstdlib>
-#include <string>
 #include <unordered_map>
 
 #include "emp/base/vector.hpp"
 #include "emp/base/notify.hpp"
 #include "emp/io/File.hpp"
-#include "emp/tools/string_utils.hpp"
+#include "emp/tools/String.hpp"
 
 namespace mabe {
 
   class Batch {
   private:
     struct FactorInfo {
-      std::string name;
-      emp::vector<std::string> options;
-      FactorInfo(const std::string & _name) : name(_name) { }
+      emp::String name;
+      emp::vector<emp::String> options;
+      FactorInfo(const emp::String & _name) : name(_name) { }
     };
 
     emp::File batch_file;
-    std::string exe_name;
+    emp::String exe_name;
 
-    emp::vector<std::string> config_options;  ///< Options to use on the command line.
-    emp::vector<FactorInfo> factors;          ///< Set of factors to combinatorially vary.
-    std::string log_file;                     ///< Where should run details be saved?
+    emp::vector<emp::String> config_options;  ///< Options to use on the command line.
+    emp::vector<FactorInfo> factors;          ///< Set of factors to combinatorically vary.
+    emp::String log_file;                     ///< Where should run details be saved?
     int replicates = 1;                       ///< How many replicates of each factor combination?
 
-    std::unordered_map<std::string, std::string> var_set; ///< Variable to use in script.
+    std::unordered_map<emp::String, emp::String> var_set; ///< Variable to use in script.
 
     bool exit_now = false;                    ///< Has something gone wrong and we should abort?
 
@@ -53,14 +52,14 @@ namespace mabe {
       return test;
     }
 
-    bool Process_Factor(std::string line) {
+    bool Process_Factor(emp::String line) {
       Require(line.size(), "Factors must have a factor name.");
-      std::string name = emp::string_pop_word(line);
+      emp::String name = line.PopWord();
       factors.push_back(name);
       Require(line.size(), "Factor '", name, "' must have at least one value.");
 
       while (line.size()) {
-        std::string option = emp::string_pop_word(line);
+        emp::String option = line.PopWord();
         factors.back().options.push_back(option);
       }
 
@@ -68,7 +67,7 @@ namespace mabe {
     }
 
   public:
-    Batch(const std::string & filename, const std::string & _exe_name) 
+    Batch(const emp::String & filename, const emp::String & _exe_name) 
     : batch_file(filename), exe_name(_exe_name) {
       batch_file.RemoveComments('#');
       batch_file.CompressWhitespace();
@@ -76,8 +75,8 @@ namespace mabe {
 
     void Process() {
       // Loop through batch file, processing line-by-line.
-      for (std::string line : batch_file) {
-        std::string keyword = emp::string_pop_word(line);
+      for (emp::String line : batch_file) {
+        emp::String keyword = line.PopWord();
         if (keyword == "config") {               // Set a config options on command line
           Require(line.size(), "'config' must specify option to include.");
           config_options.push_back(line);
@@ -86,19 +85,19 @@ namespace mabe {
           if (!result) return;
         } else if (keyword == "log") {      // A file to log output of runs
           Require(line.size(), "'log' must specify filename.");
-          log_file = emp::string_pop_word(line);
+          log_file = line.PopWord();
           Require(!line.size(), "Only filename should be specified in 'log'; text follows '", log_file, "'.");
         } else if (keyword == "mabe") {          // Set the mabe executable location
           Require(line.size(), "'mabe' must specify executable.");
-          exe_name = emp::string_pop_word(line);
+          exe_name = line.PopWord();
           Require(!line.size(), "Only one executable should be specified in 'mabe'; text follows '", exe_name, "'.");
         } else if (keyword == "replicate") {     // Provide num replicates for each combo
           Require(line.size(), "'replicate' must specify number of replicates.");
-          replicates = emp::from_string<int>(emp::string_pop_word(line));
+          replicates = line.PopSigned();;
           Require(!line.size(), "Only one value should be specified in 'replicate'; text follows '", replicates, "'.");
         } else if (keyword == "set") {           // Set a local variable value
           Require(line.size(), "'set' must specify variable name and value to set to.");
-          std::string var = emp::string_pop_word(line);
+          emp::String var = line.PopWord();
           Require(var != "seed", "The variable 'seed' is reserved for the random number seed used.");
           var_set[var] = line;          
         } else {
@@ -132,7 +131,7 @@ namespace mabe {
         // Generate the base run string.
         std::stringstream ss;
         ss << exe_name;
-        for (const std::string & option : config_options) {
+        for (const emp::String & option : config_options) {
           ss << " " << option;
         }
         ss << " -s random_seed={$seed}";
@@ -143,8 +142,8 @@ namespace mabe {
           var_set["seed"] = seed++;
 
           // Substitute in variables.
-          std::string exe_string(ss.str());        
-          exe_string = emp::replace_vars(exe_string, var_set);
+          emp::String exe_string(ss.str());
+          exe_string.ReplaceVars(var_set);
 
           // And run the executable
           emp::notify::Message("BATCH COMMAND: ", exe_string);
@@ -154,8 +153,7 @@ namespace mabe {
         // Move on to the next factors.
         size_t inc_pos = 0;
         while(inc_pos < factors.size() && ++ids[inc_pos] == factors[inc_pos].options.size()) {
-          ids[inc_pos] = 0; // Reset the current factor.
-          ++inc_pos;        // And move on to the next.
+          ids[inc_pos++] = 0; // Reset the current factor and move to the next.
         }
         if (inc_pos == factors.size()) break; // We've gone through all factors!
       }

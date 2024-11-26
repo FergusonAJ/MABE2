@@ -1,7 +1,7 @@
 /**
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
- *  @date 2021.
+ *  @date 2021-2024.
  *
  *  @file  ManagerModule.hpp
  *  @brief Base module to manage a selection of objects that share a common configuration.
@@ -62,13 +62,16 @@ namespace mabe {
     emp::Ptr<BASE_T> obj_prototype;
 
   public:
-    ManagerModule(MABE & in_control, const std::string & in_name, const std::string & in_desc="")
+    ManagerModule(MABE & in_control, const emp::String & in_name, const emp::String & in_desc="")
       : Module(in_control, in_name, in_desc)
     {
       SetManageMod(); // @CAO should specify what type of object is managed.
       obj_prototype = emp::NewPtr<managed_t>(*this);
     }
     virtual ~ManagerModule() { obj_prototype.Delete(); }
+
+    data_t & GetManagedData() { return data; }
+    const data_t & GetManagedData() const { return data; }
 
     /// Save the type that uses this manager.
     using managed_t = MANAGED_T;
@@ -89,7 +92,7 @@ namespace mabe {
 
     /// Create a random object from scratch.  Default to using the obj_prototype object
     /// and then randomize if a random number generator is provided.
-    emp::Ptr<OrgType> Make_impl(emp::Random & random) override {
+    emp::Ptr<OrgType> MakeRandom_impl(emp::Random & random) override {
       auto obj_ptr = obj_prototype->Clone();
       obj_ptr->Initialize(random);
       return obj_ptr;
@@ -98,6 +101,22 @@ namespace mabe {
     mabe::MABE& GetControl(){
       return control;
     }
+
+    void SetupConfig_Internal() override final {
+      // Set traits created in the managed data to point to their actual module.
+      for (emp::Ptr<BaseTrait> trait_ptr : data.trait_ptrs) {
+        trait_ptr->SetModule(this);
+      }
+
+      // Move all of the traits in the managed data over to the proper module.
+      emp_assert(trait_ptrs.size() == 0); // No traits should start in module if managed data is used.
+      trait_ptrs = data.trait_ptrs;
+      data.trait_ptrs.resize(0);
+
+      // Now let the module deal with them properly.
+      Module::SetupConfig_Internal();
+    }
+
     void SetupModule() override {
       obj_prototype->SetupModule();
     }
@@ -115,12 +134,13 @@ namespace mabe {
   /// Build a class that will automatically register modules when created (globally)
   template <typename MODULE_T>
   struct ManagerModuleRegistrar {
-    ManagerModuleRegistrar(const std::string & type_name, const std::string & desc) {
+    ManagerModuleRegistrar(const emp::String & type_name, const emp::String & desc) {
       emp_assert(!emp::Has(GetModuleMap(), type_name), "Module name used multiple times.", type_name);
       ModuleInfo new_info;
       new_info.name = type_name;
-      new_info.desc = desc;
-      new_info.obj_init_fun = [desc](MABE & control, const std::string & name) -> emp::Ptr<EmplodeType> {
+      new_info.full_desc = desc.Slice("\n");
+      new_info.brief_desc = new_info.full_desc.size() ? new_info.full_desc[0] : "(no description available)";;
+      new_info.obj_init_fun = [desc](MABE & control, const emp::String & name) -> emp::Ptr<EmplodeType> {
         return &control.AddModule<MODULE_T>(name, desc);
       };
       new_info.type_init_fun = [](emplode::TypeInfo & info){ MODULE_T::InitType(info); };

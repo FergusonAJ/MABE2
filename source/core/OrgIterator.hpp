@@ -1,7 +1,7 @@
 /**
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
- *  @date 2020-2021.
+ *  @date 2020-2024.
  *
  *  @file  OrgIterator.hpp
  *  @brief Tools to step through a group of arbitrary MABE organisms.
@@ -18,21 +18,21 @@
 #ifndef MABE_ORG_ITERATOR_H
 #define MABE_ORG_ITERATOR_H
 
-#include <string>
-
 #include "emp/base/error.hpp"
 #include "emp/base/Ptr.hpp"
 #include "emp/base/vector.hpp"
+#include "emp/meta/type_traits.hpp"
+#include "emp/tools/String.hpp"
 
 #include "Organism.hpp"
 
 namespace mabe {
 
-  /// Base class for all organsim containers, including population.  
+  /// Base class for all organism containers, including population.  
   struct OrgContainer : public EmplodeType {
     virtual ~OrgContainer() { }
 
-    virtual std::string GetName() const { return ""; }
+    virtual emp::String GetName() const { return ""; }
     virtual int GetID() const noexcept { return -1; }
     virtual size_t GetSize() const noexcept = 0;
     virtual bool IsEmpty() const noexcept = 0;
@@ -107,14 +107,14 @@ namespace mabe {
     }
 
     // Shortcut definitions to retrieve information from the POPULATION.
-    const std::string & PopName() const { emp_assert(pop_ptr); return pop_ptr->GetName(); }
+    const emp::String & PopName() const { emp_assert(pop_ptr); return pop_ptr->GetName(); }
     int PopID() const { emp_assert(pop_ptr); return pop_ptr->GetID(); }
     size_t PopSize() const { emp_assert(pop_ptr); return pop_ptr->GetSize(); }
     emp::Ptr<ORG_T> OrgPtr() { emp_assert(pop_ptr); return &pop_ptr->At(pos); }
     emp::Ptr<const Organism> OrgPtr() const { emp_assert(pop_ptr); return &pop_ptr->At(pos); }
 
-    std::string ToString() const {
-      return emp::to_string("{pop_ptr=", pop_ptr, ";pos=", pos, "}");
+    emp::String ToString() const {
+      return emp::MakeString("{pop_ptr=", pop_ptr, ";pos=", pos, "}");
     }
 
     /// Convert to an OrgPosition
@@ -153,13 +153,13 @@ namespace mabe {
       return out;
     }
 
-    /// Backup iterator to the previos non-empty cell in the world.
+    /// Backup iterator to the previous non-empty cell in the world.
     DERIVED_T & operator--() {
       DecPosition();
       return AsDerived();
     }
 
-    /// Postfix--: Backup iterator to the previos non-empty cell in the world.
+    /// Postfix--: Backup iterator to the previous non-empty cell in the world.
     DERIVED_T operator--(int) {
       DERIVED_T out = AsDerived();
       DecPosition();
@@ -190,20 +190,9 @@ namespace mabe {
       return AsDerived();
     }
 
-    bool operator==(const DERIVED_T & in) const { return pop_ptr == in.pop_ptr && pos == in.pos; }
-    bool operator!=(const DERIVED_T & in) const { return pop_ptr != in.pop_ptr || pos != in.pos; }
-    bool operator< (const DERIVED_T & in) const {
-      return (pop_ptr == in.pop_ptr) ? (pos <  in.pos) : (pop_ptr < in.pop_ptr);
+    auto operator<=>(const this_t & in) const {
+        return (pop_ptr == in.pop_ptr) ? (pos <=>  in.pos) : (pop_ptr <=> in.pop_ptr);
     }
-    bool operator> (const DERIVED_T & in) const { return in < *this; }
-    bool operator<=(const DERIVED_T & in) const { return !(in < *this); }
-    bool operator>=(const DERIVED_T & in) const { return !(*this < in); }
-
-    // OLD VERSION : Two iterators don't have order when they are not in the same population.
-    // bool operator< (const DERIVED_T & in) const { return pop_ptr == in.pop_ptr && pos <  in.pos; }
-    // bool operator<=(const DERIVED_T & in) const { return pop_ptr == in.pop_ptr && pos <= in.pos; }
-    // bool operator> (const DERIVED_T & in) const { return pop_ptr == in.pop_ptr && pos >  in.pos; }
-    // bool operator>=(const DERIVED_T & in) const { return pop_ptr == in.pop_ptr && pos >= in.pos; }
 
     /// Return a reference to the organism pointed to by this iterator; may advance iterator.
     ORG_T & operator*() {
@@ -229,8 +218,8 @@ namespace mabe {
       return OrgPtr();
     }
 
-    /// Is this Iterator pointing to a valid cell in the world?
-    operator bool() const { return pos < PopSize() && IsOccupied(); }
+    /// Is this Iterator pointing to a valid, occupied cell in the world?
+    operator bool() const { return IsOccupied(); }
 
     /// Iterators can be automatically converted to a pointer to the organism they refer to.
     operator emp::Ptr<ORG_T>() { emp_assert(IsValid()); return OrgPtr(); }
