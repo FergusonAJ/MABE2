@@ -61,6 +61,18 @@ namespace mabe {
                               return mod.landscape.GetOptimal(); 
                             },
                              "Fetch the optimal position as a size_t");
+      info.AddMemberFunction("WRITE_TO_FILE",
+                            [](EvalNK & mod, const std::string& filename) { 
+                              mod.landscape.WriteToFile(filename); 
+                              return filename; 
+                            },
+                             "Write the fitness table of the landscape to the given file");
+      info.AddMemberFunction("LOAD_FROM_FILE",
+                            [](EvalNK & mod, const std::string& filename, bool load_params) { 
+                              mod.landscape.LoadFromFile(filename, load_params); 
+                              return filename; 
+                            },
+                             "Load fitness values from given file. Pass bool as true to also load N and K from file, else error check.");
       info.AddMemberFunction("GET_OPTIMAL_FITNESS",
                             [](EvalNK & mod) { 
                               size_t optimal_idx = mod.landscape.GetOptimal(); 
