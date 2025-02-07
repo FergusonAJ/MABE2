@@ -81,6 +81,19 @@ namespace mabe {
                               return mod.landscape.GetFitness(bit_vec);
                             },
                              "Fetch the optimal position as a size_t");
+      info.AddMemberFunction("GET_FITNESS",
+                            [](EvalNK & mod, size_t x) { 
+                              emp::BitVector bit_vec(mod.N);
+                              bit_vec.Clear();
+                              bit_vec.SetUInt64(0, x);
+                              return mod.landscape.GetFitness(bit_vec);
+                            },
+                             "Get fitness for a genotype (passed as a decimal number)");
+      info.AddMemberFunction("GET_PARTIAL_FITNESS",
+                            [](EvalNK & mod, size_t n, size_t state) { 
+                              return mod.landscape.GetFitness(n, state);
+                            },
+                             "Get fitness of the given gene (n) and gene state");
     }
 
     void SetupConfig() override {
