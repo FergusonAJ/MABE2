@@ -230,6 +230,33 @@ namespace mabe {
         it++;
       }
     }
+
+    void PrintTable(std::ostream& ostr=std::cout){
+      size_t col_width = K+1;
+      size_t index_width = static_cast<size_t>(emp::Log10(N)) + 3;
+
+      // Print the header
+      for(size_t i = 0; i < index_width; ++i){
+        ostr << " ";
+      }
+      ostr << " ";
+      emp::BitVector bit_vec(col_width);
+      for(size_t k = 0; k < GetStateCount(); k++){
+        bit_vec.Clear();
+        bit_vec.SetUInt64(0, k);
+        ostr << bit_vec.ToBinaryString() << " ";
+      }
+      ostr << "\n";
+
+      // Print each row
+      for(size_t n = 0; n < N; n++){
+        ostr << "[" << n << "] ";
+        for(size_t k = 0; k < GetStateCount(); k++){
+          ostr << std::setw(col_width) << landscape[n][k] << " ";
+        }
+        ostr << "\n";
+      }
+    }
   };
 
   /// The NKLandscapeMemo class is simialar to NKLandscape, but it does not pre-calculate all

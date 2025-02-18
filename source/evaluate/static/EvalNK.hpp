@@ -94,6 +94,12 @@ namespace mabe {
                               return mod.landscape.GetFitness(n, state);
                             },
                              "Get fitness of the given gene (n) and gene state");
+      info.AddMemberFunction("PRINT_TABLE",
+                            [](EvalNK & mod) { 
+                              mod.landscape.PrintTable();
+                              return 0;
+                            },
+                             "Print the NK landscape table to stdout");
     }
 
     void SetupConfig() override {
