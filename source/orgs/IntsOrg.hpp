@@ -115,6 +115,8 @@ namespace mabe {
                                   emp::vector<int>(0));
     }
     
+    /// Load in a genome from a string
+    /// Genome format: "[ a b c ]"
     void GenomeFromString(const std::string & new_genome) override {
       emp::vector<int>& ints = GetTrait<emp::vector<int>>(SharedData().output_name);
       emp::vector<std::string> sliced_vec = emp::slice(new_genome, ' ');
