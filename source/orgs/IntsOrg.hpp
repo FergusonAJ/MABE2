@@ -43,9 +43,9 @@ namespace mabe {
     };
 
     /// Use "to_string" to convert.
-    std::string ToString() const override { 
+    emp::String ToString() const override { 
       const emp::vector<int>& ints = GetTrait<emp::vector<int>>(SharedData().output_name);
-      return emp::to_string(ints); 
+      return emp::MakeString(ints); 
     }
 
     size_t Mutate(emp::Random & random) override {

@@ -1,7 +1,7 @@
 /**
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
- *  @date 2021.
+ *  @date 2021-2024.
  *
  *  @file  MABEBase.hpp
  *  @brief Signal and population management for the master controller object in a MABE run.
@@ -10,12 +10,11 @@
 #ifndef MABE_MABE_BASE_H
 #define MABE_MABE_BASE_H
 
-#include <string>
-
 #include "emp/base/array.hpp"
 #include "emp/base/notify.hpp"
 #include "emp/base/Ptr.hpp"
 #include "emp/base/vector.hpp"
+#include "emp/tools/String.hpp"
 
 #include "ModuleBase.hpp"
 #include "Population.hpp"
@@ -128,7 +127,7 @@ namespace mabe {
     void AddOrgAt(emp::Ptr<Organism> org_ptr, OrgPosition pos, OrgPosition ppos=OrgPosition()) {
       emp_assert(org_ptr);                               // Must have a non-null organism to insert.
       ClearOrgAt(pos);                                   // Clear any organism already in this position.
-      before_placement_sig.Trigger(*org_ptr, pos, ppos); // Notify listerners org is about to be placed.
+      before_placement_sig.Trigger(*org_ptr, pos, ppos); // Notify listeners org is about to be placed.
       pos.PopPtr()->SetOrg(pos.Pos(), org_ptr);          // Put the new organism in place.
       on_placement_sig.Trigger(pos);                     // Notify listeners org has been placed.
     }
@@ -186,7 +185,7 @@ namespace mabe {
     // Interface function for MABEScript
     virtual uint64_t GetRandomSeed() const = 0;
     virtual void SetRandomSeed(int64_t in_seed) = 0;
-    virtual Population & AddPopulation(const std::string & name, size_t pop_size=0) = 0;
+    virtual Population & AddPopulation(const emp::String & name, size_t pop_size=0) = 0;
     virtual void CopyPop(const Population & from_pop, Population & to_pop) = 0;
     virtual void MoveOrgs(Population & from_pop, Population & to_pop, bool reset_to) = 0;
   };

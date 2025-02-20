@@ -1,0 +1,7 @@
+add, start, 1
+add, L, 25
+connect, start, L, 10, 1, 1
+
+add, alt, 1
+add, R, 250
+connect, alt, R, 10, 1, 1

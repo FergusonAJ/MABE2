@@ -1,5 +1,6 @@
-# Output csv files
-*.csv  
+# Output data files
+*.csv
+*.dat
 # MABE generator files
 *.gen  
 # MABE config files
@@ -8,6 +9,8 @@
 MABE   
 # Systematics/phylogeny output
 phylo/ 
+# Population snapshots
+snapshots/
 # Instruction set output
 inst_set.txt
 inst_set_output.txt

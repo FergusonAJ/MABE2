@@ -1,0 +1,11 @@
+add, start, 1
+
+add, D1, 0.75
+connect, start, D1, 4
+add, B1, 2
+connect, D1, B1, 0
+
+add, D2, 1.75
+connect, B1, D2, 4
+add, B2, 3
+connect, D2, B2, 0

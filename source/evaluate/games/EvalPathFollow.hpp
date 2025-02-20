@@ -27,6 +27,7 @@
 
 #include "emp/io/File.hpp"
 #include "emp/bits/BitVector.hpp"
+#include "emp/tools/String.hpp"
 
 namespace mabe {
 
@@ -35,7 +36,7 @@ namespace mabe {
     bool initialized;             ///< Flag indicating if this state has been initialized
     size_t cur_map_idx;           ///< Index of the map being traversed 
     emp::BitVector visited_tiles; ///< A mask showing which tiles have been previously visited
-    emp::StateGridStatus status;  ///< Stores position, direction, and interfaces with grid 
+    mabe::StateGridStatus status;  ///< Stores position, direction, and interfaces with grid 
     double raw_score;             /**< Number of unique valid tiles visited minus the number
                                        of steps taken off the path (not unique) */
     size_t unique_path_tiles_visited; ///< Number of unique path tiles visited
@@ -50,8 +51,8 @@ namespace mabe {
                                        randomized depending on the configuration options */
 
     PathFollowState(): initialized(false), cur_map_idx(0), visited_tiles(), status(),
-        raw_score(0), empty_cue(-1), unique_path_tiles_visited(0), moves_off_path(0), 
-        forward_cue(0), left_cue(1), right_cue(2) { ; }
+        raw_score(0), unique_path_tiles_visited(0), moves_off_path(0), 
+        empty_cue(-1), forward_cue(0), left_cue(1), right_cue(2) { ; }
     
     PathFollowState(const PathFollowState&){ // Ignore copy, just prep to initialize
       raw_score = 0;
@@ -75,7 +76,7 @@ namespace mabe {
 
   /// \brief Information of a single path that was loaded from file
   struct PathData{
-    emp::StateGrid grid;  ///< The tile data of the path and surrounding emptiness 
+    mabe::StateGrid grid;  ///< The tile data of the path and surrounding emptiness 
     size_t start_x;       ///< X coordinate of starting position
     size_t start_y;       ///< Y coordinate of starting position
     int start_facing;     /**< Facing direction for new organisms. 
@@ -85,7 +86,7 @@ namespace mabe {
 
     PathData() : 
       start_x(0), start_y(0), start_facing(0), path_length(0){;} 
-    PathData(emp::StateGrid& _grid, size_t _start_x, size_t _start_y, 
+    PathData(mabe::StateGrid& _grid, size_t _start_x, size_t _start_y, 
         int _start_facing, size_t _path_length) 
         : grid(_grid)
         , start_x(_start_x)
@@ -332,15 +333,15 @@ namespace mabe {
     using inst_func_t = VirtualCPUOrg::inst_func_t;
 
   private:
-    std::string score_trait = "score"; ///< Name of trait for organism performance
-    std::string state_trait ="state";  ///< Name of trait that stores the path follow state
+    emp::String score_trait = "score"; ///< Name of trait for organism performance
+    emp::String state_trait ="state";  ///< Name of trait that stores the path follow state
     /// Name of the trait that holds the number of unique path tiles visited
-    std::string path_tiles_visited_trait = "path_tiles_visited"; 
+    emp::String path_tiles_visited_trait = "path_tiles_visited"; 
     /// Name of the trait that holds the number of movements made onto non-path tiles
-    std::string moves_off_path_trait = "moves_off_path"; 
+    emp::String moves_off_path_trait = "moves_off_path"; 
     /// Name of the trait that holds the index of the map the organism is on 
-    std::string map_idx_trait = "map_idx"; 
-    std::string map_filenames="";      ///< ;-separated list map filenames to load.
+    emp::String map_idx_trait = "map_idx"; 
+    emp::String map_filenames="";      ///< ;-separated list map filenames to load.
     PathFollowEvaluator evaluator;     /**< The evaluator that does all of the actually 
                                             computing and bookkeeping for the path follow 
                                             task */
@@ -349,8 +350,8 @@ namespace mabe {
 
   public:
     EvalPathFollow(mabe::MABE & control,
-                const std::string & name="EvalPathFollow",
-                const std::string & desc="Evaluate organisms by how well they can follow a path.")
+                const emp::String& name="EvalPathFollow",
+                const emp::String& desc="Evaluate organisms by how well they can follow a path.")
       : Module(control, name, desc)
       , evaluator(control.GetRandom())
     {

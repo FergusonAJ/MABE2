@@ -1,0 +1,305 @@
+add, start, 1
+
+add, B, 9
+connect, start, B, 7
+
+add, finish, 10 
+connect, B, finish, 0
+
+add, N1, 0.1
+connect, start, N1, 7
+connect, N1, finish, 0
+add, N2, 0.1
+connect, start, N2, 7
+connect, N2, finish, 0
+add, N3, 0.1
+connect, start, N3, 7
+connect, N3, finish, 0
+add, N4, 0.1
+connect, start, N4, 7
+connect, N4, finish, 0
+add, N5, 0.1
+connect, start, N5, 7
+connect, N5, finish, 0
+add, N6, 0.1
+connect, start, N6, 7
+connect, N6, finish, 0
+add, N7, 0.1
+connect, start, N7, 7
+connect, N7, finish, 0
+add, N8, 0.1
+connect, start, N8, 7
+connect, N8, finish, 0
+add, N9, 0.1
+connect, start, N9, 7
+connect, N9, finish, 0
+add, N10, 0.1
+connect, start, N10, 7
+connect, N10, finish, 0
+add, N11, 0.1
+connect, start, N11, 7
+connect, N11, finish, 0
+add, N12, 0.1
+connect, start, N12, 7
+connect, N12, finish, 0
+add, N13, 0.1
+connect, start, N13, 7
+connect, N13, finish, 0
+add, N14, 0.1
+connect, start, N14, 7
+connect, N14, finish, 0
+add, N15, 0.1
+connect, start, N15, 7
+connect, N15, finish, 0
+add, N16, 0.1
+connect, start, N16, 7
+connect, N16, finish, 0
+add, N17, 0.1
+connect, start, N17, 7
+connect, N17, finish, 0
+add, N18, 0.1
+connect, start, N18, 7
+connect, N18, finish, 0
+add, N19, 0.1
+connect, start, N19, 7
+connect, N19, finish, 0
+add, N20, 0.1
+connect, start, N20, 7
+connect, N20, finish, 0
+add, N21, 0.1
+connect, start, N21, 7
+connect, N21, finish, 0
+add, N22, 0.1
+connect, start, N22, 7
+connect, N22, finish, 0
+add, N23, 0.1
+connect, start, N23, 7
+connect, N23, finish, 0
+add, N24, 0.1
+connect, start, N24, 7
+connect, N24, finish, 0
+add, N25, 0.1
+connect, start, N25, 7
+connect, N25, finish, 0
+add, N26, 0.1
+connect, start, N26, 7
+connect, N26, finish, 0
+add, N27, 0.1
+connect, start, N27, 7
+connect, N27, finish, 0
+add, N28, 0.1
+connect, start, N28, 7
+connect, N28, finish, 0
+add, N29, 0.1
+connect, start, N29, 7
+connect, N29, finish, 0
+add, N30, 0.1
+connect, start, N30, 7
+connect, N30, finish, 0
+add, N31, 0.1
+connect, start, N31, 7
+connect, N31, finish, 0
+add, N32, 0.1
+connect, start, N32, 7
+connect, N32, finish, 0
+add, N33, 0.1
+connect, start, N33, 7
+connect, N33, finish, 0
+add, N34, 0.1
+connect, start, N34, 7
+connect, N34, finish, 0
+add, N35, 0.1
+connect, start, N35, 7
+connect, N35, finish, 0
+add, N36, 0.1
+connect, start, N36, 7
+connect, N36, finish, 0
+add, N37, 0.1
+connect, start, N37, 7
+connect, N37, finish, 0
+add, N38, 0.1
+connect, start, N38, 7
+connect, N38, finish, 0
+add, N39, 0.1
+connect, start, N39, 7
+connect, N39, finish, 0
+add, N40, 0.1
+connect, start, N40, 7
+connect, N40, finish, 0
+add, N41, 0.1
+connect, start, N41, 7
+connect, N41, finish, 0
+add, N42, 0.1
+connect, start, N42, 7
+connect, N42, finish, 0
+add, N43, 0.1
+connect, start, N43, 7
+connect, N43, finish, 0
+add, N44, 0.1
+connect, start, N44, 7
+connect, N44, finish, 0
+add, N45, 0.1
+connect, start, N45, 7
+connect, N45, finish, 0
+add, N46, 0.1
+connect, start, N46, 7
+connect, N46, finish, 0
+add, N47, 0.1
+connect, start, N47, 7
+connect, N47, finish, 0
+add, N48, 0.1
+connect, start, N48, 7
+connect, N48, finish, 0
+add, N49, 0.1
+connect, start, N49, 7
+connect, N49, finish, 0
+add, N50, 0.1
+connect, start, N50, 7
+connect, N50, finish, 0
+add, N51, 0.1
+connect, start, N51, 7
+connect, N51, finish, 0
+add, N52, 0.1
+connect, start, N52, 7
+connect, N52, finish, 0
+add, N53, 0.1
+connect, start, N53, 7
+connect, N53, finish, 0
+add, N54, 0.1
+connect, start, N54, 7
+connect, N54, finish, 0
+add, N55, 0.1
+connect, start, N55, 7
+connect, N55, finish, 0
+add, N56, 0.1
+connect, start, N56, 7
+connect, N56, finish, 0
+add, N57, 0.1
+connect, start, N57, 7
+connect, N57, finish, 0
+add, N58, 0.1
+connect, start, N58, 7
+connect, N58, finish, 0
+add, N59, 0.1
+connect, start, N59, 7
+connect, N59, finish, 0
+add, N60, 0.1
+connect, start, N60, 7
+connect, N60, finish, 0
+add, N61, 0.1
+connect, start, N61, 7
+connect, N61, finish, 0
+add, N62, 0.1
+connect, start, N62, 7
+connect, N62, finish, 0
+add, N63, 0.1
+connect, start, N63, 7
+connect, N63, finish, 0
+add, N64, 0.1
+connect, start, N64, 7
+connect, N64, finish, 0
+add, N65, 0.1
+connect, start, N65, 7
+connect, N65, finish, 0
+add, N66, 0.1
+connect, start, N66, 7
+connect, N66, finish, 0
+add, N67, 0.1
+connect, start, N67, 7
+connect, N67, finish, 0
+add, N68, 0.1
+connect, start, N68, 7
+connect, N68, finish, 0
+add, N69, 0.1
+connect, start, N69, 7
+connect, N69, finish, 0
+add, N70, 0.1
+connect, start, N70, 7
+connect, N70, finish, 0
+add, N71, 0.1
+connect, start, N71, 7
+connect, N71, finish, 0
+add, N72, 0.1
+connect, start, N72, 7
+connect, N72, finish, 0
+add, N73, 0.1
+connect, start, N73, 7
+connect, N73, finish, 0
+add, N74, 0.1
+connect, start, N74, 7
+connect, N74, finish, 0
+add, N75, 0.1
+connect, start, N75, 7
+connect, N75, finish, 0
+add, N76, 0.1
+connect, start, N76, 7
+connect, N76, finish, 0
+add, N77, 0.1
+connect, start, N77, 7
+connect, N77, finish, 0
+add, N78, 0.1
+connect, start, N78, 7
+connect, N78, finish, 0
+add, N79, 0.1
+connect, start, N79, 7
+connect, N79, finish, 0
+add, N80, 0.1
+connect, start, N80, 7
+connect, N80, finish, 0
+add, N81, 0.1
+connect, start, N81, 7
+connect, N81, finish, 0
+add, N82, 0.1
+connect, start, N82, 7
+connect, N82, finish, 0
+add, N83, 0.1
+connect, start, N83, 7
+connect, N83, finish, 0
+add, N84, 0.1
+connect, start, N84, 7
+connect, N84, finish, 0
+add, N85, 0.1
+connect, start, N85, 7
+connect, N85, finish, 0
+add, N86, 0.1
+connect, start, N86, 7
+connect, N86, finish, 0
+add, N87, 0.1
+connect, start, N87, 7
+connect, N87, finish, 0
+add, N88, 0.1
+connect, start, N88, 7
+connect, N88, finish, 0
+add, N89, 0.1
+connect, start, N89, 7
+connect, N89, finish, 0
+add, N90, 0.1
+connect, start, N90, 7
+connect, N90, finish, 0
+add, N91, 0.1
+connect, start, N91, 7
+connect, N91, finish, 0
+add, N92, 0.1
+connect, start, N92, 7
+connect, N92, finish, 0
+add, N93, 0.1
+connect, start, N93, 7
+connect, N93, finish, 0
+add, N94, 0.1
+connect, start, N94, 7
+connect, N94, finish, 0
+add, N95, 0.1
+connect, start, N95, 7
+connect, N95, finish, 0
+add, N96, 0.1
+connect, start, N96, 7
+connect, N96, finish, 0
+add, N97, 0.1
+connect, start, N97, 7
+connect, N97, finish, 0
+add, N98, 0.1
+connect, start, N98, 7
+connect, N98, finish, 0
+add, N99, 0.1
+connect, start, N99, 7
+connect, N99, finish, 0

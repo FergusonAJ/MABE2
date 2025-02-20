@@ -25,6 +25,8 @@
 #ifndef MABE_VIRTUAL_CPU_ORGANISM_H
 #define MABE_VIRTUAL_CPU_ORGANISM_H
 
+#include <filesystem>
+
 #include "../core/MABE.hpp"
 #include "../core/Organism.hpp"
 #include "../core/OrganismManager.hpp"
@@ -52,12 +54,12 @@ namespace mabe {
     using typename base_t::genome_t;
     using typename base_t::inst_lib_t;
     using typename base_t::data_t;
+    using data_vec_t = emp::vector<data_t>;
     using inst_func_t = std::function<void(this_t&, const this_t::inst_t&)>;
 
   protected: 
     size_t insts_speculatively_executed = 0;
     emp::BitVector non_speculative_inst_vec;
-    
 
     /// Perform a single point mutation at the given position
     void Mutate_Point(size_t pos, emp::Random& random){
@@ -135,6 +137,19 @@ namespace mabe {
     /// This includes all the configuration variables, as well as internal variables (e.g., 
     /// variables used in calculating mutations)
     struct ManagerData : public Organism::ManagerData {
+      // Organism traits
+      OptionalTrait<data_vec_t> input_trait{this, "input", "Variable to load inputs from."};
+      SharedTrait<data_vec_t> output_trait{this, "output", "Value map output from organism."};
+      SharedTrait<double> merit_trait{this, "merit", "Value representing fitness of organism"};
+      SharedTrait<double> offspring_merit_trait{this, "offspring_merit", "Fitness passed on to offspring"};
+      OwnedTrait<emp::String> genome_trait{this, "genome", "Organism's genome"};
+      SharedTrait<genome_t> offspring_genome_trait{this, "offspring_genome", "Latest genome copied"};
+      OwnedTrait<genome_t> original_genome_trait{this, "original_genome", "Genome as passed from parent"};
+      SharedTrait<OrgPosition> position_trait{this, "position", "Organism's position"};
+      OwnedTrait<size_t> generation_trait{this, "generation", "Organism's generation"};
+      OwnedTrait<size_t> length_trait{this, "genome_length", "Num instructions in organism's genome"};
+      OwnedTrait<size_t> insts_executed_trait{this, "insts_executed", "Num instructions executed"};
+
       // Configuration variables
       double site_point_mut_prob = 0.01;      ///< Per-site point mutation rate.
       double site_insertion_mut_prob = 0.01;  ///< Per-site insertion mutation rate.
@@ -145,35 +160,16 @@ namespace mabe {
       size_t init_length = 100;   ///< Length of new organisms.
       bool init_random = true;    ///< Should we randomize ancestor?  (false = all zeros)
       size_t eval_time = 500;     ///< How long should the CPU be given on each evaluate?
-      std::string input_name = "input";   /**< Name of trait that should be used to 
-                                               load input values */
-      std::string output_name = "output"; /**< Name of trait that should be used to store 
-                                               output values */
-      std::string merit_name = "merit";   /**< Name of trait that stores the merit of an org 
-                                               as it was passed from its parent */ 
-      std::string genome_name = "genome"; ///< Name of trait that stores an org's genome 
-      std::string offspring_genome_name = "offspring_genome";  /**< Name of trait that stores 
-                                                                    the genome for the 
-                                                                    upcoming offspring */
-      std::string position_name = "org_pos"; ///< Name of trait that stores org's position 
-      std::string genome_length_name = "genome_length"; /**< Name of trait that stores length 
-                                                             of org's genome 
-                                                   */
-      std::string child_merit_name = "child_merit"; /**< Name of the trait that stores an 
-                                                         org's merit during its lifetime. This
-                                                         is then passed to its offspring */
-      std::string generation_name = "generation";  /**<  Name of the trait that store's the 
-                                                         org's generation */
-      double initial_merit = 0; ///< Merit that the ancestor starts with
+      double initial_merit = 0;   ///< Merit that the ancestor starts with
       bool copy_influences_merit = true;  /**<  Does the number of instructions copied 
                                                   influence merit passed to offspring? */
       bool verbose = false;     ///< Flag that indicates whether to print additional info
-      std::string initial_genome_filename = "ancestor.org"; /**< If init_random is false, this
+      emp::String initial_genome_filename = "ancestor.org"; /**< If init_random is false, this
                                                                  indicates a file that 
                                                                  contains the ancestor's 
                                                                  genome */
-      std::string inst_set_input_filename = ""; /// File to load for the instruction set
-      std::string inst_set_output_filename = ""; /**< If not empty, writes instruction set
+      emp::String inst_set_input_filename = ""; /// File to load for the instruction set
+      emp::String inst_set_output_filename = ""; /**< If not empty, writes instruction set
                                                       (in order) to the specified file **/
       bool expanded_nop_args = false; /**< Flag that indicates whether to use the "expanded
                                            nop" syntax. If true, instructions like and can 
@@ -183,9 +179,6 @@ namespace mabe {
                                                    execute instruction.*/
       int max_speculative_insts = -1;         /**< Maximum number of insts. to speculatively 
                                                   execute. -1 for genome length. */
-      std::string num_insts_executed_name = "insts_executed"; /**< Trait name for the number
-                                                                    of instructions 
-                                                                    executed */
       
       // Internal use
       /// Distribution of number of point mutations to occur.
@@ -240,8 +233,8 @@ namespace mabe {
       );
       // Update hardware and traits accordingly
       ResetWorkingGenome();
-      Organism::SetTrait<std::string>(SharedData().genome_name, GetGenomeString());
-      Organism::SetTrait<size_t>(SharedData().genome_length_name, GetGenomeSize());
+      SharedData().genome_trait(*this) = GetGenomeString();
+      SharedData().length_trait(*this) = GetGenomeSize();
       return mut_count;
     }
 
@@ -251,8 +244,8 @@ namespace mabe {
         RandomizeInst(pos, random);
       }
       ResetWorkingGenome();
-      Organism::SetTrait<std::string>(SharedData().genome_name, GetGenomeString());
-      Organism::SetTrait<size_t>(SharedData().genome_length_name, GetGenomeSize());
+      SharedData().genome_trait(*this) = GetGenomeString();
+      SharedData().length_trait(*this) = GetGenomeSize();
     }
 
     /// Pad the organism's genome out to the specified length with random instructions.
@@ -274,33 +267,41 @@ namespace mabe {
       
     /// Reset organism's traits to match what it was born with
     void ResetTraits(){
-      const double merit = Organism::GetTrait<double>(SharedData().merit_name);
-      const size_t gen = Organism::GetTrait<size_t>(SharedData().generation_name);
-      const OrgPosition pos = Organism::GetTrait<OrgPosition>(SharedData().position_name);
+      const double merit = SharedData().merit_trait(*this);
+      const size_t gen = SharedData().generation_trait(*this);
+      const OrgPosition pos = SharedData().position_trait(*this);
       GetManager().GetControl().ResetTraits(*this);
-      Organism::SetTrait<double>(SharedData().merit_name, merit);
-      Organism::SetTrait<size_t>(SharedData().generation_name, gen);
-      Organism::SetTrait<OrgPosition>(SharedData().position_name, pos);
-      Organism::SetTrait<std::string>(SharedData().genome_name, GetGenomeString());
-      Organism::SetTrait<size_t>(SharedData().genome_length_name, GetGenomeSize());
-      Organism::SetTrait<double>(SharedData().child_merit_name, 
-          SharedData().initial_merit); 
-      Organism::SetTrait<size_t>(SharedData().num_insts_executed_name, 0);
+      SharedData().merit_trait(*this) = merit;
+      SharedData().generation_trait(*this) = gen;
+      SharedData().position_trait(*this) = pos;
+      SharedData().genome_trait(*this) = GetGenomeString();
+      SharedData().length_trait(*this) = GetGenomeSize();
+      SharedData().offspring_merit_trait(*this) = SharedData().initial_merit; 
     }
 
     /// Create an ancestral organism and load in values from configuration file
     void Initialize(emp::Random & random) override {
       emp_assert(GetGenomeSize() == 0, "Cannot initialize VirtualCPUOrg twice");
       // Create the ancestor, either randomly or from a genome file
-      if(SharedData().init_random) FillRandom(SharedData().init_length, random);
-      else{
-        Load(SharedData().initial_genome_filename);
-        SharedData().init_length = GetGenomeSize();
+      if (SharedData().init_random) {
+        FillRandom(SharedData().init_length, random);
+      } else {
+        const emp::String filename = SharedData().initial_genome_filename;
+        if (filename.size() == 0) {
+          emp::notify::Error("Cannot initialize genome; "
+                             "Must set init_random to true OR set initial_genome_filename");
+        }
+        else if (!std::filesystem::exists(filename.str())) {
+          emp::notify::Error("Cannot initialize genome; no such file '", filename, "'.");
+        }
+        else {
+          Load(filename);
+          SharedData().init_length = GetGenomeSize();
+        }
       }
       // Set traits that are specific to the ancestor (others are in ResetTraits) 
-      Organism::SetTrait<size_t>(SharedData().generation_name, 0); 
-      Organism::SetTrait<double>(SharedData().merit_name, 
-          GetGenomeSize() / SharedData().init_length); 
+      SharedData().generation_trait(*this) = 0;
+      SharedData().merit_trait(*this) = GetGenomeSize() / SharedData().init_length;
       // Call generic reset methods
       ResetHardware();
       ResetTraits();
@@ -313,59 +314,56 @@ namespace mabe {
     }
     
     /// Create an offspring organism using the configuration file's mutation rate.
-    emp::Ptr<Organism> MakeOffspringOrganism(emp::Random & random) const {
+    emp::Ptr<Organism> MakeOffspringOrganism(emp::Random & random) const override {
       // Create and mutate
-      auto offspring = OrgType::Clone().DynamicCast<VirtualCPUOrg>();
-      const genome_t offspring_genome = 
-          GetTrait<genome_t>(SharedData().offspring_genome_name);
-      offspring->genome.resize(offspring_genome.size(), GetDefaultInst());
-      std::copy(
-          offspring_genome.begin(),
-          offspring_genome.end(),
-          offspring->genome.begin());
-      offspring->ResetWorkingGenome();
-      offspring->Mutate(random);
-      offspring->Reset();
+      auto offspring_ptr = OrgType::Clone().DynamicCast<VirtualCPUOrg>();
+      VirtualCPUOrg & offspring = *offspring_ptr;
+      const genome_t offspring_genome = SharedData().offspring_genome_trait(*this);
+      offspring.genome.resize(offspring_genome.size(), GetDefaultInst());
+      std::copy( offspring_genome.begin(),
+                 offspring_genome.end(),
+                 offspring.genome.begin() );
+      offspring.ResetWorkingGenome();
+      offspring.Mutate(random);
+      offspring.Reset();
       double bonus = 0;
-      if(SharedData().copy_influences_merit){
+      if (SharedData().copy_influences_merit){
           bonus = std::min(
-            {offspring->GetGenomeSize(), GetNumInstsCopied(), GetNumInstsExecuted()}
+            {offspring.GetGenomeSize(), GetNumInstsCopied(), GetNumInstsExecuted()}
           );
       } 
-      else bonus = std::min(offspring->GetGenomeSize(), GetNumInstsExecuted());
+      else bonus = std::min(offspring.GetGenomeSize(), GetNumInstsExecuted());
       bonus /= SharedData().init_length;
       // Initialize all necessary traits and ready hardware
-      offspring->SetTrait<double>(SharedData().merit_name, 
-          bonus + GetTrait<double>(SharedData().child_merit_name)); 
-      offspring->SetTrait<double>(SharedData().child_merit_name, SharedData().initial_merit); 
-      offspring->SetTrait<size_t>(SharedData().generation_name, 
-          GetTrait<size_t>(SharedData().generation_name) + 1); 
-      offspring->CurateNops();
-      offspring->Organism::SetTrait<std::string>(
-          SharedData().genome_name, offspring->GetGenomeString());
-      offspring->Organism::SetTrait<size_t>(
-          SharedData().genome_length_name, offspring->GetGenomeSize());
-      offspring->Organism::SetTrait<size_t>(
-          SharedData().num_insts_executed_name, 0);
-      offspring->Organism::GetTrait<emp::vector<data_t>>(SharedData().output_name).clear();
-      offspring.DynamicCast<VirtualCPUOrg>()->ResetHardware();
-      offspring.DynamicCast<VirtualCPUOrg>()->insts_speculatively_executed = 0;
-      return offspring;
+      SharedData().merit_trait(offspring) = bonus + SharedData().offspring_merit_trait(*this);
+      SharedData().offspring_merit_trait(offspring) = SharedData().initial_merit;
+      SharedData().generation_trait(offspring) = SharedData().generation_trait(*this) + 1;
+      offspring.CurateNops();
+      SharedData().genome_trait(offspring) = offspring.GetGenomeString();
+      SharedData().length_trait(offspring) = offspring.GetGenomeSize();
+      SharedData().output_trait(offspring).clear();
+      offspring.ResetHardware();
+      offspring.insts_speculatively_executed = 0;
+
+      return offspring_ptr;
     }
     
     /// Create an identical organism with no mutations and with the same merit
-    virtual emp::Ptr<Organism> CloneOrganism() const {
-      auto offspring = OrgType::Clone().DynamicCast<VirtualCPUOrg>();
-      offspring->ResetWorkingGenome();
-      offspring->ResetHardware();
-      offspring->SetTrait<double>(SharedData().merit_name, GetTrait<double>(SharedData().merit_name)); 
-      offspring->SetTrait<double>(SharedData().child_merit_name, SharedData().initial_merit); 
-      offspring->Organism::SetTrait<std::string>(SharedData().genome_name, offspring->GetGenomeString());
-      offspring->Organism::SetTrait<size_t>(SharedData().genome_length_name, offspring->GetGenomeSize());
-      offspring->Organism::GetTrait<emp::vector<data_t>>(SharedData().output_name).clear();
-      offspring->expanded_nop_args = SharedData().expanded_nop_args;
-      offspring->insts_speculatively_executed = 0;
-      return offspring;
+    virtual emp::Ptr<Organism> CloneOrganism() const override {
+      auto offspring_ptr = OrgType::Clone().DynamicCast<VirtualCPUOrg>();
+      VirtualCPUOrg & offspring = *offspring_ptr;
+
+      offspring.ResetWorkingGenome();
+      offspring.ResetHardware();
+      SharedData().merit_trait(offspring) = SharedData().merit_trait(*this); 
+      SharedData().offspring_merit_trait(offspring) = SharedData().initial_merit; 
+      SharedData().genome_trait(offspring) = offspring.GetGenomeString();
+      SharedData().length_trait(offspring) = offspring.GetGenomeSize();
+      SharedData().output_trait(offspring).clear();
+      offspring.expanded_nop_args = SharedData().expanded_nop_args;
+      offspring.insts_speculatively_executed = 0;
+
+      return offspring_ptr;
     }
 
     /// Load inputs and run the organism for a number of steps specified in the configuration
@@ -374,7 +372,7 @@ namespace mabe {
       ResetHardware();
 
       // Setup the input.
-      SetInputs(Organism::GetTrait<emp::vector<data_t>>(SharedData().input_name));
+      SetInputs( SharedData().input_trait(*this) );
 
       // Run the code.
       //Process(SharedData().eval_time, SharedData().verbose);
@@ -408,24 +406,6 @@ namespace mabe {
                       "Should we randomize ancestor?  (0 = \"blank\" default)");
       GetManager().LinkVar(SharedData().eval_time, "eval_time",
                       "How many CPU cycles should we give organisms to run?");
-      GetManager().LinkVar(SharedData().input_name, "input_name",
-                      "Name of variable to load inputs from.");
-      GetManager().LinkVar(SharedData().output_name, "output_name",
-                      "Name of variable to output results.");
-      GetManager().LinkVar(SharedData().genome_name, "genome_name",
-                      "Where to store the genome?.");
-      GetManager().LinkVar(SharedData().position_name, "position_name",
-                      "Where to store the organism's position?.");
-      GetManager().LinkVar(SharedData().genome_length_name, "genome_length_name",
-                      "Where to store the genome's length?.");
-      GetManager().LinkVar(SharedData().merit_name, "merit_name",
-                      "Name of variable corresponding to the organism's task performance.");
-      GetManager().LinkVar(SharedData().child_merit_name, "child_merit_name",
-                      "Name of variable corresponding to the organism's task performance that"
-                      " will be used to calculate CPU cycles given to offspring.");
-      GetManager().LinkVar(SharedData().generation_name, "generation_name",
-                      "Name of variable corresponding to the organism's generation. "
-                      "When an organism replicates, the child's gen. is the parent's gen +1");
       GetManager().LinkVar(SharedData().initial_merit, "initial_merit",
                       "Initial value for merit (task performance)");
       GetManager().LinkVar(SharedData().verbose, "verbose",
@@ -453,36 +433,12 @@ namespace mabe {
                       "copy_influences_merit",
                       "If 1, the number of instructions copied (e.g., via HCopy instruction)"
                       "factor into offspring merit");
-      GetManager().LinkVar(SharedData().num_insts_executed_name, 
-                      "insts_executed_trait",
-                      "Name of the trait that holds the number of instructions executed");
     }
 
     /// Set up this organism type with the traits it need to track and initialize 
     /// shared variables.
     void SetupModule() override {
       SetupMutationDistribution();
-      GetManager().AddOptionalTrait<emp::vector<data_t>>(SharedData().input_name);
-      GetManager().AddSharedTrait(SharedData().output_name,
-          "Value map output from organism.", emp::vector<data_t>());
-      GetManager().AddSharedTrait<double>(SharedData().merit_name,
-          "Value representing fitness of organism", SharedData().initial_merit);
-      GetManager().AddSharedTrait<double>(SharedData().child_merit_name,
-          "Fitness passed on to children", SharedData().initial_merit);
-      GetManager().AddOwnedTrait<std::string>(SharedData().genome_name, 
-          "Organism's genome", "[None]");
-      GetManager().AddSharedTrait<genome_t>(SharedData().offspring_genome_name, 
-          "Latest genome copied", { } );
-      GetManager().AddSharedTrait<genome_t>("passed_genome", 
-          "Genome as passed from parent", { } );
-      GetManager().AddSharedTrait<OrgPosition>(SharedData().position_name, 
-          "Organism's position ", { } );
-      GetManager().AddOwnedTrait<size_t>(SharedData().generation_name, 
-          "Organism's generation", 0);
-      GetManager().AddOwnedTrait<size_t>(SharedData().genome_length_name, 
-          "Length of organism's genome", 0);
-      GetManager().AddOwnedTrait<size_t>(SharedData().num_insts_executed_name, 
-          "Number of instructions executed.", 0);
       SetupInstLib();
       if(!SharedData().inst_set_output_filename.empty()){
         WriteInstructionSetFile(SharedData().inst_set_output_filename);
@@ -490,7 +446,7 @@ namespace mabe {
     }
 
     /// Write the instructions in the instruction set (in order) to the specified file
-    void WriteInstructionSetFile(const std::string& filename){
+    void WriteInstructionSetFile(const emp::String& filename){
       std::cout << "Writing instruction set to file: " << filename << std::endl;
       emp::File file;
       std::stringstream ss;
@@ -509,15 +465,20 @@ namespace mabe {
     }
 
     /// Load from the file the instruction to use and what order to include them in
-    emp::vector<std::string> LoadInstSetFromFile(){
+    emp::vector<emp::String> LoadInstSetFromFile(){
+      if (SharedData().inst_set_input_filename.size() == 0) {
+        emp::notify::Error("VirtualCPUOrg instruction set filename is empty.");
+        emp_error("Stop!");
+        return emp::vector<emp::String>{};
+      }
       emp::File file(SharedData().inst_set_input_filename);
       file.RemoveComments("//");
       file.RemoveComments("#");
       file.RemoveWhitespace();
       file.RemoveEmpty();
-      if(file.GetNumLines() == 0){
-        emp_error("Error! VirtualCPUOrg instruction set file is either empty or missing: ", 
-            SharedData().inst_set_input_filename);
+      if (file.GetNumLines() == 0){
+        emp::notify::Error("VirtualCPUOrg instruction set file is either empty or missing: ", 
+                           SharedData().inst_set_input_filename);
       }
       return file.GetAllLines();
     }
@@ -528,7 +489,7 @@ namespace mabe {
       if(SharedData().use_speculative_execution) non_speculative_inst_vec.Clear();
       // All instructions are stored in the populations ActionMap
       ActionMap& action_map = GetManager().GetControl().GetActionMap(0);
-      std::unordered_map<std::string, mabe::Action>& typed_action_map =
+      std::unordered_map<emp::String, mabe::Action>& typed_action_map =
         action_map.GetFuncs<void, VirtualCPUOrg&, const inst_t&>();
       // Print the number of instructions found and each of their names
       std::cout << "Found " << typed_action_map.size() << " external functions!";
@@ -537,9 +498,9 @@ namespace mabe {
       }
       std::cout << std::endl;
 
-      const emp::vector<std::string> name_vec = LoadInstSetFromFile();
+      const emp::vector<emp::String> name_vec = LoadInstSetFromFile();
       for(size_t inst_idx = 0; inst_idx < name_vec.size(); ++inst_idx){
-        const std::string& name = name_vec[inst_idx];
+        const emp::String& name = name_vec[inst_idx];
         if(typed_action_map.find(name) == typed_action_map.end()){
           emp_error("Instruction '" + name + "' not found. Make sure the VirtualCPUOrg"
              " module comes after all instruction modules in the config file"); 
@@ -570,9 +531,9 @@ namespace mabe {
           }
         }
         // Grab description
-        const std::string desc = 
+        const emp::String desc = 
           (action.data.HasName("description") ? 
-            action.data.Get<std::string>("description") : "No description provided");
+            action.data.Get<emp::String>("description") : "No description provided");
         const size_t num_args = 
           (action.data.HasName("num_args") ?  action.data.Get<size_t>("num_args") : 0);
         inst_lib.AddInst(
@@ -586,7 +547,7 @@ namespace mabe {
             desc,                              // Description 
             emp::ScopeType::NONE,              // No scope type, but must provide
             (size_t) -1,                       // Scope arg, must provide 
-            std::unordered_set<std::string>(), // Instruction properties
+            std::unordered_set<emp::String>(), // Instruction properties
             inst_idx);                          // Instruction ID
       }
     }
@@ -604,7 +565,7 @@ namespace mabe {
           const size_t inst_id = genome_working[inst_ptr].id;
           if(!non_speculative_inst_vec[inst_id]){
             if(SharedData().verbose){
-              std::cout << "[" << GetTrait<OrgPosition>(SharedData().position_name).Pos() 
+              std::cout << "[" << SharedData().position_trait(*this).Pos() 
                 << "]" << std::endl;
             }
             Process(1, SharedData().verbose);
@@ -613,7 +574,7 @@ namespace mabe {
           else{
             if(insts_speculatively_executed == 0){
               if(SharedData().verbose){
-                std::cout << "[" << GetTrait<OrgPosition>(SharedData().position_name).Pos() 
+                std::cout << "[" << SharedData().position_trait(*this).Pos() 
                   << "]" << std::endl;
               }
               Process(1, SharedData().verbose);
@@ -633,46 +594,46 @@ namespace mabe {
       }
       else{
         if(SharedData().verbose){
-          std::cout << "[" << GetTrait<OrgPosition>(SharedData().position_name).Pos()
+          std::cout << "[" << SharedData().position_trait(*this).Pos()
             << "]" << std::endl;;
         }
         Process(1, SharedData().verbose);
       }
-      SetTrait<size_t>(SharedData().num_insts_executed_name, num_insts_executed);
+      SharedData().insts_executed_trait(*this)++;
       return true;
     }
 
     /// Initialize the mutational distribution variables to match the genome size (either 
     /// current size or projected sizes)
-    void SetupMutationDistribution(){
-      if(GetGenomeSize() != 0){ // If we have a genome size, use it!
-        SharedData().site_point_mut_dist.Setup(
-            SharedData().site_point_mut_prob, GetGenomeSize());
-        SharedData().site_insertion_mut_dist.Setup(
-            SharedData().site_insertion_mut_prob, GetGenomeSize());
-        SharedData().site_deletion_mut_dist.Setup(
-            SharedData().site_deletion_mut_prob, GetGenomeSize());
+    void SetupMutationDistribution() {
+      if (GetGenomeSize() != 0) { // If we have a genome size, use it!
+        SharedData().site_point_mut_dist.Setup(SharedData().site_point_mut_prob, 
+            GetGenomeSize());
+        SharedData().site_insertion_mut_dist.Setup(SharedData().site_insertion_mut_prob, 
+            GetGenomeSize());
+        SharedData().site_deletion_mut_dist.Setup(SharedData().site_deletion_mut_prob, 
+            GetGenomeSize());
         SharedData().mut_sites.Resize(GetGenomeSize());
       }
-      else{ // Otherwise, use the genome size set in the configuration file
-        SharedData().site_point_mut_dist.Setup(
-            SharedData().site_point_mut_prob, SharedData().init_length);
-        SharedData().site_insertion_mut_dist.Setup(
-            SharedData().site_insertion_mut_prob, SharedData().init_length);
-        SharedData().site_deletion_mut_dist.Setup(
-            SharedData().site_deletion_mut_prob, SharedData().init_length);
+      else { // Otherwise, use the genome size set in the configuration file
+        SharedData().site_point_mut_dist.Setup(SharedData().site_point_mut_prob, 
+            SharedData().init_length);
+        SharedData().site_insertion_mut_dist.Setup(SharedData().site_insertion_mut_prob, 
+            SharedData().init_length);
+        SharedData().site_deletion_mut_dist.Setup(SharedData().site_deletion_mut_prob, 
+            SharedData().init_length);
         SharedData().mut_sites.Resize(SharedData().init_length);
       }
     }
 
     /// Fetch a string representation of the genome
-    std::string ToString() const override { return  GetRawGenomeString(); }
+    emp::String ToString() const override { return  GetRawGenomeString(); }
     
     void GenomeFromString(const std::string & new_genome) override {
       LoadFromChars(new_genome);
       ResetHardware();
-      Organism::SetTrait<std::string>(SharedData().genome_name, GetGenomeString());
-      Organism::SetTrait<size_t>(SharedData().genome_length_name, GetGenomeSize());
+      SharedData().genome_trait(*this) = GetGenomeString();
+      SharedData().length_trait(*this) = GetGenomeSize();
     }
 
   };

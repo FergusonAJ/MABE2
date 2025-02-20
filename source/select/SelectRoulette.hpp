@@ -1,7 +1,7 @@
 /**
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
- *  @date 2021.
+ *  @date 2021-2024.
  *
  *  @file  SelectRoulette.hpp
  *  @brief MABE module to enable roulette selection.
@@ -20,7 +20,7 @@ namespace mabe {
   /// \brief Selects organisms with roulette (fitness-proportional) selection
   class SelectRoulette : public Module {
   private:
-    std::string fit_equation;    ///< Which equation should we select on?
+    emp::String fit_equation;    ///< Which equation should we select on?
 
     /// Select num_births organisms from select_pop and replicate them into birth_pop
     Collection Select(Population & select_pop, Population & birth_pop, size_t num_births) {
@@ -64,20 +64,29 @@ namespace mabe {
 
       // Setup the fitness function - redo this each time in case it changes.
       auto fit_fun = control.BuildTraitEquation(select_pop, fit_equation);
+      emp::vector<double> fitness_vec;
+      fitness_vec.resize(N, 0);
+      for(size_t idx = 0; idx < N; idx++){
+        fitness_vec[idx] = fit_fun(select_pop[idx]);
+      }
 
       // Track where all organisms are placed.
       Collection placement_list;
   
+      emp::UnorderedIndexMap fit_map(N, 0.0); // Still use full pop size, but most will be 0
       for(size_t idx = 0; idx < N; idx++){
-        auto neighbor_pos_vec = select_pop.FindAllNeighbors(OrgPosition(select_pop, idx));
-        emp::IndexMap fit_map(N, 0.0); // Still use full pop size, but most will be 0
+        fit_map.Clear();
+        auto neighbor_pos_vec = select_pop.HasStaticNeighbors() 
+          ? select_pop.FindStaticNeighbors(OrgPosition(select_pop, idx)) 
+          : select_pop.FindAllNeighbors(OrgPosition(select_pop, idx));
+        //emp::IndexMap fit_map(N, 0.0); // Still use full pop size, but most will be 0
         // Add self first
         if (!select_pop.IsEmpty(idx)){
-          fit_map[idx] = fit_fun(select_pop[idx]);
+          fit_map[idx] = fitness_vec[idx];
         }
         for(OrgPosition& neighbor_pos : neighbor_pos_vec){
           if (select_pop.IsEmpty(neighbor_pos.Pos())) continue;
-          fit_map[neighbor_pos.Pos()] = fit_fun(select_pop[neighbor_pos.Pos()]);
+          fit_map[neighbor_pos.Pos()] = fitness_vec[neighbor_pos.Pos()];
         }
         size_t org_id = fit_map.Index( random.GetDouble(fit_map.GetWeight()) );
         placement_list += control.Replicate(select_pop.IteratorAt(org_id), birth_pop);
@@ -89,8 +98,8 @@ namespace mabe {
   public:
     SelectRoulette(
       mabe::MABE & control,
-      const std::string & name="SelectRoulette",
-      const std::string & desc="Module to choose random organisms for replication, proportional to their fitness."
+      const emp::String & name="SelectRoulette",
+      const emp::String & desc="Module to choose random organisms for replication, proportional to their fitness."
     ) : Module(control, name, desc)
     {
       SetSelectMod(true);               ///< Mark this module as a selection module.
