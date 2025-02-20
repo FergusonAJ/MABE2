@@ -43,7 +43,6 @@ TEST_CASE("NK-MultiAllele_Base", "[core]"){
   CHECK(landscape.GetTotalCount() == 45);
 }
 
-
 TEST_CASE("NK-MultiAllele_Simple", "[core]"){ 
   // Initialize variables
   size_t N = 3;
@@ -132,19 +131,62 @@ TEST_CASE("NK-MultiAllele_Simple", "[core]"){
     CHECK(landscape.GetState(2, 7) ==  0.0); // CB
     CHECK(landscape.GetState(2, 8) ==  0.0); // CC
   }
+
+  // Check a few states
+  { // ABC - Best genome
+    emp::vector<size_t> states{1, 5, 6}; 
+    CHECK(landscape.GetFitnessStates(states) == 3.0);
+  } 
+
+  { // BAB
+    emp::vector<size_t> states{3, 1, 4}; 
+    CHECK(landscape.GetFitnessStates(states) == 0.0);
+  } 
+
+  { // CAB
+    emp::vector<size_t> states{6, 1, 5}; 
+    CHECK(landscape.GetFitnessStates(states) == 0.0);
+  } 
  
   // Check a few specific genomes
   { // ABC - Best genome
-    emp::vector<size_t> genome{1, 5, 6};
+    emp::vector<size_t> genome{0, 1, 2}; // from base 3 to base 10 we get 1,5,6
     CHECK(landscape.GetFitness(genome) == 3.0);
   } 
-  { // CBA - Zero genome
-    emp::vector<size_t> genome{7, 3, 2};
+
+  { // CBA - Zero genome                              
+    emp::vector<size_t> genome{2, 1, 0}; //7,3,2
     CHECK(landscape.GetFitness(genome) == 0.0);
   } 
+  
   { // ABA - Only first site confers fitness 
-    emp::vector<size_t> genome{1, 3, 1};
+    emp::vector<size_t> genome{0, 1 , 0}; //1,3,0
+    CHECK(landscape.GetFitness(genome) == 1.0);
+  } 
+
+  { // ABB
+    emp::vector<size_t> genome{0, 1 , 1}; //1,4,3
+    CHECK(landscape.GetFitness(genome) == 1.0);
+  } 
+
+  { // BAB
+    emp::vector<size_t> genome{1, 0 , 1}; //3,1,4
     CHECK(landscape.GetFitness(genome) == 0.0);
+  } 
+
+  { // CAB
+    emp::vector<size_t> genome{2, 0 , 1}; //6,1,5
+    CHECK(landscape.GetFitness(genome) == 0.0);
+  } 
+
+  { // BAC
+    emp::vector<size_t> genome{1, 0 , 2}; //3,2,7
+    CHECK(landscape.GetFitness(genome) == 0.0);
+  } 
+
+  { // CBC
+    emp::vector<size_t> genome{2, 1 , 2}; //7,5,8
+    CHECK(landscape.GetFitness(genome) == 1.0);
   } 
 
 }
