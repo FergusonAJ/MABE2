@@ -123,6 +123,18 @@ namespace mabe {
       return 1;
     }
 
+    void PrintDetails(std::ostream& ostr = std::cout){
+      base_t::PrintDetails(ostr);
+      ostr 
+          << "Position in pop [" 
+          << GetTrait<OrgPosition>(SharedData().position_name).Pos() 
+          << "]\n" 
+          << "Accumulated merit: " << GetTrait<double>(SharedData().child_merit_name) 
+          << "; Given merit: " << GetTrait<double>(SharedData().merit_name) 
+          << "\n________________________________"
+          << std::endl;
+    }
+
   public:
     VirtualCPUOrg(OrganismManager<VirtualCPUOrg> & _manager)
       : OrganismTemplate<VirtualCPUOrg>(_manager), VirtualCPU(genome_t(GetInstLib()) ){ }
@@ -609,19 +621,11 @@ namespace mabe {
         for(size_t offset = 0; offset < max_insts; ++offset){
           const size_t inst_id = genome_working[inst_ptr].id;
           if(!non_speculative_inst_vec[inst_id]){
-            if(SharedData().verbose){
-              std::cout << "[" << GetTrait<OrgPosition>(SharedData().position_name).Pos() 
-                << "]" << std::endl;
-            }
             Process(1, SharedData().verbose);
             ++insts_speculatively_executed; 
           }
           else{
             if(insts_speculatively_executed == 0){
-              if(SharedData().verbose){
-                std::cout << "[" << GetTrait<OrgPosition>(SharedData().position_name).Pos() 
-                  << "]" << std::endl;
-              }
               Process(1, SharedData().verbose);
             }
             else break;
@@ -638,10 +642,6 @@ namespace mabe {
         Process_Speculative();
       }
       else{
-        if(SharedData().verbose){
-          std::cout << "[" << GetTrait<OrgPosition>(SharedData().position_name).Pos()
-            << "]" << std::endl;;
-        }
         Process(1, SharedData().verbose);
       }
       SetTrait<size_t>(SharedData().num_insts_executed_name, num_insts_executed);
