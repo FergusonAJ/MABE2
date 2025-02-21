@@ -148,6 +148,8 @@ namespace mabe {
 
     /// Update MABE a single time step.
     void Update(size_t num_updates=1);
+    /// Update MABE one time step at a time until a stop condition is met
+    void UpdateForever();
 
     // --- Population Management ---
 
@@ -722,6 +724,19 @@ namespace mabe {
 
     const size_t target_update = update + num_updates;
     while (update < target_update && !exit_now) {
+      emp_assert(OK(), update);                 // In debug mode, keep checking MABE integrity
+      if (rescan_signals) UpdateSignals();      // If we have reason to, update module signals
+      before_update_sig.Trigger(update);        // Signal that a new update is about to begin
+      update++;                                 // Increment 'update' to start new update
+      on_update_sig.Trigger(update);            // Signal all modules about the new update
+      config_script.Trigger("UPDATE", update);  // Trigger any updated-based events
+    }
+  }
+  
+  /// Update MABE world until a stop condition is met
+  void MABE::UpdateForever() {
+    if (update == 0) config_script.Trigger("START");
+    while (!exit_now) {
       emp_assert(OK(), update);                 // In debug mode, keep checking MABE integrity
       if (rescan_signals) UpdateSignals();      // If we have reason to, update module signals
       before_update_sig.Trigger(update);        // Signal that a new update is about to begin
