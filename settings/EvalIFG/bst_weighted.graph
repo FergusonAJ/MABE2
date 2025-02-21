@@ -1,0 +1,16 @@
+add, start, 1
+
+add, L, 25
+connect, start, L, 10, 1, 1
+add, R, 25
+connect, start, R, 10, 999, 1
+
+add, LL, 50 
+connect, L, LL, 10, 1, 1
+add, LR, 50
+connect, L, LR, 10, 999, 1
+
+add, RL, 50 
+connect, R, RL, 10, 1, 1
+add, RR, 50
+connect, R, RR, 10, 999, 1

@@ -41,6 +41,18 @@
 *.swp
 
 examples/NK
+build/*.csv
+build/*.gen
+build/*.mabe
+build/MABE
+
+# Temporary and backup files
+*.tmp
+*.bak
+*.bak2
+*-bak.*
+*-bak2.*
+tmp*
 
 # Mac files 
 *.DS_Store

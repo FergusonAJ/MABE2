@@ -1,0 +1,15 @@
+# create <NAME> <FITNESS>
+add, A, 1
+add, B, 3
+add, C, 2 
+connect, A, B, 3
+connect, A, C, 2
+connect, B, C, 1
+
+## create <NAME> <FITNESS>
+#add, start, 1
+## extend <NAME> <LENGTH> <FITNESS_STEP> <NAME>
+#extend, start, 5, 1, A
+#extend, start, 4, 1, B
+## connect <NAME> <NAME> <LENGTH>
+#connect, A, B, 5 

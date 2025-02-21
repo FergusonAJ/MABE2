@@ -1,0 +1,137 @@
+random_seed = 0;                // Seed for random number generator; use 0 to base on time.
+Var pop_size = 64;
+Var num_gens = 10000;
+Var num_vals = 1;
+Var print_step = 1;          // Interval for printing...
+Var bonus_step = 1000;
+Var max_val = 200;
+Var cur_bonus = 6;
+Var bonus_orgs = 5;
+Var cur_update = 0;
+Var pop_snapshot_dir = "pop_snapshots";
+
+Population main_pop;
+Population next_pop;
+
+IntsOrg ints_org {
+  N = num_vals;
+  mut_prob = 0.05;
+  min_val = 0;
+  max_val = max_val;
+  output_name = "ints";
+  init_random = 0;
+};
+
+//EvalSawtooth sawtooth {
+//  N = num_vals;
+//  ints_trait = "ints";
+//  fitness_trait = "fitness";
+//  sawtooth_min_peak = 8;
+//  max_val = max_val;
+//};
+EvalSawtooth_Regular sawtooth {
+  N = num_vals;
+  ints_trait = "ints";
+  fitness_trait = "fitness";
+  valley_width = 7;
+  step_decrease = 1;
+  offset = 2;
+};
+
+SelectElite select_e {          // Choose the top fitness organisms for replication.
+  fitness_fun = "adj_fitness";      // Which trait provides the fitness value to use?
+  top_count = 1;       // Number of top-fitness orgs to be replicated
+};
+
+SelectTournament select_t {     // Replicate top fitness organisms from random subgroups.
+  tournament_size = 2;          // Number of orgs in each tournament
+  fitness_fun = "adj_fitness";      // Which trait provides the fitness value to use?
+};
+
+SelectRoulette select_r {     // Replicate top fitness organisms via roulette selection
+  fitness_fun = "1.1**adj_fitness";      // Which trait provides the fitness value to use?
+};
+
+FixedTrait am_trait {
+  trait_name = "am_bonus";
+  trait_type = "double";
+};
+
+AddTraits trait_adder {
+  trait_a_name = "am_bonus";
+  trait_b_name = "fitness";
+  trait_type = "double";
+  output_trait_name = "adj_fitness";
+};
+
+Spatial1DPlacement one_d_placement{
+  target = "main_pop";
+  grid_width = pop_size;
+  does_wrap = 0;
+};
+
+DataFile fit_file { filename="fitness.csv"; };
+fit_file.ADD_COLUMN( "update", "cur_update");
+fit_file.ADD_COLUMN( "fitness_raw_mean", "main_pop.CALC_MEAN('fitness')" );
+fit_file.ADD_COLUMN( "fitness_raw_max", "main_pop.CALC_MAX('fitness')" );
+fit_file.ADD_COLUMN( "fitness_adj_mean", "main_pop.CALC_MEAN('adj_fitness')" );
+fit_file.ADD_COLUMN( "fitness_adj_max", "main_pop.CALC_MAX('adj_fitness')" );
+fit_file.ADD_COLUMN( "bonus_mean", "main_pop.CALC_MEAN('am_bonus')" );
+fit_file.ADD_COLUMN( "bonus_max", "main_pop.CALC_MAX('am_bonus')" );
+
+OrgList best_org;
+DataFile max_file { filename="max_org.csv"; };
+max_file.ADD_SETUP( "best_org = main_pop.FIND_MAX('fitness')" );
+max_file.ADD_COLUMN( "Fitness", "best_org.TRAIT('fitness')" );
+max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('ints')" );
+
+@START() {
+  PRINT("Beginning DIAGNOSTICS!\nMain config options:");
+  PRINT(" Num org values:   ", num_vals);
+  PRINT(" Mut Probability:  ", ints_org.mut_prob);
+  PRINT(" Population size:  ", pop_size);
+  PRINT(" Random seed:      ", random_seed, "\n");
+  PRINT(" Num Generations:  ", num_gens, "\n");
+  
+  main_pop.INJECT_GENOME("ints_org", "[ 14 ]", pop_size);       // Inject starting population.
+  one_d_placement.PRINT(main_pop);
+  am_trait.SET_DOUBLE(main_pop, 0);
+}
+
+// Actions to perform every update.
+
+@UPDATE(Var ud) {
+  cur_update = ud;
+  IF (ud == num_gens){
+    EXIT();
+  } 
+
+  sawtooth.EVAL(main_pop);
+  trait_adder.ADD(main_pop);
+  
+
+  IF (ud % print_step == 0) {
+    fit_file.WRITE();
+    max_file.WRITE();
+    //main_pop.SAVE_TO_FILE(pop_snapshot_dir + "/ud_" + ud + ".pop");
+    //am_trait.SAVE_TO_FILE(main_pop, pop_snapshot_dir + "/ud_" + ud + ".popt");
+  }
+  IF (ud % bonus_step == 0) {
+    //cur_bonus = cur_bonus + 3;
+    PRINT("Bonus increases to: ", cur_bonus);
+    Var tmp_counter = 0;
+    WHILE(tmp_counter < pop_size){
+      am_trait.SET_DOUBLE(main_pop.INDEX(tmp_counter), 0);
+      tmp_counter = tmp_counter + 1;
+    }
+    tmp_counter = 0;
+    WHILE(tmp_counter < bonus_orgs){
+      am_trait.SET_DOUBLE(main_pop.INDEX(tmp_counter), cur_bonus);
+      tmp_counter = tmp_counter + 1;
+    }
+  }
+
+  //select_t.SELECT_SPATIAL(main_pop, next_pop);
+  select_r.SELECT_SPATIAL(main_pop, next_pop);
+  main_pop.REPLACE_WITH(next_pop);
+}

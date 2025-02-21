@@ -33,5 +33,5 @@ int main(int argc, char* argv[])
   if (control.Setup() == false) return 0;
 
   // Start the run! 
-  control.Update(1000000);
+  control.Update(100000000);
 }

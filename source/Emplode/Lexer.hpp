@@ -33,13 +33,13 @@ namespace emplode {
 
       // Keywords have top priority, especially over identifiers.   Most are simply reserved words.
       token_keyword = AddToken("Keyword",
-        "(ELSE)|(IF)"
+        "(BREAK)|(CONTINUE)|(ELSE)|(IF)|(WHILE)"
         // Reserved keywords below.
-        "|(AND)|(AUTO)|(BREAK)|(CASE)|(CAST)|(CATCH)|(CLASS)|(CONST)|(CONTINUE)|(DEBUG)"
+        "|(AND)|(AUTO)|(CASE)|(CAST)|(CATCH)|(CLASS)|(CONST)|(DEBUG)"
         "|(DEFAULT)|(DEFINE)|(DELETE)|(DO)|(EVENT)|(EVERY)|(FALSE)|(FOR)|(FOREACH)"
         "|(FUNCTION)|(GOTO)|(IN)|(INCLUDE)|(MUTABLE)|(NAMESPACE)|(NEW)|(OR)|(PRIVATE)"
         "|(PROTECTED)|(PUBLIC)|(RETURN)|(SIGNAL)|(STATIC)|(SWITCH)|(TEMPLATE)|(THIS)"
-        "|(THROW)|(TRIGGER)|(TRUE)|(TRY)|(TYPE)|(UNION)|(USING)|(WHILE)|(YIELD)");
+        "|(THROW)|(TRIGGER)|(TRUE)|(TRY)|(TYPE)|(UNION)|(USING)|(YIELD)");
 
       // Meaningful tokens have next priority.
       token_identifier = AddToken("Identifier", "[a-zA-Z_][a-zA-Z0-9_]*");
@@ -52,12 +52,12 @@ namespace emplode {
       token_symbol = AddToken("Symbol", ".|\"::\"|\"==\"|\"!=\"|\"<=\"|\">=\"|\"->\"|\"&&\"|\"||\"|\"<<\"|\">>\"|\"++\"|\"--\"|\"**\"");
     }
 
-    bool IsKeyword(const emp::Token token) const noexcept { return token.token_id == token_keyword; }
-    bool IsID(const emp::Token token) const noexcept { return token.token_id == token_identifier; }
-    bool IsNumber(const emp::Token token) const noexcept { return token.token_id == token_number; }
-    bool IsString(const emp::Token token) const noexcept { return token.token_id == token_string; }
-    bool IsDots(const emp::Token token) const noexcept { return token.token_id == token_dots; }
-    bool IsSymbol(const emp::Token token) const noexcept { return token.token_id == token_symbol; }
+    bool IsKeyword(const emp::Token token) const noexcept { return token.id == token_keyword; }
+    bool IsID(const emp::Token token) const noexcept { return token.id == token_identifier; }
+    bool IsNumber(const emp::Token token) const noexcept { return token.id == token_number; }
+    bool IsString(const emp::Token token) const noexcept { return token.id == token_string; }
+    bool IsDots(const emp::Token token) const noexcept { return token.id == token_dots; }
+    bool IsSymbol(const emp::Token token) const noexcept { return token.id == token_symbol; }
   };
 }
 

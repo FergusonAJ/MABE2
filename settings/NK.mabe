@@ -13,7 +13,7 @@ BitsOrg bits_org {              // Organism consisting of a series of N bits.
   init_random = 1;              // Should we randomize ancestor?  (0 = all zeros)
 };
 
-EvalNK eval_nk {                // Evaluate bitstrings on an NK fitness lanscape.
+EvalNK eval_nk {                // Evaluate bitstrings on an NK fitness landscape.
   N = num_bits;                 // Number of bits required in output
   K = 3;                        // Number of bits used in each gene
   bits_trait = "bits";          // Which trait stores the bit sequence to evaluate?
@@ -68,9 +68,7 @@ max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('bits')" );
   fit_file.WRITE();
   max_file.WRITE();
 
-  IF (ud == num_gens){
-    EXIT();
-  }
+  IF (ud == num_gens) EXIT();
 
   OrgList elite_offspring = elite.SELECT(main_pop, next_pop, 1);
   // Calc number of tournaments to run
@@ -79,4 +77,3 @@ max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('bits')" );
   main_pop.REPLACE_WITH(next_pop);
 
 }
-

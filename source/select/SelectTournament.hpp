@@ -1,7 +1,7 @@
 /**
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
- *  @date 2019-2022.
+ *  @date 2019-2024.
  *
  *  @file  SelectTournament.hpp
  *  @brief MABE module to enable tournament selection (choose T random orgs and return "best")
@@ -18,8 +18,8 @@ namespace mabe {
   /// Add elite selection with the current population.
   class SelectTournament : public Module {
   private:
-    std::string fit_equation;     ///< Trait function that we should select on
-    size_t tourny_size;      ///< Number of organisms in each tournament
+    emp::String fit_equation;  ///< Trait function that we should select on
+    size_t tourny_size;        ///< Number of organisms in each tournament
 
     Collection Select(Population & select_pop, Population & birth_pop, size_t num_births) {
       emp::Random & random = control.GetRandom();
@@ -60,12 +60,49 @@ namespace mabe {
 
       return placement_list;
     }
+    
+    Collection SelectSpatial(Population & select_pop, Population & birth_pop) {
+      emp::Random & random = control.GetRandom();
+      const size_t N = select_pop.GetSize();
+
+      if (select_pop.GetNumOrgs() == 0) {
+        emp::notify::Error("Trying to run Tournament Selection on an Empty Population.");
+        return Collection();
+      }
+
+      // Setup the fitness function - redo this each time in case it changes.
+      auto fit_fun = control.BuildTraitEquation(select_pop, fit_equation);
+
+      // Track where all organisms are placed.
+      Collection placement_list;
+
+      for(size_t idx = 0; idx < N; idx++){
+        emp::vector<size_t> best_ids;
+        best_ids.push_back(idx);
+        double best_fit = fit_fun(select_pop[idx]);
+        for(OrgPosition& neighbor_pos : 
+            select_pop.FindAllNeighbors(OrgPosition(select_pop, idx))){
+          double test_fit = fit_fun(select_pop[neighbor_pos.Pos()]);          
+          if(test_fit > best_fit){
+            best_ids.clear();
+            best_ids.push_back(neighbor_pos.Pos());
+            best_fit = test_fit;
+          }
+          else if (test_fit == best_fit){
+            best_ids.push_back(neighbor_pos.Pos());
+          }
+        }
+        size_t best_id = best_ids[random.GetUInt(best_ids.size())];
+        placement_list += control.Replicate(select_pop.IteratorAt(best_id), birth_pop, 1);
+      }
+      return placement_list;
+    }
 
   public:
     SelectTournament(mabe::MABE & control,
-                     const std::string & name="SelectTournament",
-                     const std::string & desc="Replicate most fit organisms from random subgroups.",
-                     const std::string & in_fit="fitness",
+                     const emp::String & name="SelectTournament",
+                     const emp::String & desc="Replicate most fit organisms from random subgroups.",
+                     const emp::String & in_fit="fitness",
                      size_t t_size=7)
       : Module(control, name, desc)
       , fit_equation(in_fit), tourny_size(t_size)
@@ -82,6 +119,12 @@ namespace mabe {
           return mod.Select(from,to,count);
         },
         "Perform tournament selection on the provided organisms.");
+      info.AddMemberFunction(
+        "SELECT_SPATIAL",
+        [](SelectTournament & mod, Population & from, Population & to) {
+          return mod.SelectSpatial(from,to);
+        },
+        "Perform tournament selection for each index of the population using its neighborhood");
     }
 
     void SetupConfig() override {

@@ -9,7 +9,7 @@ MaxSizePlacement place_max_size { // Grow population to a given size then mainta
 };
 AnnotatePlacement_Position pos_annotater { // Store org's position as trait on placement.
   target = "main_pop";      // Population(s) to annotate
-  pos_trait = "org_pos";    // Name of trait that will hold organism's position
+  pos_trait = "position";    // Name of trait that will hold organism's position
 };
 SchedulerProbabilistic scheduler { // Rations out updates to organisms based on a specified attribute, using a method akin to roulette wheel selection.
   pop = "main_pop";             // Which population should we select parents from?
@@ -36,7 +36,7 @@ VirtualCPU_Inst_Manipulation inst_lib_manip { // Manipulation instructions for V
 };
 VirtualCPU_Inst_Replication inst_lib_repl { // Replication instructions for VirtualCPUOrg
   target_pop = "main_pop";      // Population(s) to manage.
-  pos_trait = "org_pos";        // Name of trait that holds organism's position
+  pos_trait = "position";        // Name of trait that holds organism's position
   offspring_genome_trait = "offspring_genome";// Name of trait that holds the offspring organism's genome
   req_count_inst_executed = 1500; // Minimum number of instructions that the organism must 
                                   // execute before its allowed to reproduce. Otherwise 
@@ -83,13 +83,6 @@ VirtualCPUOrg avida_org {       // Organism consisting of Avida instructions.
   N = 0;                        // Initial number of instructions in genome
   init_random = 0;              // Should we randomize ancestor?  (0 = "blank" default)
   eval_time = 200;              // How many CPU cycles should we give organisms to run?
-  input_name = "input";         // Name of variable to load inputs from.
-  output_name = "unused_output";   // Name of variable to output results.
-  genome_name = "genome";       // Where to store the genome?.
-  genome_length_name = "genome_length";   // Where to store the genome's length? 
-  position_name = "org_pos";    // Where to store the organism's position?.
-  merit_name = "merit";         // Name of variable corresponding to the organism's task performance.
-  child_merit_name = "child_merit";// Name of variable corresponding to the organism's task performance that will be used to calculate CPU cylces given to offspring.
   initial_merit = 0.01;       // Initial value for merit (task performance)
   verbose = 0;
   initial_genome_filename = "../settings/VirtualCPUOrg/ancestor_repro.org";

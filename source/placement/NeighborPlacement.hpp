@@ -58,6 +58,11 @@ namespace mabe {
               return PlaceInject(pop);
             }
           );
+          pop.SetFindAllNeighborsFun(
+            [this, &pop](OrgPosition ppos){
+              return FindAllNeighbors(ppos, pop);
+            }
+          );
         }
       }
     }
@@ -162,7 +167,59 @@ namespace mabe {
       // Otherwise, don't find a legal place!
       return OrgPosition();      
     }
-    
+   
+    emp::vector<OrgPosition> FindAllNeighbors(OrgPosition ppos, Population & target_pop) {
+        const size_t parent_idx = ppos.Pos();
+        const size_t parent_x = parent_idx % grid_width;
+        const size_t parent_y = parent_idx / grid_width;
+        size_t offspring_x = parent_x;
+        size_t offspring_y = parent_y;
+        emp::vector<OrgPosition> result_vec;
+        // Start with the von Neumann neighborhood: 4 cardinal directions 
+        //   0 
+        // 3 X 1
+        //   2  
+        // North
+        offspring_x = parent_x;
+        offspring_y = (parent_y <= 0 ? grid_height - 1 : parent_y - 1); 
+        result_vec.emplace_back(target_pop, offspring_y * grid_width + offspring_x);
+        // South
+        offspring_x = parent_x;
+        offspring_y = (parent_y >= (grid_height - 1) ? 0 : parent_y + 1);
+        result_vec.emplace_back(target_pop, offspring_y * grid_width + offspring_x);
+        // East
+        offspring_x = (parent_x >= (grid_width - 1) ? 0 : parent_x + 1);
+        offspring_y = parent_y;
+        result_vec.emplace_back(target_pop, offspring_y * grid_width + offspring_x);
+        // West
+        offspring_x = (parent_x <= 0 ? grid_width - 1 : parent_x - 1);
+        offspring_y = parent_y;
+        result_vec.emplace_back(target_pop, offspring_y * grid_width + offspring_x);
+        // Moore neighborhood: all 8 sides
+        // 7 0 1
+        // 6 X 2
+        // 5 4 3
+        if(use_moore_neighborhood){
+          // Northeast 
+          offspring_y = (parent_y <= 0 ? grid_height - 1 : parent_y - 1);
+          offspring_x = (parent_x >= (grid_width - 1) ? 0 : parent_x + 1);
+          result_vec.emplace_back(target_pop, offspring_y * grid_width + offspring_x);
+          // Southeast 
+          offspring_y = (parent_y >= (grid_height - 1) ? 0 : parent_y + 1);
+          offspring_x = (parent_x >= (grid_width - 1) ? 0 : parent_x + 1);
+          result_vec.emplace_back(target_pop, offspring_y * grid_width + offspring_x);
+          // Southwest
+          offspring_y = (parent_y >= (grid_height - 1) ? 0 : parent_y + 1);
+          offspring_x = (parent_x <= 0 ? grid_width - 1 : parent_x - 1);
+          result_vec.emplace_back(target_pop, offspring_y * grid_width + offspring_x);
+          // Northwest
+          offspring_y = (parent_y <= 0 ? grid_height - 1 : parent_y - 1);
+          offspring_x = (parent_x <= 0 ? grid_width - 1 : parent_x - 1);
+          result_vec.emplace_back(target_pop, offspring_y * grid_width + offspring_x);
+        }
+        return result_vec;
+    }
+
     double PrintGrid(Collection& list){
       for(size_t row_idx = 0; row_idx < grid_height; ++row_idx){
         for(size_t col_idx = 0; col_idx < grid_width; ++col_idx){
