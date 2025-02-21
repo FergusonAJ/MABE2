@@ -50,7 +50,7 @@ namespace mabe {
     void SetupGrid(){
       val_map.clear();
       emp::File map_file(map_filename);
-      for(int row_idx = 0; row_idx < num_rows; row_idx++){
+      for(size_t row_idx = 0; row_idx < num_rows; row_idx++){
         val_map.push_back(map_file.ExtractRowAs<double>(","));
       }
       for(size_t row_idx = 0; row_idx < num_rows; row_idx++){
@@ -90,7 +90,8 @@ namespace mabe {
                            "\nOrg: ", org.ToString());
       }
       double fitness = 0;
-      if(ints[0] < 0 || ints[0] >= num_rows || ints[1] < 0 || ints[1] >= num_cols){
+      if(ints[0] < 0 || static_cast<size_t>(ints[0]) >= num_rows || 
+         ints[1] < 0 || static_cast<size_t>(ints[1]) >= num_cols){
         fitness = -100;
       }
       else{

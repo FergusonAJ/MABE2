@@ -57,6 +57,7 @@ namespace mabe {
       auto dm_fun = dm_parser.BuildMathFunction(data_layout, pp_equ.result, pp_equ.values);
       return [dm_fun](const Organism & org){ 
         if(!org.IsEmpty()) return dm_fun(org.GetDataMap()); 
+        return emp::Datum(std::nan("Empty organism"));
       };
     }
 

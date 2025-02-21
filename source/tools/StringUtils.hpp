@@ -30,7 +30,7 @@ namespace mabe {
     // Setup member functions associated with this class.
     static void InitType(emplode::TypeInfo & info) {
       info.AddMemberFunction("CONVERT_TO_BITSTRING",
-                              [](StringUtils & mod, size_t idx, size_t num_bits) { 
+                              [](StringUtils & /*mod*/, size_t idx, size_t num_bits) { 
                                 emp::BitVector bit_vec(num_bits);
                                 bit_vec.SetUInt64(0, idx);
                                 return bit_vec.ToBinaryString();

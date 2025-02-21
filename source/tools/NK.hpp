@@ -170,7 +170,7 @@ namespace mabe {
       double best_fitness = 0;
       size_t best_idx = 0;
       emp::BitVector bit_vec(N);
-      for(size_t i = 0; i < (1 << N); ++i){
+      for(size_t i = 0; i < (1ul << N); ++i){
         bit_vec.Clear();
         bit_vec.SetUInt64(0, i);
         double fitness = GetFitness(bit_vec);

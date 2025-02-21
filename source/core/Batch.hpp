@@ -147,7 +147,11 @@ namespace mabe {
 
           // And run the executable
           emp::notify::Message("BATCH COMMAND: ", exe_string);
-          std::system(exe_string.c_str());
+          int return_val = std::system(exe_string.c_str());
+          if(return_val != 0){
+            emp::notify::Warning("Nonzero exit status (", return_val, ") on batch run: ", 
+                exe_string.c_str());
+          }
         }
 
         // Move on to the next factors.
