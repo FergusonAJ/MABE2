@@ -77,4 +77,30 @@ namespace mabe {
   MABE_REGISTER_MODULE(SelectElite, "Choose the top fitness organisms for replication.");
 }
 
+/*
+== New Version:
+
+module SelectElite {
+  desc: "Module to choose a set of top scoring organisms."
+  module_type: "selection"
+
+  config fit_fun : TraitEquation { default: "fitness"; desc: "Function to use for selection"; }
+  config top_count : Int { default: 1; desc: "Number of top-scoring orgs to select"; }
+
+  function(Population select_pop {desc: "Population to select from."},
+           Int count {desc: "Number of organisms to select"; default: 1}) : OrgList {
+    desc: "Select the top scoring organisms from the population.";
+    require(select_pop.Size() > 0);
+
+    OrgList top_orgs = select_pop.FindMax(fit_fun, top_count);
+
+    OrgList selected;
+    while (selected.Size() < count) selected += top_orgs;
+    selected.Resize(count); // Trim off any extra orgs.
+    return selected;
+  }
+}
+
+*/
+
 #endif

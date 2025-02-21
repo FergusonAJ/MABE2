@@ -137,4 +137,24 @@ namespace mabe {
   MABE_REGISTER_MODULE(SelectRoulette, "Randomly choose organisms to replicate, with odds proportional to their fitness.");
 }
 
+/*
+== New Version:
+
+module SelectRoulette {
+  desc: "Module to randomly choose organisms, weighted based on score.",
+  module_type: "selection"
+
+  config fit_fun : TraitEquation {  default: "fitness";  desc: "Function to use for selection"; }
+
+  function(Population select_pop {desc: "Population to select from."},
+           Int count {desc: "Number of organisms to select"; default: 1}) : OrgList {
+    desc: "Select random organisms, weighted based on score.";
+    require(select_pop.Size() > 0);
+
+    OrgWeights fit_map = select_pop.Weights(fit_fun);
+    return fit_map.SelectList(count);
+  }
+}
+
+*/
 #endif
