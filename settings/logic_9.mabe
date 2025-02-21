@@ -1,7 +1,9 @@
 random_seed = 0;       // Seed for random number generator; use 0 to base on time.
-Var pop_size = 3600;   // Local value variable.
-Var max_updates = 1000; // Local value variable.
-Var task_reward_type = "mult"; 
+
+Var pop_size = 3600;              // Local value variable.
+Var max_updates = 1000;           // Local value variable.
+Var task_reward_type = "mult";
+
 Population main_pop;   // Collection of organisms
 
 NeighborPlacement grid_placement{
@@ -25,30 +27,31 @@ SchedulerProbabilistic scheduler { // Rations out updates to organisms based on 
   base_value = 1;               // What value should the scheduler use for organisms that have performed no tasks?
   merit_scale_factor = 1;       // How should the scheduler scale merit?
 };
+
 VirtualCPU_Inst_Nop inst_lib_nop { // Nop instructions for VirtualCPUOrg
-  target_pop = "main_pop";      // Population(s) to manage.
-  num_nops = 3;                 // Number of nops to include.
+  target_pop = "main_pop";         // Population(s) to manage.
+  num_nops = 3;                    // Number of nops to include.
 };
 VirtualCPU_Inst_Math inst_lib_math { // Math instructions for VirtualCPUOrg
-  target_pop = "main_pop"; // Population(s) to manage.
+  target_pop = "main_pop";           // Population(s) to manage.
 };
 VirtualCPU_Inst_IO inst_lib_io { // IO instructions for VirtualCPUOrg
-  target_pop = "main_pop";      // Population(s) to manage.
-  input_name = "input";         // Name of variable to store inputs
-  output_name = "output";       // Name of variable to store outputs
-  input_idx_name = "input_idx"; // Index of next input to be loaded
+  target_pop = "main_pop";       // Population(s) to manage.
+  input_name = "input";          // Name of variable to store inputs
+  output_name = "output";        // Name of variable to store outputs
+  input_idx_name = "input_idx";  // Index of next input to be loaded
 };
 VirtualCPU_Inst_Flow inst_lib_flow { // Flow control instructions for VirtualCPUOrg
-  target_pop = "main_pop";  // Population(s) to manage.
+  target_pop = "main_pop";           // Population(s) to manage.
 };
 VirtualCPU_Inst_Manipulation inst_lib_manip { // Manipulation instructions for VirtualCPUOrg
-  target_pop = "main_pop"; // Population(s) to manage.
+  target_pop = "main_pop";                    // Population(s) to manage.
 };
 VirtualCPU_Inst_Replication inst_lib_repl { // Replication instructions for VirtualCPUOrg
-  target_pop = "main_pop";      // Population(s) to manage.
+  target_pop = "main_pop";       // Population(s) to manage.
   pos_trait = "position";        // Name of trait that holds organism's position
   offspring_genome_trait = "offspring_genome"; // Name of trait that holds the offspring organism's genome
-  req_count_inst_executed = -1; // Minimum number of instructions that the organism must 
+  req_count_inst_executed = -1;   // Minimum number of instructions that the organism must 
                                   // execute before its allowed to reproduce. Otherwise 
                                   // reproduction instructions do nothing.  Takes priority 
                                   // over `req_frac_inst_executed`; -1 to use fraction instead

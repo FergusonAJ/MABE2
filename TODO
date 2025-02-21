@@ -17,3 +17,108 @@ MAJOR PROJECTS
   to call them.  Ideally with a caching option as well...  For computationally
   intensive evaluations, this will allow them to only be called when needed.
 
+
+
+== NEW VERSION OF MABEScript ==
+
+Key ideas:
+- All modules are written in MABEScript
+- MABEScript can either be compiled to C++ (for compute speed) or interpreted (for ease)
+- Modules will have a main function associated with them.
+  For example, and instance the EliteSelect module 'elite_select' will can be called as
+  elite_select(main_pop, 10) and would return the 10 selected individuals.
+- Member function calls are interchangeable with stand-alone function that have type as first argument.
+
+== Signals ==
+Signals will be easy to name and to provide relevant information.
+By default signals will only trigger modules listening to a particular population.
+
+Signals are triggered with the "trigger" keyword.  For example:
+  trigger "BeforeDeath" (position=target_org.GetPosition());
+
+Modules specify what trigger names they are paying attention to.
+  on "BeforeDeath" { ... actions that can use "position" as an input variable ... }
+
+== Labels ==
+Each module / function / config parameter works with labels in "name: value" format.
+
+  desc: is used for the description.
+  type: specified the type name something resolves to.
+  default: gives a default value.
+  min_value: sets a lower limit, below which an out-of-range error should occur.
+  max_value: sets an upper limit, above which an out-of-range error should occur.
+  min_adjust: a soft lower limit that will adjust automatically without error.
+  max_adjust: a soft upper limit that will adjust automatically without error.
+
+Any other labels are allowed.  They are const Datum type (strings or values that can't be changed)
+
+== Types ==
+Built in types should include:
+- Int (must be a numeric integer value) (Do we need more specifics for compilation to C++?)
+- UInt
+- Float
+- Char
+- Bool
+
+- String
+- BitSet
+
+- TraitEquation:
+    automatically assumes all traits used are "required"
+    if treated as a function, converts to the resulting value
+    requires all traits are convertible to Float (unless a more restrictive "convert_to:" is set)
+- TraitSet:
+    automatically assumes all traits used are "required"
+    if "convert_to:" is specified, limits the traits allowed
+    .Insert(...) add the organism or organisms provided to this set.
+    .Remove(...) remove the organism or organisms provided from this set.
+
+- Organism
+- Population: A natural grouping of organisms.
+   .Size()
+   .FindMax(trait_fun, count=1)
+   .FindMin(trait_fun, count=1)
+   .Weights(trait_fun) use function to place orgs in a WeightedSet (OrgWeights) object
+   .At(position) return the organism at the specified position
+   .Alive() return an OrgSet of the living orgs in the population 
+   .TraitValues(String trait_name)
+      return a vector of trait values corresponding to population position
+   .TraitValues(TraitSet trait_set)
+      return a 2D matrix of trait values; row = trait ID, col = population position
+   .SelectSet(count) build a random OrgSet of the desired size (no replacement)
+   .SelectList(count) build a random OrgList of the desired size (with replacement)
+   .GenerateOutput()
+- OrgSet: A set of organisms (by position); no duplicates or ordering
+   Same member functions as Population.
+- OrgList: A list of organisms in order, potentially with repeats
+   Same member functions as Population.
+   .Resize(new_size)  - New orgs are empty of new size > old size
+- OrgWeights: A map of organisms to weight levels
+   .SelectSet(count) - select count orgs with proper weights (no duplications)
+   .SelectList(count) - select count independent organisms from container with weights
+
+== Keywords ==
+
+`if`
+`foreach`
+`function` - about to define a new function.
+`in` - with `foreach`, specifies container.  with `if`, tests inclusion
+`mutable` - vars are const unless preceded by this keyword
+`return`
+`while`
+
+`config`
+`module`
+`trait`
+
+== Built-in functions ==
+
+Random(...) - Generate a random value.
+  no args: Float in range 0.0 to 1.0
+  one arg: Must be numerical type; output same type, from 0 to value
+  two args (min / max): Must be numerical type; output common type, from min to max
+
+Range(...)
+  one arg: generate Int[] or UInt[] (depending on arg) from 0 to target value (exclusive)
+  two args: generate array from min to max in steps of 1 (or 1.0) in common type
+  three args: Generate array using min,step,max in common type 
