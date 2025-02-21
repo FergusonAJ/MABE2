@@ -1,0 +1,86 @@
+random_seed = 0;                // Seed for random number generator; use 0 to base on time.
+Var pop_size = 1000;            // Number of organisms to evaluate in the population.
+Var genome_size = 10;             // Number of bits in each organism (and the NK landscape)
+Var max_ud = 30;
+
+Population main_pop;            // Main population for managing candidate solutions.
+Population next_pop;            // Temp. population while constructing the next generation.
+
+MultiAlleleOrg Multi_Org {      // Organism consisting of a series of N bits.
+  output_name = "genome";      // Name of variable to contain bit sequence.
+  N = genome_size;                 // Number of bits in organism
+  num_alleles = 3;              // number of possible alleles in our genome(currently called alleles)
+  mut_prob = 0.01;              // Probability of each bit mutating on reproduction.
+  init_random = 1;              // Should we randomize ancestor?  (0 = all zeros)
+};
+
+EvalNKMultiAllele eval_nkM {    // Evaluate bitstrings on an NK fitness landscape.
+  N = genome_size;                 // Number of bits required in output
+  K = 3;                        // Number of symbols used in each gene
+  num_alleles = 3;              // The number of possible alleles
+  genome_trait = "genome";      // Which trait stores the genome sequence to evaluate?
+  fitness_trait = "fitness";  // Which trait should we store NK-MultiAllele fitness in?
+};
+
+SelectElite elite {             // Choose the top fitness organisms for replication.
+  top_count = 5;                // Number of top-fitness orgs to be replicated
+  fitness_fun = "fitness";      // Which trait provides the fitness value to use?
+};
+
+SelectTournament tournament {   // Select the top fitness organisms from random subgroups for replication.
+  tournament_size = 7;          // Number of orgs in each tournament
+  fitness_fun = "fitness";      // Which trait provides the fitness value to use?
+};
+
+DataFile fit_file { filename="fitness.csv"; };
+fit_file.ADD_COLUMN( "Average Fitness", "main_pop.CALC_MEAN('fitness')" );
+fit_file.ADD_COLUMN( "Maximum Fitness", "main_pop.CALC_MAX('fitness')" );
+fit_file.ADD_COLUMN( "Dominant Fitness", "main_pop.CALC_MODE('fitness')" );
+
+DataFile max_file { filename="max_org.csv"; };
+OrgList best_org;
+max_file.ADD_SETUP( "best_org = main_pop.FIND_MAX('fitness')" );
+max_file.ADD_COLUMN( "Fitness", "best_org.TRAIT('fitness')" );
+max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('genome')" );
+
+
+@START() {
+  PRINT("random_seed = ", random_seed, "\n");  // Print seed at run start.
+  main_pop.INJECT("Multi_Org", pop_size);    // Inject starting population.
+  Multi_Org.N = 10;
+  PRINT("print fitness: ", eval_nkM.GET_FITNESS_STATE(5, 6));
+  PRINT("print fitness: ", eval_nkM.GET_FITNESS_STATE(5, 5));
+  PRINT("print fitness: ", eval_nkM.GET_FITNESS_STATE(3, 4));
+  
+}
+
+// Actions to perform every update.
+@UPDATE(Var ud) {
+  IF (ud == max_ud) EXIT();
+
+  eval_nkM.EVAL(main_pop);
+  Var mode_fit = main_pop.CALC_MODE("fitness");
+  //PRINT(main_pop.CALC_MODE("genome"));
+
+  OrgList list_less = main_pop.FILTER("fitness < ${mode_fit}");
+  OrgList list_equ  = main_pop.FILTER("fitness == ${mode_fit}");
+  OrgList list_gtr  = main_pop.FILTER("fitness > ${mode_fit}");
+  PRINT("UD:", GET_UPDATE(),
+      "  MainPopSize=", main_pop.SIZE(),
+      "  AveFitness=", main_pop.CALC_MEAN("fitness"),
+      "  MaxFitness=", main_pop.CALC_MAX("fitness"),
+      "  ModeFitness=", mode_fit,
+      "\nMODE_LESS=", list_less.SIZE(),
+      "  MODE_EQU=", list_equ.SIZE(),
+      "  MODE_GTR=", list_gtr.SIZE()
+  );
+  fit_file.WRITE();
+  max_file.WRITE();
+
+  OrgList elite_offspring = elite.SELECT(main_pop, next_pop, 25);
+
+  Var num_tournaments = pop_size - elite_offspring.SIZE();  // Calc number of tournaments to run
+  OrgList tourny_offspring = tournament.SELECT(main_pop, next_pop, num_tournaments);
+
+  main_pop.REPLACE_WITH(next_pop);
+}
