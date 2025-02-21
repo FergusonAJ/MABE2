@@ -49,6 +49,57 @@ namespace mabe {
       info.AddMemberFunction("RESET",
                              [](EvalNK & mod) { mod.landscape.Config(mod.N, mod.K, mod.control.GetRandom()); return 0; },
                              "Regenerate the NK landscape with current N and K.");
+      info.AddMemberFunction("RESET_WITH_SEED",
+                            [](EvalNK & mod, int seed) { 
+                              emp::Random tmp_rand(seed);
+                              mod.landscape.Config(mod.N, mod.K, tmp_rand); 
+                              return 0; 
+                            },
+                             "Regenerate the NK landscape with current N and K and a seed");
+      info.AddMemberFunction("GET_OPTIMAL",
+                            [](EvalNK & mod) { 
+                              return mod.landscape.GetOptimal(); 
+                            },
+                             "Fetch the optimal position as a size_t");
+      info.AddMemberFunction("WRITE_TO_FILE",
+                            [](EvalNK & mod, const std::string& filename) { 
+                              mod.landscape.WriteToFile(filename); 
+                              return filename; 
+                            },
+                             "Write the fitness table of the landscape to the given file");
+      info.AddMemberFunction("LOAD_FROM_FILE",
+                            [](EvalNK & mod, const std::string& filename, bool load_params) { 
+                              mod.landscape.LoadFromFile(filename, load_params); 
+                              return filename; 
+                            },
+                             "Load fitness values from given file. Pass bool as true to also load N and K from file, else error check.");
+      info.AddMemberFunction("GET_OPTIMAL_FITNESS",
+                            [](EvalNK & mod) { 
+                              size_t optimal_idx = mod.landscape.GetOptimal(); 
+                              emp::BitVector bit_vec(mod.N);
+                              bit_vec.SetUInt(0, optimal_idx);
+                              return mod.landscape.GetFitness(bit_vec);
+                            },
+                             "Fetch the optimal position as a size_t");
+      info.AddMemberFunction("GET_FITNESS",
+                            [](EvalNK & mod, size_t x) { 
+                              emp::BitVector bit_vec(mod.N);
+                              bit_vec.Clear();
+                              bit_vec.SetUInt64(0, x);
+                              return mod.landscape.GetFitness(bit_vec);
+                            },
+                             "Get fitness for a genotype (passed as a decimal number)");
+      info.AddMemberFunction("GET_PARTIAL_FITNESS",
+                            [](EvalNK & mod, size_t n, size_t state) { 
+                              return mod.landscape.GetFitness(n, state);
+                            },
+                             "Get fitness of the given gene (n) and gene state");
+      info.AddMemberFunction("PRINT_TABLE",
+                            [](EvalNK & mod) { 
+                              mod.landscape.PrintTable();
+                              return 0;
+                            },
+                             "Print the NK landscape table to stdout");
     }
 
     void SetupConfig() override {

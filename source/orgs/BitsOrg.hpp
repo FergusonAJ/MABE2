@@ -48,7 +48,9 @@ namespace mabe {
     std::string ToString() const override { return emp::to_string(bits); }
 
     void GenomeFromString(const std::string & new_genome) override {
-      bits = emp::BitVector(new_genome);
+      std::string new_string(new_genome);
+      std::reverse(new_string.begin(), new_string.end());
+      bits = emp::BitVector(new_string);
     }
 
     size_t Mutate(emp::Random & random) override {
