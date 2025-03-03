@@ -58,7 +58,7 @@ jobs:
       - run: sudo apt-get install cmake build-essential python3-virtualenv python3-pip nodejs tar gzip llvm llvm-dev clang llvm-dev libclang-dev
       - run: clang++ --version
       - run: g++ --version
-      - run: git fetch origin master:refs/remotes/origin/master
+      # - run: git fetch origin master:refs/remotes/origin/master
       - run: make install-test-dependencies
         working-directory: source/third-party/empirical
       - run: export CXX=clang++ && make install-coverage-dependencies
