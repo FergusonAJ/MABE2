@@ -1,2 +1,6 @@
 modules.hpp
 MABE_test
+MABE_coverage
+coverage.txt
+default.profdata
+default.profraw

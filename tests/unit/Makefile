@@ -20,4 +20,13 @@ test:
 cov-%:
 	cd $(@:cov-%=%) && make coverage
 
-coverage: $(addprefix cov-, $(DIR_NAMES))
+#coverage: $(addprefix cov-, $(DIR_NAMES))
+
+coverage: 
+	cp ../../source/modules.hpp .
+	clang++ $(FLAGS_COVERAGE) test_main.cpp -o MABE_coverage
+	./MABE_coverage
+	llvm-profdata merge default.profraw -o default.profdata
+	llvm-cov show MABE_coverage -instr-profile=default.profdata > coverage.txt
+	python ${EMP_DIR}/third-party/force-cover/fix_coverage.py coverage.txt
+	rm modules.hpp
