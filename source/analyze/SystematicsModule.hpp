@@ -88,11 +88,34 @@ public:
       sys.AddPhylogeneticDiversityDataNode();
       sys.AddPairwiseDistanceDataNode();
       sys.AddEvolutionaryDistinctivenessDataNode();
+      //Updates
       std::function<size_t ()> updatefun = [this](){return control.GetUpdate();};
       data.AddFun(updatefun,"Generation", "The current generation");
+      // Phylo diversity
       data.AddCurrent(*sys.GetDataNode("phylogenetic_diversity"), "phylogenetic_diversity","The current phylogenetic diversity.", true, true);
+      // Genetic entropy
+      std::function<double ()> diversity_func = [this](){return sys.CalcDiversity();};
+      data.AddFun(diversity_func, "diversity", "Diversity as the entropy of taxa");
+      // Average depth
+      std::function<double ()> ave_depth_func = [this](){return sys.GetAveDepth();};
+      data.AddFun(ave_depth_func, "ave_depth", "Average depth of orgs in population");
+      // MRCA depth
+      std::function<int ()> mrca_func = [this](){return sys.GetMRCADepth();};
+      data.AddFun(mrca_func,"mrca_depth", "Depth of the most recent common ancestor");
+      // Pairwise distance
       data.AddStats(*sys.GetDataNode("pairwise_distance"),"pairwise_distance","pairwise distance",true,true);
+      // Evolutionary distinctiveness
       data.AddStats(*sys.GetDataNode("evolutionary_distinctiveness"),"evolutionary_distinctiveness","evolutionary distinctiveness",true,true);
+      // Num roots 
+      std::function<size_t ()> num_roots_func = [this](){return sys.GetNumRoots();};
+      data.AddFun(num_roots_func, "num_roots", "Number of root nodes in the phylogeny");
+      // Num taxa
+      std::function<size_t ()> num_taxa_func = [this](){return sys.GetNumActive();};
+      data.AddFun(num_taxa_func, "num_active_taxa", "Number of active taxa in the phylogeny");
+      // Num orgs
+      std::function<size_t ()> num_orgs_func = [this](){return sys.GetTotalOrgs();};
+      data.AddFun(num_orgs_func, "num_total_orgs", "Number of living orgs being tracked");
+      
       data.PrintHeaderKeys();
       data.SetTimingRange(data_start, data_frequency, data_end);    
 
