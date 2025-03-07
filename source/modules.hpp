@@ -9,6 +9,7 @@
 
 // Analyze Modules
 #include "analyze/SystematicsModule.hpp"
+#include "analyze/IFGTrackerModule.hpp"
 
 // Evaluation Modules
 #include "evaluate/FixedTrait.hpp"
