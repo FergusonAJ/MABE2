@@ -115,7 +115,7 @@ namespace mabe {
     }
 
     void SetupModule() override {
-      SetupSawtooth();
+      if(diagnostic_id == SAWTOOTH) SetupSawtooth();
     }
 
     /// @brief Take a set of initial scores, clean them up, apply valleys, and return the sum.

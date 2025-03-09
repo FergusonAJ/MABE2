@@ -49,7 +49,7 @@ ValsOrg vals_org {              // Organism consisting of a series of N floating
                                 // - "clamp": Reduce too-high values to max_value.
                                 // - "wrap": Make high values loop around to minimum.
                                 // - "rebound": Make high values 'bounce' back down.
-  output_name = "vals";         // Name of variable to contain set of values.
+  genome_name = "vals";         // Name of variable to contain set of values.
   total_name = "total";         // Name of variable to contain total of all values.
 };
 

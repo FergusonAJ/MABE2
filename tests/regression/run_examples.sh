@@ -70,7 +70,12 @@ UNSUCCESSFUL_PROJECTS=""
 for NAME in ${PROJECTS}
 do
   PROJ_SUCCESSFUL=1
-  echo "${NAME}"
+  echo ""
+  echo "##############################################"
+  echo "##### Begin project ${NAME} ####"
+  echo "##############################################"
+
+
   # Setup directory structure
   PROJ_DIR="${THIS_DIR}/projects/${NAME}"
   OUTPUT_DIR="${PROJ_DIR}/output"

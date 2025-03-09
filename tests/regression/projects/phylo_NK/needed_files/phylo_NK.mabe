@@ -38,6 +38,7 @@ AnalyzeSystematics sys{
   store_ancestors = 1;          // Store all ancestors of extant taxa.(1 = TRUE)
   store_outside = 0;            // Store all taxa that ever existed.(1 = TRUE)
   taxon_info = "bits";        // Which trait should we identify unique taxa based on
+  generate_output = 0;          // Do we generate org output before storing?
 };
 
 DataFile fit_file { filename="fitness.csv"; };

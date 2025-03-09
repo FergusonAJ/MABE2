@@ -23,6 +23,7 @@ private:
     // Systematics manager setup
     bool store_outside = false;                        ///< Track extinct non-ancestor taxa?
     bool store_ancestors = true;                       ///< Track extinct ancestor taxa?
+    bool generate_output = true;                       ///< Do we generate org output?
     RequiredTraitAsString taxon_trait{this,"genome"};  ///< Which trait should taxa be based on?
     emp::Systematics <Organism, emp::String> sys;      ///< The systematics manager.
 
@@ -39,7 +40,7 @@ public:
                const emp::String & desc="Module to track the population's phylogeny.")
       : Module(control, name, desc)
       , sys([this](Organism& org){
-              org.GenerateOutput();
+              if(generate_output) org.GenerateOutput();
               return taxon_trait.Get(org);
             }, true, store_ancestors, store_outside, true)
       , snapshot_file_root_name("phylogeny")
@@ -56,6 +57,7 @@ public:
       // Settings for the systematic manager.
       LinkVar(store_outside, "store_outside", "Store all taxa that ever existed.(1 = TRUE)" );
       LinkVar(store_ancestors, "store_ancestors", "Store all ancestors of extant taxa.(1 = TRUE)" );
+      LinkVar(generate_output, "generate_output", "Do we generate org output before storing?.(1 = TRUE)" );
       // Settings for output files.
       LinkVar(data_file_name, "data_file_name", "Filename for systematics data file.");
       LinkVar(snapshot_file_root_name, "snapshot_file_root_name", "Filename for snapshot files (will have update number and .csv appended to end)");

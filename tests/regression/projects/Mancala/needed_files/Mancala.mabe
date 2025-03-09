@@ -14,12 +14,6 @@ AvidaGPOrg avida_org {          // Organism consisting of Avida instructions.
 };
 
 EvalMancala eval_mancala {      // Evaluate organisms on their ability to play Mancala.
-  input_trait = "input";        // Into which trait should input values be placed?
-  output_trait = "output";      // Out of which trait should output values be read?
-  scoreA_trait = "scoreA";      // Trait to save score for this player.
-  scoreB_trait = "scoreB";      // Trait to save score for opponent.
-  error_trait = "num_errors";   // Trait to count number of illegal moves attempted.
-  fitness_trait = "fitness";    // Trait with combined success rating.
   opponent_type = "random";     // Which type of opponent should organisms face?
                                 //  random: Always choose a random, legal move.
                                 //  ai: Human supplied (but not very good) AI

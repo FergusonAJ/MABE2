@@ -194,6 +194,10 @@ namespace mabe {
         return (pop_ptr == in.pop_ptr) ? (pos <=>  in.pos) : (pop_ptr <=> in.pop_ptr);
     }
 
+    bool operator==(const this_t & in) const {
+      return (pop_ptr == in.pop_ptr) && (pos == in.pos);
+    }
+
     /// Return a reference to the organism pointed to by this iterator; may advance iterator.
     ORG_T & operator*() {
       emp_assert(IsValid(), pop_ptr, pos, PopSize());  // Make sure we're not outside of the vector.
