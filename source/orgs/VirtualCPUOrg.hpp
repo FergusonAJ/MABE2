@@ -452,9 +452,9 @@ namespace mabe {
                         "copy_influences_merit",
                         "If 1, the number of instructions copied (e.g., via HCopy instruction)"
                         "factor into offspring merit");
-        GetManager().LinkVar(SharedData().num_insts_executed_name, 
-                        "insts_executed_trait",
-                        "Name of the trait that holds the number of instructions executed");
+        //GetManager().LinkVar(SharedData().num_insts_executed_name, 
+        //                "insts_executed_trait",
+        //                "Name of the trait that holds the number of instructions executed");
         GetManager().LinkVar(SharedData().replicate_via_inst, 
                         "replicate_via_inst",
                         "Do organisms self replicate via executing an instruction?");
