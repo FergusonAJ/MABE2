@@ -1,4 +1,4 @@
-Loading file(s): 'RoyalRoad.mabe'
+Loading file(s): "RoyalRoad.mabe"
 Setting Random Seed to 40
 Beginning ROYAL ROAD!
 Main config options:

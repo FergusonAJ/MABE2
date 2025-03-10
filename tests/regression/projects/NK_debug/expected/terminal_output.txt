@@ -1,10 +1,10 @@
 EMP_TRACK_MEM: Pointer tracking is active!
-Loading file(s): 'NK_debug.mabe'
+Loading file(s): "NK_debug.mabe"
 Setting Random Seed to 11
 random_seed = 11
 
-UD:1  MainPopSize=50  AveFitness=48.7873  MaxFitness=56.7699  ModeFitness=43.0111
-MODE_LESS=0  MODE_EQU=1  MODE_GTR=49
+UD:1  MainPopSize=50  AveFitness=48.7873  MaxFitness=56.7699  ModeFitness=44.9882
+MODE_LESS=7  MODE_EQU=1  MODE_GTR=42
 UD:2  MainPopSize=50  AveFitness=52.9409  MaxFitness=56.7699  ModeFitness=53.1768
 MODE_LESS=25  MODE_EQU=4  MODE_GTR=21
 UD:3  MainPopSize=50  AveFitness=55.5578  MaxFitness=57.6626  ModeFitness=56.7699
@@ -33,8 +33,8 @@ UD:14  MainPopSize=50  AveFitness=62.7389  MaxFitness=64.249  ModeFitness=63.407
 MODE_LESS=33  MODE_EQU=5  MODE_GTR=12
 UD:15  MainPopSize=50  AveFitness=62.997  MaxFitness=65.4018  ModeFitness=64.0114
 MODE_LESS=39  MODE_EQU=5  MODE_GTR=6
-UD:16  MainPopSize=50  AveFitness=63.42  MaxFitness=65.4018  ModeFitness=64.0114
-MODE_LESS=28  MODE_EQU=6  MODE_GTR=16
+UD:16  MainPopSize=50  AveFitness=63.42  MaxFitness=65.4018  ModeFitness=64.249
+MODE_LESS=39  MODE_EQU=6  MODE_GTR=5
 UD:17  MainPopSize=50  AveFitness=63.8131  MaxFitness=65.4018  ModeFitness=64.249
 MODE_LESS=25  MODE_EQU=9  MODE_GTR=16
 UD:18  MainPopSize=50  AveFitness=63.9765  MaxFitness=65.4514  ModeFitness=65.4018
@@ -51,8 +51,8 @@ UD:23  MainPopSize=50  AveFitness=65.102  MaxFitness=66.4287  ModeFitness=66.287
 MODE_LESS=43  MODE_EQU=4  MODE_GTR=3
 UD:24  MainPopSize=50  AveFitness=65.1317  MaxFitness=66.4287  ModeFitness=66.2873
 MODE_LESS=39  MODE_EQU=5  MODE_GTR=6
-UD:25  MainPopSize=50  AveFitness=65.512  MaxFitness=66.4287  ModeFitness=66.2873
-MODE_LESS=32  MODE_EQU=8  MODE_GTR=10
+UD:25  MainPopSize=50  AveFitness=65.512  MaxFitness=66.4287  ModeFitness=66.3702
+MODE_LESS=40  MODE_EQU=8  MODE_GTR=2
 UD:26  MainPopSize=50  AveFitness=65.529  MaxFitness=66.5099  ModeFitness=66.3702
 MODE_LESS=32  MODE_EQU=11  MODE_GTR=7
 UD:27  MainPopSize=50  AveFitness=65.6607  MaxFitness=66.649  ModeFitness=66.3702
@@ -81,8 +81,8 @@ UD:38  MainPopSize=50  AveFitness=66.509  MaxFitness=67.6781  ModeFitness=67.596
 MODE_LESS=42  MODE_EQU=7  MODE_GTR=1
 UD:39  MainPopSize=50  AveFitness=66.4429  MaxFitness=67.7765  ModeFitness=67.5968
 MODE_LESS=41  MODE_EQU=5  MODE_GTR=4
-UD:40  MainPopSize=50  AveFitness=66.6019  MaxFitness=67.9474  ModeFitness=67.6781
-MODE_LESS=39  MODE_EQU=5  MODE_GTR=6
+UD:40  MainPopSize=50  AveFitness=66.6019  MaxFitness=67.9474  ModeFitness=67.7765
+MODE_LESS=44  MODE_EQU=5  MODE_GTR=1
 UD:41  MainPopSize=50  AveFitness=67.0741  MaxFitness=67.9474  ModeFitness=67.7765
 MODE_LESS=34  MODE_EQU=12  MODE_GTR=4
 UD:42  MainPopSize=50  AveFitness=66.9861  MaxFitness=67.9474  ModeFitness=67.9474
@@ -104,4 +104,4 @@ MODE_LESS=42  MODE_EQU=8  MODE_GTR=0
 UD:50  MainPopSize=50  AveFitness=67.251  MaxFitness=68.4254  ModeFitness=68.4216
 MODE_LESS=42  MODE_EQU=7  MODE_GTR=1
 EMP_TRACK_MEM: No memory leaks found!
- 287698 pointers found; all have been cleaned up fully.
+ 355291 pointers found; all have been cleaned up fully.

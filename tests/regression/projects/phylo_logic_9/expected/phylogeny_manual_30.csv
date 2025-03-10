@@ -1,0 +1,5 @@
+1,[NONE],0,inf,3,4,2,3,0,[50]rucavccccccccccccccccccccccccccccccccccccutycasvab
+2,[1],7,inf,1,1,1,1,1,[50]rucavccccccccccccccccccccccccccccccccccccutjcasvab
+5,[2],25,inf,1,1,0,0,2,[75]ccccccccccccccccutjcasvabrucavccccccccccccccccccccaaaaaaaaaaaaaaaaaaaaaaaaa
+6,[1],25,inf,1,1,0,0,1,[50]rucavcccccccccccccccccccccccccyccccccccccitycasvab
+id,ancestor_list,origin_time,destruction_time,num_orgs,tot_orgs,num_offspring,total_offspring,depth,taxon_info

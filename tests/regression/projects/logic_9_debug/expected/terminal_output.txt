@@ -1,5 +1,5 @@
 EMP_TRACK_MEM: Pointer tracking is active!
-Loading file(s): 'logic_9_debug.mabe'
+Loading file(s): "logic_9_debug.mabe"
 Setting Random Seed to 301
 Found 36 external functions! HSearch Repro HCopy HAlloc SetFlow GetHead IO IfNEqu HDivide Dec ShiftL IfGreaterThanX MovHead IfGreaterThan0 Inc Swap NopC Nand NopX NopB NopA ShiftR IfNot0 IfLessThan0 IfEqualX IfEqual0 IfLabel IfLess MoveHeadIfNEqu MoveHeadIfLess Sub Pop Push SwapStk Add JumpHead
 Found 1 external functions with name: NopA! (a)
@@ -158,4 +158,4 @@ UD:98  mean_generation=7.62857  num_orgs=105  merit_mean=1  genome_length_mean=4
 UD:99  mean_generation=7.74286  num_orgs=105  merit_mean=1  genome_length_mean=49.8952
 UD:100  mean_generation=7.8972  num_orgs=107  merit_mean=1  genome_length_mean=49.9252
 EMP_TRACK_MEM: No memory leaks found!
- 26986 pointers found; all have been cleaned up fully.
+ 94328 pointers found; all have been cleaned up fully.

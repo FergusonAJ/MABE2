@@ -1,4 +1,4 @@
-Loading file(s): 'Mancala.mabe'
+Loading file(s): "Mancala.mabe"
 Registered instruction: Inc index: 0; id: 0; symbol: a
 Registered instruction: Dec index: 1; id: 1; symbol: b
 Registered instruction: Not index: 2; id: 2; symbol: c

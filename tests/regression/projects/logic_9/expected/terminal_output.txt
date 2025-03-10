@@ -1,4 +1,4 @@
-Loading file(s): 'logic_9.mabe'
+Loading file(s): "logic_9.mabe"
 Setting Random Seed to 300
 Found 36 external functions! HSearch Repro HCopy HAlloc SetFlow GetHead IO IfNEqu HDivide Dec ShiftL IfGreaterThanX MovHead IfGreaterThan0 Inc Swap NopC Nand NopX NopB NopA ShiftR IfNot0 IfLessThan0 IfEqualX IfEqual0 IfLabel IfLess MoveHeadIfNEqu MoveHeadIfLess Sub Pop Push SwapStk Add JumpHead
 Found 1 external functions with name: NopA! (a)

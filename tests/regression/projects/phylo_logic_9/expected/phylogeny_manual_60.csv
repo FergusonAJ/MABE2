@@ -1,0 +1,9 @@
+12,[1],55,inf,1,2,0,0,1,[50]rucavccccccccccccccccccccccccccccccccccchutycasvab
+13,[1],59,inf,1,1,0,0,1,[49]rucavcccccccccccccccccccccccccccccccccccutycasvab
+1,[NONE],0,inf,9,15,4,6,0,[50]rucavccccccccccccccccccccccccccccccccccccutycasvab
+2,[1],7,38,0,1,3,3,1,[50]rucavccccccccccccccccccccccccccccccccccccutjcasvab
+5,[2],25,inf,1,1,0,0,2,[75]ccccccccccccccccutjcasvabrucavccccccccccccccccccccaaaaaaaaaaaaaaaaaaaaaaaaa
+6,[1],25,inf,1,1,0,0,1,[50]rucavcccccccccccccccccccccccccyccccccccccitycasvab
+7,[2],31,inf,1,1,0,0,2,[75]cccccccccccccccuutjgasvabrucavccccccccccccccccecccaaaaaaaaaaaaaaaaaaaaaaaaa
+9,[2],37,inf,1,1,0,0,2,[75]ccccccccccccccccutjcasvabrucavccccccccccccccccccccaaaaaaaaaaaaaaaaaaaaaaaaa
+id,ancestor_list,origin_time,destruction_time,num_orgs,tot_orgs,num_offspring,total_offspring,depth,taxon_info
