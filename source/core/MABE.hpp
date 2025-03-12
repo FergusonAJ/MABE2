@@ -704,7 +704,7 @@ namespace mabe {
     args = emp::cl::ArgsToStrings(argc, argv);
   }
 
-  bool MABE::Setup(bool _setup_cmd=false) {
+  bool MABE::Setup(bool _setup_cmd=true) {
     // Read in command line arguments, respond to flags, load associated files, and deal with
     // any other command-line settings.
     if(_setup_cmd) Setup_CommandLine(); 
