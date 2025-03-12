@@ -4,5 +4,5 @@
 
 for FILENAME in $(ls phylogeny*)
 do
-  cat ${FILENAME} | sort > ${FILENAME}
+  cat ${FILENAME} | sort -n > ${FILENAME}
 done

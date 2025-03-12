@@ -1,10 +1,10 @@
 Latest commit at time of last regeneration:
-commit 2beebe6bb3c65ec9b9b6114dc68fb397daba18e3
+commit 2a265bf700cd588602d67764698dd7c10ee0147d
 Author: Austin Ferguson <ferguson.austin.j@gmail.com>
-Date:   Sun Mar 9 17:36:53 2025 -0400
+Date:   Wed Mar 12 00:55:22 2025 -0400
 
-    Fix compile and runtime issues in regression tests
+    Update Empirical submodule
  
  
 Time of last regeneration:
-Sun Mar  9 11:36:04 PM EDT 2025
+Wed Mar 12 10:30:39 AM EDT 2025

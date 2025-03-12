@@ -1,7 +1,9 @@
+id,ancestor_list,origin_time,destruction_time,num_orgs,tot_orgs,num_offspring,total_offspring,depth,taxon_info
+1,[NONE],0,inf,17,36,9,12,0,[50]rucavccccccccccccccccccccccccccccccccccccutycasvab
+6,[1],25,inf,1,1,0,0,1,[50]rucavcccccccccccccccccccccccccyccccccccccitycasvab
 12,[1],55,inf,2,3,1,1,1,[50]rucavccccccccccccccccccccccccccccccccccchutycasvab
 14,[1],61,inf,1,3,1,1,1,[50]rucavccccccccccccccccccdcccccccccccccccccutycasvab
 16,[1],63,inf,1,1,1,1,1,[50]rucavcccccccccccccccccccccccccccccccccbccutycasvab
-1,[NONE],0,inf,17,36,9,12,0,[50]rucavccccccccccccccccccccccccccccccccccccutycasvab
 20,[1],69,inf,1,2,0,0,1,[50]rucavcccaccccccccccccccccccccccccccccccccutycasvab
 22,[16],76,inf,1,1,0,0,2,[50]rucavcccccccccccccccccccccccccccccccccpcvutycasvab
 23,[1],77,inf,1,1,0,0,1,[50]rucavcccaccccccccccccqcccccccccccccccccccutycasvab
@@ -10,5 +12,3 @@
 26,[14],79,inf,1,1,0,0,2,[49]rucavcccccccccccccccccdcccccccccccccccccutycasvab
 27,[1],79,inf,1,1,0,0,1,[50]rucavccccccccccccccccccccccccccccccccccccutycisvab
 28,[1],79,inf,1,1,0,0,1,[50]rucavccccccccccccccccccgcccccccccccccccccutycasvab
-6,[1],25,inf,1,1,0,0,1,[50]rucavcccccccccccccccccccccccccyccccccccccitycasvab
-id,ancestor_list,origin_time,destruction_time,num_orgs,tot_orgs,num_offspring,total_offspring,depth,taxon_info

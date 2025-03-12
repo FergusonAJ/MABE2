@@ -3,6 +3,6 @@
 
 for FILENAME in $(ls phylogeny*)
 do
-  cat ${FILENAME} | sort > tmp
+  cat ${FILENAME} | sort -n > tmp
   mv tmp ${FILENAME}
 done
