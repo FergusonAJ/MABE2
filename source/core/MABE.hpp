@@ -141,7 +141,7 @@ namespace mabe {
     }
 
     // --- Tools to setup runs ---
-    bool Setup();
+    bool Setup(bool);
 
     /// Build a placeholder organism for "empty" positions in a Population
     template <typename EMPTY_MANAGER_T> void SetupEmpty();
@@ -704,10 +704,10 @@ namespace mabe {
     args = emp::cl::ArgsToStrings(argc, argv);
   }
 
-  bool MABE::Setup() {
+  bool MABE::Setup(bool _setup_cmd=false) {
     // Read in command line arguments, respond to flags, load associated files, and deal with
     // any other command-line settings.
-    Setup_CommandLine(); 
+    if(_setup_cmd) Setup_CommandLine(); 
     if (exit_now) return false;  // If any of the inital flags triggered an 'exit_now', do so.
 
     Setup_Modules();    // Run SetupModule() on each module for linking traits or other setup.
