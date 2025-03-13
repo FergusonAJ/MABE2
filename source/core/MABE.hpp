@@ -341,6 +341,9 @@ namespace mabe {
     ModuleBase & GetModule(const emp::String & mod_name) {
       return *modules[(size_t) GetModuleID(mod_name)];
     }
+    emp::Ptr<ModuleBase> GetModulePtr(const emp::String & mod_name) {
+      return modules[(size_t) GetModuleID(mod_name)];
+    }
 
     /// Add a new module of the specified type.
     template <typename MOD_T, typename... ARGS>

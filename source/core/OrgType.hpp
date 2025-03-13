@@ -140,6 +140,13 @@ namespace mabe {
 
     /// Setup organism-specific traits.
     virtual void SetupModule() { ; }
+
+ 
+    /// If a derived class defines the static method, it will be called when the MANAGER's 
+    ///   InitType is called. 
+    ///   This is because the Manager side is all handled by OrganismManager, we do not write 
+    ///   custom code. We _do_ write the Organism class (derived from here by a few steps)
+    static void InitType(emplode::TypeInfo & /*info*/) { ; }
   };
 
 }

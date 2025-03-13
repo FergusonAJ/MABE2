@@ -129,6 +129,10 @@ namespace mabe {
       obj_prototype->SetupConfig();
     }
 
+    static void InitType(emplode::TypeInfo & info) {
+      managed_t::InitType(info);
+    }
+
   };
 
   /// Build a class that will automatically register modules when created (globally)

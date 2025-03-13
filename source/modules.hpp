@@ -69,6 +69,7 @@
 #include "orgs/ValsOrg.hpp"
 #include "orgs/AvidaGPOrg.hpp"
 #include "orgs/VirtualCPUOrg.hpp"
+#include "orgs/MultiVirtualCPUOrg.hpp"
 #include "orgs/instructions/VirtualCPU_Inst_Nop.hpp"
 #include "orgs/instructions/VirtualCPU_Inst_Math.hpp"
 #include "orgs/instructions/VirtualCPU_Inst_IO.hpp"
@@ -77,6 +78,7 @@
 #include "orgs/instructions/VirtualCPU_Inst_Manipulation.hpp"
 #include "orgs/instructions/VirtualCPU_Inst_Replication.hpp"
 #include "orgs/instructions/VirtualCPU_Inst_Dictionary.hpp"
+#include "orgs/instructions/MultiVirtualCPU_Inst_Replication.hpp"
 
 // Tools
 #include "tools/MutantGenerator.hpp"
