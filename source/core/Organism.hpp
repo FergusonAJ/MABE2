@@ -41,6 +41,8 @@ namespace mabe {
   class Organism : public OrgType, public emp::AnnotatedType {
   private:
     emp::Ptr<Population> pop_ptr = nullptr;
+    emp::Ptr<Organism> container_org_ptr = nullptr;
+    bool is_container = false;
   public:
     Organism(ModuleBase & _man) : OrgType(_man) { ; }
     virtual ~Organism() {
@@ -58,6 +60,32 @@ namespace mabe {
     void SetPopulation(Population & in) { pop_ptr = &in; }
     void ClearPopulation() { pop_ptr = nullptr; }
 
+    /// Is this org contained by another org? As part of a MultiOrg, for example.
+    bool IsContained() const {
+      return container_org_ptr != nullptr;
+    }
+
+    /// Indicate that this organism is contained by another org (e.g., a MultiOrg)
+    void SetContainerOrg(emp::Ptr<Organism> org_ptr){
+      container_org_ptr = org_ptr;
+    }
+    
+    /// If this org is contained (such as inside a MultiOrg), return that container organism
+    Organism& GetContainerOrg(){ 
+      emp_assert(container_org_ptr);
+      return *container_org_ptr; 
+    }
+    
+    /// Does this org contain other orgs?
+    bool IsContainer() const {
+      return is_container;
+    }
+
+    /// Mark this org as containing other organisms (like a MultiOrg)
+    void MarkAsContainer(bool b = true){
+      is_container = b;
+    }
+    
     /// Specialty version of Clone to return an Organism type.
     [[nodiscard]] virtual emp::Ptr<Organism> CloneOrganism() const {
       return OrgType::Clone().DynamicCast<Organism>();
