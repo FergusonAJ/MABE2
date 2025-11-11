@@ -44,11 +44,10 @@ namespace mabe {
       bool init_random = true;           ///< Should we randomize ancestor?  (false = all zeros)
     };
 
-    emp::String ToString() const override { return emp::MakeString(bits); }
+    emp::String ToString() const override { return bits.ToString(); }
 
     void GenomeFromString(const std::string & new_genome) override {
       std::string new_string(new_genome);
-      std::reverse(new_string.begin(), new_string.end());
       bits = emp::BitVector(new_string);
     }
 
