@@ -36,6 +36,13 @@ namespace mabe {
                                 return bit_vec.ToBinaryString();
                               },
                              "Convert int to bitstring of a given length");
+      info.AddMemberFunction("CONVERT_TO_R_BITSTRING",
+                              [](StringUtils & /*mod*/, size_t idx, size_t num_bits) { 
+                                emp::BitVector bit_vec(num_bits);
+                                bit_vec.SetUInt64(0, idx);
+                                return bit_vec.ToString();
+                              },
+                             "Convert int to reversed bitstring of a given length");
     }
 
     void SetupConfig() override {
