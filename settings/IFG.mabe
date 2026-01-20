@@ -1,6 +1,6 @@
 random_seed = 0;                // Seed for random number generator; use 0 to base on time.
 Var pop_size = 1000;            // Number of organisms to evaluate in the population.
-Var num_gens = 5000;
+Var num_gens = 1000;
 
 Population main_pop;            // Main population for managing candidate solutions.
 Population next_pop;            // Temp. population while constructing the next generation.
@@ -38,6 +38,10 @@ Spatial1DPlacement one_d_placement{
   does_wrap = 0;
 };
 
+IFGTracker ifg_tracker{
+  genotype_trait="genotype";  
+};
+
 DataFile fit_file { filename="fitness.csv"; };
 fit_file.ADD_COLUMN( "Average Fitness", "main_pop.CALC_MEAN('fitness')" );
 fit_file.ADD_COLUMN( "Maximum Fitness", "main_pop.CALC_MAX('fitness')" );
@@ -73,10 +77,15 @@ max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('genotype')" );
 // @BEFOREDIVIDE(OrgList parent IN altruists) PRINT("Altruist Birth!");
 
 @UPDATE(Var ud) {
-  IF (ud == num_gens) EXIT();
-
+  IF (ud == num_gens){
+    ifg_tracker.PRINT();
+    ifg_tracker.WRITE_TO_FILE("ifg_discoveries.csv");
+    EXIT();
+  }
+  
   eval_ifg.EVAL(main_pop);
   eval_ifg.DETECT_DISCOVERIES(main_pop);
+  ifg_tracker.UPDATE(main_pop, ud);
   Var mode_fit = main_pop.CALC_MODE("fitness");
   OrgList list_less = main_pop.FILTER("fitness < ${mode_fit}");
   OrgList list_equ  = main_pop.FILTER("fitness == ${mode_fit}");
@@ -103,4 +112,3 @@ max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('genotype')" );
   //main_pop.REPLACE_WITH(next_pop);
 }
 
-@UPDATE(Var ud2) IF (ud2 == num_gens) EXIT();

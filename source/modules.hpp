@@ -9,6 +9,7 @@
 
 // Analyze Modules
 #include "analyze/SystematicsModule.hpp"
+#include "analyze/IFGTrackerModule.hpp"
 #include "analyze/TrackAncestor.hpp"
 
 // Evaluation Modules
