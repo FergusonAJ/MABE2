@@ -1,11 +1,15 @@
 /**
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
- *  @date 2021.
+ *  @date 2021-2024.
  *
  *  @file  OrgType.hpp
  *  @brief A base class for all organism components, with facilities for replication.
- *  @note Status: ALPHA
+ *  @note Status: BETA
+ * 
+ *  Organisms are all managed types in MABE, which is to say that a module handles all of their
+ *  configuration options, shared by each individual.  The same is true for each organism component
+ *  such as genomes or brains.  And OrgType should be the base class of any such components.
  */
 
 #ifndef MABE_ORG_TYPE_HPP
@@ -31,10 +35,9 @@ namespace mabe {
     const Module & GetManager() const { return (Module&) manager; }
 
     /// The class below is a placeholder for storing any manager-specific data that the organisms
-    /// should have access to.  A derived organism class merely needs to shadow this one in order
-    /// to include specialized data.
-    struct ManagerData {
-    };
+    /// should have access to.  A derived organism class should derive it's managed data from this
+    /// one (mabe::OrgType::ManagerData) such that it inherits the common variables.
+    struct ManagerData : public TraitHolder { };
 
 
     // ------------------------------------------
@@ -98,15 +101,15 @@ namespace mabe {
     /// Convert this organism into a string of characters.
     /// @note Required if we are going to print organisms to screen or to file).  If this function
     /// is not overridden, try to the equivalent function in the organism manager.
-    virtual std::string ToString() const { return "__unknown__"; }
+    virtual emp::String ToString() const { return "__unknown__"; }
 
     /// By default print an organism by triggering it's ToString() function.
-    std::ostream & Print(std::ostream & os) const {
+    virtual std::ostream & Print(std::ostream & os) const {
       os << ToString();
       return os;
     }
 
-    virtual void GenomeFromString(const std::string & new_genome) {
+    virtual void GenomeFromString(const std::string & /*new_genome*/) {
       emp_assert(false, "FromString() must be overridden before it can be called.");
     }
 
@@ -124,7 +127,7 @@ namespace mabe {
     /// Run the organisms a single time step; only implemented for continuous execution organisms.
     virtual bool ProcessStep() { return false; }
  
-    // virtual bool AddEvent(const std::string & event_name, int event_id) { return false; }
+    // virtual bool AddEvent(const emp::String & event_name, int event_id) { return false; }
     // virtual void TriggerEvent(int) { ; }
 
 

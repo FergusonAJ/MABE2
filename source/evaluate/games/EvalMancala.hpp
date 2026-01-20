@@ -1,7 +1,7 @@
 /**
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
- *  @date 2021.
+ *  @date 2021-2024.
  *
  *  @file  EvalMancala.hpp
  *  @brief MABE Evaluation module that has organisms play Mancala.
@@ -19,12 +19,12 @@ namespace mabe {
 
   class EvalMancala : public Module {
   private:
-    std::string input_trait = "input";          ///< Trait to put input values.
-    std::string output_trait = "output";        ///< Trait to find output values.
-    std::string scoreA_trait = "scoreA";        ///< Trait for this player's game results.
-    std::string scoreB_trait = "scoreB";        ///< Trait for other player's game results.
-    std::string error_trait = "num_errors";     ///< Trait counting illegal moves attempted.
-    std::string fitness_trait = "fitness";      ///< Trait for combined fitness.
+    OwnedTrait<emp::vector<double>> input_trait {this, "input", "Input values (current board state)"};
+    RequiredTrait<emp::vector<double>> output_trait {this, "output"}; // Output values (move to make)
+    OwnedTrait<double> scoreA_trait {this, "scoreA", "Score for this player"};
+    OwnedTrait<double> scoreB_trait {this, "scoreB", "Score for opponent"};
+    OwnedTrait<double> error_trait {this, "num_errors", "Number of illegal moves attempted"};
+    OwnedTrait<double> fitness_trait {this, "fitness", "Combined success rating"};
 
     /// What type of opponent should we use?
     enum Opponent {
@@ -38,8 +38,8 @@ namespace mabe {
 
   public:
     EvalMancala(mabe::MABE & control,
-                const std::string & name="EvalMancala",
-                const std::string & desc="Evaluate organisms by having them play Mancala.")
+                emp::String name="EvalMancala",
+                emp::String desc="Evaluate organisms by having them play Mancala.")
       : Module(control, name, desc)
     {
       SetEvaluateMod(true);
@@ -52,7 +52,7 @@ namespace mabe {
                              [](EvalMancala & mod, Collection orgs) { return mod.Evaluate(orgs); },
                              "Evaluate organism's ability to play the game Mancala.");
       info.AddMemberFunction("TRACE",
-                             [](EvalMancala & mod, Collection orgs, const std::string & filename) {
+                             [](EvalMancala & mod, Collection orgs, const emp::String & filename) {
                                 std::ofstream file(filename);
                                 mod.TraceEval(orgs, file);
                                 return orgs.GetSize();
@@ -61,12 +61,6 @@ namespace mabe {
     }
 
     void SetupConfig() override {
-      LinkVar(input_trait, "input_trait", "Into which trait should input values be placed?");
-      LinkVar(output_trait, "output_trait", "Out of which trait should output values be read?");
-      LinkVar(scoreA_trait, "scoreA_trait", "Trait to save score for this player.");
-      LinkVar(scoreB_trait, "scoreB_trait", "Trait to save score for opponent.");
-      LinkVar(error_trait, "error_trait", "Trait to count number of illegal moves attempted.");
-      LinkVar(fitness_trait, "fitness_trait", "Trait with combined success rating.");
       LinkMenu(opponent_type, "opponent_type", "Which type of opponent should organisms face?",
                RANDOM_MOVES, "random", "Always choose a random, legal move.",
                AI, "ai", "Human supplied (but not very good) AI",
@@ -74,25 +68,15 @@ namespace mabe {
       );
     }
 
-    void SetupModule() override {
-      AddOwnedTrait<emp::vector<double>>(input_trait, "Input values (curret board state)", emp::vector<double>({0.0}));
-      AddRequiredTrait<emp::vector<double>>(output_trait); // Output values (move to make)
-      AddOwnedTrait<double>(scoreA_trait, "Score for this player", 0.0);
-      AddOwnedTrait<double>(scoreB_trait, "Score for opponent", 0.0);
-      AddOwnedTrait<double>(error_trait, "Number of illegal moves attempted", 0.0);
-      AddOwnedTrait<double>(fitness_trait, "Combined success rating", 0.0);
-    }
-
-
     // Determine the next move of an organism.
     size_t EvalMove(emp::Mancala & game, Organism & org) {
       // Setup the hardware with proper inputs.
-      org.GetTrait<emp::vector<double>>(input_trait) = game.AsVectorInput(game.GetCurPlayer());
+      input_trait(org) = game.AsVectorInput(game.GetCurPlayer());
 
       // Run the code.
       org.GenerateOutput();
 
-      emp::vector<double> results = org.GetTrait<emp::vector<double>>(output_trait);
+      emp::vector<double> results = output_trait(org);
 
       // Determine the chosen move.
       size_t best_move = 0;
@@ -252,10 +236,10 @@ namespace mabe {
       double max_fitness = 0.0;
       for (Organism & org : alive_collect) {
         control.Verbose("...eval org #", org_count++);
-        double & scoreA = org.GetTrait<double>(scoreA_trait);
-        double & scoreB = org.GetTrait<double>(scoreB_trait);
-        double & num_errors = org.GetTrait<double>(error_trait);
-        double & fitness = org.GetTrait<double>(fitness_trait);
+        double & scoreA = scoreA_trait(org);
+        double & scoreB = scoreB_trait(org);
+        double & num_errors = error_trait(org);
+        double & fitness = fitness_trait(org);
         Results results = EvalGame(org, control.GetRandom());  // Start first.
         scoreA = results.scoreA;
         scoreB = results.scoreB;
@@ -278,7 +262,7 @@ namespace mabe {
     double Evaluate(Population & pop) { return Evaluate( Collection(pop) ); }
 
     // If a string is provided to Evaluate, convert it to a Collection.
-    double Evaluate(const std::string & in) { return Evaluate( control.ToCollection(in) ); }
+    double Evaluate(const emp::String & in) { return Evaluate( control.ToCollection(in) ); }
   };
 
   MABE_REGISTER_MODULE(EvalMancala, "Evaluate organisms on their ability to play Mancala.");

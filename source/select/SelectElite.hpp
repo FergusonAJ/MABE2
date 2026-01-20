@@ -1,7 +1,7 @@
 /**
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
- *  @date 2019-2021.
+ *  @date 2019-2024.
  *
  *  @file  SelectElite.hpp
  *  @brief MABE module to enable elite selection (flexible to handle mu-lambda selection)
@@ -20,7 +20,7 @@ namespace mabe {
   /// Add elite selection with the current population.
   class SelectElite : public Module {
   private:
-    std::string fit_equation;    ///< Which equation should we select on?
+    emp::String fit_equation;    ///< Which equation should we select on?
     size_t top_count=1;          ///< Top how-many should we select?
 
     Collection Select(Population & select_pop, Population & birth_pop, size_t num_births) {
@@ -44,9 +44,9 @@ namespace mabe {
 
   public:
     SelectElite(mabe::MABE & control,
-                const std::string & name="SelectElite",
-                const std::string & desc="Module to choose the top fitness organisms for replication.",
-                const std::string & in_fit_equation="fitness", size_t tcount=1)
+                const emp::String & name="SelectElite",
+                const emp::String & desc="Module to choose the top fitness organisms for replication.",
+                const emp::String & in_fit_equation="fitness", size_t tcount=1)
       : Module(control, name, desc)
       , fit_equation(in_fit_equation), top_count(tcount)
     {
@@ -76,5 +76,31 @@ namespace mabe {
 
   MABE_REGISTER_MODULE(SelectElite, "Choose the top fitness organisms for replication.");
 }
+
+/*
+== New Version:
+
+module SelectElite {
+  desc: "Module to choose a set of top scoring organisms."
+  module_type: "selection"
+
+  config fit_fun : TraitEquation { default: "fitness"; desc: "Function to use for selection"; }
+  config top_count : Int { default: 1; desc: "Number of top-scoring orgs to select"; }
+
+  function(Population select_pop {desc: "Population to select from."},
+           Int count {desc: "Number of organisms to select"; default: 1}) : OrgList {
+    desc: "Select the top scoring organisms from the population.";
+    require(select_pop.Size() > 0);
+
+    OrgList top_orgs = select_pop.FindMax(fit_fun, top_count);
+
+    OrgList selected;
+    while (selected.Size() < count) selected += top_orgs;
+    selected.Resize(count); // Trim off any extra orgs.
+    return selected;
+  }
+}
+
+*/
 
 #endif

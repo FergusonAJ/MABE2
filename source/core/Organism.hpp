@@ -1,7 +1,7 @@
 /**
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
- *  @date 2019-2021.
+ *  @date 2019-2024.
  *
  *  @file  Organism.hpp
  *  @brief A base class for all organisms in MABE.
@@ -10,7 +10,7 @@
  *  All organism types or organism component types (e.g., brains or genomes) that can be
  *  individually configured in MABE must have mabe::OrgType as its ultimate base class.  A helper
  *  template mabe::OrganismTemplate<ORG_T> is derived from mabe::OrgType and should be used as
- *  the more immeidate base class for any user-defined organism types.  Providing this template
+ *  the more immediate base class for any user-defined organism types.  Providing this template
  *  with your new organism type as ORG_T will setup type-specific return values for ease of use.
  *
  *  All interactions between an organism and its environment are mediated through the Organism's
@@ -30,7 +30,7 @@
 #include "emp/base/assert.hpp"
 #include "emp/base/vector.hpp"
 #include "emp/data/AnnotatedType.hpp"
-#include "emp/tools/string_utils.hpp"
+#include "emp/tools/String.hpp"
 
 #include "OrgType.hpp"
 
@@ -81,15 +81,15 @@ namespace mabe {
 
     /// Produce an sexual (two parent) offspring WITH MUTATIONS.
     [[nodiscard]] virtual emp::Ptr<Organism>
-    MakeOffspringOrganism(emp::Ptr<Organism> parent2, emp::Random & random) const {
+    MakeOffspringOrganism_TwoParent(emp::Ptr<Organism> parent2, emp::Random & random) const {
       return OrgType::MakeOffspring(parent2, random).DynamicCast<Organism>();
     }
 
     // @CAO: Need to clean this one up to use Organism...
-    /// Produce one or more offspring from multiple parents WITH MUTATIONS.  By default, use
-    /// Recombine() and then Mutate().
+    /// Produce one or more offspring from multiple parents WITH MUTATIONS.
+    // @CAO: By default, use Recombine() and then Mutate() ?
     [[nodiscard]] virtual emp::vector<emp::Ptr<OrgType>> 
-    MakeOffspringOrganisms(emp::vector<emp::Ptr<OrgType>> other_parents, emp::Random & random) const {
+    MakeOffspringOrganisms_MultiParent(emp::vector<emp::Ptr<OrgType>> other_parents, emp::Random & random) const {
       return OrgType::MakeOffspring(other_parents, random);
     }
 
@@ -99,13 +99,13 @@ namespace mabe {
     // -- Also deal with some deprecated functionality... --
 
     [[deprecated("Use OrgType::HasTrait() instead of OrgType::HasVar()")]]
-    bool HasVar(const std::string & name) const { return HasTrait(name); }
+    bool HasVar(const emp::String & name) const { return HasTrait(name); }
     template <typename T>
     [[deprecated("Use OrgType::GetTrait() instead of OrgType::GetVar()")]]
-    T & GetVar(const std::string & name) { return GetTrait<T>(name); }
+    T & GetVar(const emp::String & name) { return GetTrait<T>(name); }
     template <typename T>
     [[deprecated("Use OrgType::GetTrait() instead of OrgType::GetVar()")]]
-    const T & GetVar(const std::string & name) const { return GetTrait<T>(name); }
+    const T & GetVar(const emp::String & name) const { return GetTrait<T>(name); }
     template <typename T>
     [[deprecated("Use OrgType::GetTrait() instead of OrgType::GetVar()")]]
     T & GetVar(size_t id) { return GetTrait<T>(id); }
@@ -115,7 +115,7 @@ namespace mabe {
 
     template <typename T>
     [[deprecated("Use OrgType::SetTrait() instead of OrgType::SetVar()")]]
-    void SetVar(const std::string & name, const T & value) { SetTrait(name, value); }
+    void SetVar(const emp::String & name, const T & value) { SetTrait(name, value); }
 
     template <typename T>
     [[deprecated("Use OrgType::SetTrait() instead of OrgType::SetVar()")]]

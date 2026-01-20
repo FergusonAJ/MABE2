@@ -27,7 +27,7 @@ namespace mabe {
     bool initialized;             ///< Flag indicating if this state has been initialized
     size_t cur_map_idx;           ///< Index of the map being traversed 
     emp::BitVector visited_tiles; ///< A mask showing which tiles have been previously visited
-    emp::StateGridStatus status;  ///< Stores position, direction, and interfaces with grid 
+    mabe::StateGridStatus status;  ///< Stores position, direction, and interfaces with grid 
     double raw_score;             /**< Number of unique valid tiles visited minus the number
                                        of steps taken off the path (not unique) */
     size_t nutrients_consumed = 0;///< Number of unique nutrient positions visited by org
@@ -58,7 +58,7 @@ namespace mabe {
 
   /// \brief Information of a single path that was loaded from file
   struct MapData{
-    emp::StateGrid grid;  ///< The tile data of the path and surrounding emptiness 
+    mabe::StateGrid grid;  ///< The tile data of the path and surrounding emptiness 
     size_t start_x;       ///< X coordinate of starting position
     size_t start_y;       ///< Y coordinate of starting position
     int start_facing;     /**< Facing direction for new organisms. 
@@ -68,7 +68,7 @@ namespace mabe {
     double merit_exp_max; ///< On this map, merit will cap at 2^(this value)
 
     MapData() : total_nutrients(0){;} 
-    MapData(emp::StateGrid& _grid, size_t _total_nutrients) 
+    MapData(mabe::StateGrid& _grid, size_t _total_nutrients) 
         : grid(_grid) , total_nutrients(_total_nutrients) { ; }
   };
 
@@ -219,7 +219,7 @@ namespace mabe {
       bool has_been_visited = state.visited_tiles.Get(
           state.status.GetIndex(GetCurPath(state).grid));
       if(verbose){
-        std::cout << "Current tile: " << tile_id << 
+        std::cout << "[HARVEST] Current tile: " << tile_id << 
             "; visited: " << has_been_visited << std::endl;
       }
       if(!has_been_visited && (tile_id == Tile::NUTRIENT || tile_id == Tile::NUTRIENT_EDGE)){
@@ -234,27 +234,36 @@ namespace mabe {
       if(!state.initialized) InitializeState(state);
       // Mark *old* tile as visited
       MarkVisited(state);
-      if(verbose) std::cout << "[HARVEST] move" << std::endl;
+      if(verbose){
+          std::cout << "[HARVEST] move" << std::endl;
+          PrintVerboseState(state);
+      }
       state.status.Move(GetCurPath(state).grid, scale_factor);
       double score = GetCurrentPosScore(state);
       if(score == 1) state.nutrients_consumed++;
       else if(score == -1) state.moves_off_path++;
       state.raw_score += score;
-      if(verbose) std::cout << "Score: " << state.raw_score << std::endl;
+      if(verbose) std::cout << "[HARVEST] Accumulated score: " << state.raw_score << std::endl;
       return GetNormalizedExponentialScore(state);
     }
     
     /// Rotate the organism clockwise by 45 degrees
     void RotateRight(PatchHarvestState& state){
       if(!state.initialized) InitializeState(state);
-      if(verbose) std::cout << "[HARVEST] rot_right" << std::endl;
+      if(verbose){
+          std::cout << "[HARVEST] rot_right" << std::endl;
+          PrintVerboseState(state);
+      }
       state.status.Rotate(1);
     }
 
     /// Rotate the organism counterclockwise by 45 degrees
     void RotateLeft(PatchHarvestState& state){
       if(!state.initialized) InitializeState(state);
-      if(verbose) std::cout << "[HARVEST] rot_left" << std::endl;
+      if(verbose){
+          std::cout << "[HARVEST] rot_left" << std::endl;
+          PrintVerboseState(state);
+      }
       state.status.Rotate(-1);
     }
 
@@ -280,6 +289,17 @@ namespace mabe {
           return 0; 
           break;
       }
+      return -2;
+    }
+
+    /// Print out some useful debugging information 
+    void PrintVerboseState(PatchHarvestState& state){
+        std::cout << "[HARVEST][STATE] "
+                  << "position: " << state.status.GetIndex(GetCurPath(state).grid) 
+                  << " (" << state.status.GetX() 
+                  << ", " << state.status.GetX() 
+                  << "); facing: " << state.status.GetFacing()
+                  << "\n";
     }
   };
 

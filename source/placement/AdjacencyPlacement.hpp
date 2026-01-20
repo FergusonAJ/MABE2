@@ -149,7 +149,7 @@ namespace mabe {
         return result_vec;
     }
     
-    emp::vector<OrgPosition>& FindStaticNeighbors(OrgPosition ppos, Population & target_pop) {
+    emp::vector<OrgPosition>& FindStaticNeighbors(OrgPosition ppos, Population & /*target_pop*/) {
         const size_t parent_idx = ppos.Pos();
         return neighbor_vecs[parent_idx];
     }

@@ -16,10 +16,10 @@ AvidaGPOrg avida_org {          // Organism consisting of Avida instructions.
 EvalMancala eval_mancala {      // Evaluate organisms on their ability to play Mancala.
   input_trait = "input";        // Into which trait should input values be placed?
   output_trait = "output";      // Out of which trait should output values be read?
-  scoreA_trait = "scoreA";      // Trait to save score for this player.
-  scoreB_trait = "scoreB";      // Trait to save score for opponent.
-  error_trait = "num_errors";   // Trait to count number of illegal moves attempted.
-  fitness_trait = "fitness";    // Trait with combined success rating.
+  //scoreA_trait = "scoreA";      // Trait to save score for this player.
+  //scoreB_trait = "scoreB";      // Trait to save score for opponent.
+  //error_trait = "num_errors";   // Trait to count number of illegal moves attempted.
+  //fitness_trait = "fitness";    // Trait with combined success rating.
   opponent_type = "random";     // Which type of opponent should organisms face?
                                 //  random: Always choose a random, legal move.
                                 //  ai: Human supplied (but not very good) AI
@@ -53,7 +53,15 @@ SelectTournament select_t {     // Select the top fitness organisms from random 
         "  MaxFitness=", main_pop.CALC_MAX("fitness")
        );
 
-  OrgList tourny_offspring = select_t.SELECT(main_pop, next_pop, pop_size);
+  // Trace every 10 updates.
+  IF (ud % 10 == 0) {
+    OrgList trace_org = main_pop.FIND_MAX("fitness");
+    Var filename = "Trace-" + ud;
+    eval_mancala.TRACE(trace_org, filename);
+  }
+
+  // Generate the next generation and put it in place.
+  OrgList offspring = select_t.SELECT(main_pop, next_pop, pop_size);
   main_pop.REPLACE_WITH(next_pop);
 };
 

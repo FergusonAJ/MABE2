@@ -152,7 +152,7 @@ namespace mabe {
       if(inst.nop_vec.size()) hw.AdvanceIP(1); 
     }
     void Inst_IfEqualX(org_t& hw, const org_t::inst_t& inst){
-      size_t value_to_compare = 1;
+      int value_to_compare = 1;
       for(size_t nop_idx = 0; nop_idx < inst.nop_vec.size(); ++nop_idx){
         const size_t nop_val = inst.nop_vec[nop_idx];
         if(nop_val == 0) value_to_compare *= -1;

@@ -43,9 +43,9 @@ namespace mabe {
     };
 
     /// Use "to_string" to convert.
-    std::string ToString() const override { 
+    emp::String ToString() const override { 
       const emp::vector<int>& ints = GetTrait<emp::vector<int>>(SharedData().output_name);
-      return emp::to_string(ints); 
+      return emp::MakeString(ints); 
     }
 
     size_t Mutate(emp::Random & random) override {
@@ -115,6 +115,8 @@ namespace mabe {
                                   emp::vector<int>(0));
     }
     
+    /// Load in a genome from a string
+    /// Genome format: "[ a b c ]"
     void GenomeFromString(const std::string & new_genome) override {
       emp::vector<int>& ints = GetTrait<emp::vector<int>>(SharedData().output_name);
       emp::vector<std::string> sliced_vec = emp::slice(new_genome, ' ');

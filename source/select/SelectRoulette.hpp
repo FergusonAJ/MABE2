@@ -1,7 +1,7 @@
 /**
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
- *  @date 2021.
+ *  @date 2021-2024.
  *
  *  @file  SelectRoulette.hpp
  *  @brief MABE module to enable roulette selection.
@@ -20,7 +20,7 @@ namespace mabe {
   /// \brief Selects organisms with roulette (fitness-proportional) selection
   class SelectRoulette : public Module {
   private:
-    std::string fit_equation;    ///< Which equation should we select on?
+    emp::String fit_equation;    ///< Which equation should we select on?
 
     /// Select num_births organisms from select_pop and replicate them into birth_pop
     Collection Select(Population & select_pop, Population & birth_pop, size_t num_births) {
@@ -98,8 +98,8 @@ namespace mabe {
   public:
     SelectRoulette(
       mabe::MABE & control,
-      const std::string & name="SelectRoulette",
-      const std::string & desc="Module to choose random organisms for replication, proportional to their fitness."
+      const emp::String & name="SelectRoulette",
+      const emp::String & desc="Module to choose random organisms for replication, proportional to their fitness."
     ) : Module(control, name, desc)
     {
       SetSelectMod(true);               ///< Mark this module as a selection module.
@@ -137,4 +137,24 @@ namespace mabe {
   MABE_REGISTER_MODULE(SelectRoulette, "Randomly choose organisms to replicate, with odds proportional to their fitness.");
 }
 
+/*
+== New Version:
+
+module SelectRoulette {
+  desc: "Module to randomly choose organisms, weighted based on score.",
+  module_type: "selection"
+
+  config fit_fun : TraitEquation {  default: "fitness";  desc: "Function to use for selection"; }
+
+  function(Population select_pop {desc: "Population to select from."},
+           Int count {desc: "Number of organisms to select"; default: 1}) : OrgList {
+    desc: "Select random organisms, weighted based on score.";
+    require(select_pop.Size() > 0);
+
+    OrgWeights fit_map = select_pop.Weights(fit_fun);
+    return fit_map.SelectList(count);
+  }
+}
+
+*/
 #endif

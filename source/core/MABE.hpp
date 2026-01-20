@@ -1,7 +1,7 @@
 /**
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
- *  @date 2019-2021.
+ *  @date 2019-2024.
  *
  *  @file  MABE.hpp
  *  @brief Master controller object for a MABE run.
@@ -17,7 +17,6 @@
 #define MABE_MABE_HPP
 
 #include <limits>
-#include <string>
 #include <sstream>
 
 #include "emp/base/array.hpp"
@@ -27,10 +26,11 @@
 #include "emp/config/command_line.hpp"
 #include "emp/control/Signal.hpp"
 #include "emp/data/DataMap.hpp"
-#include "emp/data/DataMapParser.hpp"
+#include "emp/data/SimpleParser.hpp"
 #include "emp/datastructs/vector_utils.hpp"
+#include "emp/math/constants.hpp"
 #include "emp/math/Random.hpp"
-#include "emp/tools/string_utils.hpp"
+#include "emp/tools/String.hpp"
 
 #include "../Emplode/Emplode.hpp"
 
@@ -55,11 +55,11 @@ namespace mabe {
 
   class MABE : public MABEBase {
   private:
-    const std::string VERSION = "0.0.1";
+    const emp::String VERSION = "0.0.2";
 
     // --- Variables to handle configuration, initialization, and error reporting ---
     bool show_help = false;      ///< Should we show "help" before exiting?
-    std::string help_topic="";   ///< What topic should we give help about?
+    emp::String help_topic="";   ///< What topic should we give help about?
 
     /// Populations used; generated in the configuration file.
     emp::vector< emp::Ptr<Population> > pops;
@@ -77,36 +77,39 @@ namespace mabe {
 
     // --- Config information for command-line arguments ---
     struct ArgInfo {
-      std::string name;    ///< E.g.: "help" which would be called with "--help"
-      std::string flag;    ///< E.g.: "h" which would be called with -h
-      std::string args;    ///< Type of arguments needed: E.g.: "[filename...]"
-      std::string desc;    ///< E.g.: "Print available command-line options."
+      emp::String name;    ///< E.g.: "help" which would be called with "--help"
+      emp::String flag;    ///< E.g.: "h" which would be called with -h
+      emp::String args;    ///< Type of arguments needed: E.g.: "[filename...]"
+      emp::String desc;    ///< E.g.: "Print available command-line options."
 
       /// Function to call when triggered.
-      using fun_t = std::function<void(const emp::vector<std::string> &)>;
+      using fun_t = std::function<void(const emp::vector<emp::String> &)>;
       fun_t action;
 
-      ArgInfo(const std::string & _n, const std::string & _f, const std::string & _a,
-              const std::string & _d, fun_t _action)
+      ArgInfo(const emp::String & _n, const emp::String & _f, const emp::String & _a,
+              const emp::String & _d, fun_t _action)
         : name(_n), flag(_f), args(_a), desc(_d), action(_action) { }
     };
 
     emp::vector<ArgInfo> arg_set;              ///< Info about valid command-line arguments.
-    emp::vector<std::string> args;             ///< Command-line arguments passed in.
-    emp::vector<std::string> config_filenames; ///< Names of configuration files to load.
-    emp::vector<std::string> config_settings;  ///< Additional config commands to run.
-    std::string gen_filename;                  ///< Name of output file to generate.
+    emp::vector<emp::String> args;             ///< Command-line arguments passed in.
+    emp::vector<emp::String> config_filenames; ///< Names of configuration files to load.
+    emp::vector<emp::String> config_settings;  ///< Additional config commands to run.
+    emp::String gen_filename;                  ///< Name of output file to generate.
     MABEScript config_script;                  ///< Configuration information for this run.
+    
     // ----------- Helper Functions -----------    
     void ShowHelp();       ///< Print information on how to run the software.
     void ShowModules();    ///< List all available modules in the current compilation.
     void RunBatch();       ///< Process a whole series of MABE runs.
     void ProcessArgs();    ///< Process all arguments passed in on the command line.
     /// Setup a function as deprecated so we can phase it out.
-    void Setup_Modules();  ///< Run SetupModule() method on each module we've loaded.
-    void UpdateSignals();  ///< Link signals only to modules that respond to them.
+    void Setup_CommandLine(); ///< Process all command-line args.
+    void Setup_Modules();     ///< Run SetupModule() method on each module we've loaded.
+    void UpdateSignals();     ///< Link signals only to modules that respond to them.
 
   public:
+    MABE();                        ///< MABE default constructor (for testing)
     MABE(int argc, char* argv[]);  ///< MABE command-line constructor.
     MABE(const MABE &) = delete;
     MABE(MABE &&) = delete;
@@ -124,7 +127,7 @@ namespace mabe {
 
     /// Output args if (and only if) we are in verbose mode.
     template <typename... Ts> void Verbose(Ts &&... args) {
-      if (verbose) std::cout << emp::to_string(std::forward<Ts>(args)...) << std::endl;
+      if (verbose) std::cout << emp::MakeString(std::forward<Ts>(args)...) << std::endl;
     }
 
     void PrintAST() override {
@@ -145,6 +148,8 @@ namespace mabe {
 
     /// Update MABE a single time step.
     void Update(size_t num_updates=1);
+    /// Update MABE one time step at a time until a stop condition is met
+    void UpdateForever();
 
     // --- Population Management ---
 
@@ -155,15 +160,32 @@ namespace mabe {
     const ActionMap & GetActionMap(size_t id) const { return action_maps[id]; }
     ActionMap & GetActionMap(size_t id) { return action_maps[id]; }
 
+    size_t GetPopulationID(const emp::String & name) const {
+      for (size_t id = 0; id < pops.size(); ++id) {
+        if (pops[id]->GetName() == name) return id;
+      }
+      return emp::MAX_SIZE_T;
+    }
     Population & GetPopulation(size_t id) { return *pops[id]; }
     const Population & GetPopulation(size_t id) const { return *pops[id]; }
-    Population & AddPopulation(const std::string & name, size_t pop_size=0) override;
+
+    Population & GetPopulation(const emp::String & name) {
+      return *pops[GetPopulationID(name)];
+    }
+    const Population & GetPopulation(const emp::String & name) const {
+      return *pops[GetPopulationID(name)];
+    }
+
+
+    Population & AddPopulation(const emp::String & name, size_t pop_size=0) override;
 
     /// Move an organism from one position to another; kill anything that previously occupied
     /// the target position.
     void MoveOrg(OrgPosition from_pos, OrgPosition to_pos) {
-      ClearOrgAt(to_pos);
-      SwapOrgs(from_pos, to_pos);
+      if (from_pos != to_pos) {
+        ClearOrgAt(to_pos);
+        SwapOrgs(from_pos, to_pos);
+      }
     }
 
     /// Inject one or more copies of an organism and return the positions they were placed in.
@@ -183,26 +205,26 @@ namespace mabe {
     
     /// Add one or more organisms of a specified type (provide the type name; the MABE controller
     /// will create instances of it.)  Returns the positions the organisms were placed.
-    Collection Inject(Population & pop, const std::string & type_name, size_t copy_count=1);
+    Collection Inject(Population & pop, const emp::String & type_name, size_t copy_count=1);
    
     /// Injects N organisms with the given genome 
     Collection InjectGenome(
         Population & pop, 
-        const std::string & type_name, 
-        const std::string & genome, 
+        const emp::String & type_name, 
+        const emp::String & genome, 
         size_t copy_count=1);
   
     /// Add an organsim of a specified type and genome to the specific world location
     OrgPosition InjectGenomeAt(
       Population & pop, 
-      const std::string & type_name, 
-      const std::string& genome, 
+      const emp::String & type_name, 
+      const emp::String& genome, 
       OrgPosition pos);
 
     /// Add an organism of a specified type and population (provide names of both and they
     /// will be properly setup.)
-    Collection InjectByName(const std::string & pop_name,
-                             const std::string & type_name, 
+    Collection InjectByName(const emp::String & pop_name,
+                             const emp::String & type_name, 
                              size_t copy_count=1);
 
     /// Inject a copy of the provided organism at a specified position.
@@ -217,7 +239,7 @@ namespace mabe {
     bool SavePopulation(Population & pop, std::ostream& os);
 
     /// Write out the current population to file
-    bool SavePopulationToFile(Population & pop, const std::string& filename){
+    bool SavePopulationToFile(Population & pop, const emp::String& filename){
       std::ofstream ofs(filename);
       return SavePopulation(pop, ofs);
     }
@@ -225,8 +247,8 @@ namespace mabe {
     // Load a whole population from a given file
     Collection LoadPopulationFromFile(
         Population & pop, 
-        const std::string& org_type_name,
-        const std::string& filename);
+        const emp::String& org_type_name,
+        const emp::String& filename);
 
     /// Give birth to one or more offspring; return position of last placed.
     /// Triggers 'before repro' signal on parent (once) and 'offspring ready' on each offspring.
@@ -273,26 +295,26 @@ namespace mabe {
     /// Move all organisms from one population to another.
     void MoveOrgs(Population & from_pop, Population & to_pop, bool reset_to) override;
 
-    /// Return a ramdom position from a desginated population.
+    /// Return a random position from a designated population.
     OrgPosition GetRandomPos(Population & pop) {
       emp_assert(pop.GetSize() > 0);
       return pop.IteratorAt( random.GetUInt(pop.GetSize()) );
     }
 
-    /// Return a ramdom position from the population with the specified id.
+    /// Return a random position from the population with the specified id.
     OrgPosition GetRandomPos(size_t pop_id) { return GetRandomPos(GetPopulation(pop_id)); }
 
-    /// Return a ramdom position from a desginated population with a living organism in it.
+    /// Return a random position from a designated population with a living organism in it.
     OrgPosition GetRandomOrgPos(Population & pop);
 
-    /// Return a ramdom position of a living organism from the population with the specified id.
+    /// Return a random position of a living organism from the population with the specified id.
     OrgPosition GetRandomOrgPos(size_t pop_id) { return GetRandomOrgPos(GetPopulation(pop_id)); }
 
 
     // --- Collection Management ---
 
-    std::string ToString(const mabe::Collection & collect) const { return collect.ToString(); }
-    Collection ToCollection(const std::string & load_str);
+    emp::String ToString(const mabe::Collection & collect) const { return collect.ToString(); }
+    Collection ToCollection(const emp::String & load_str);
 
     Collection GetAlivePopulation(size_t id) {
       Collection col(GetPopulation(id));
@@ -304,7 +326,7 @@ namespace mabe {
     // --- Module Management ---
 
     /// Get the unique id of a module with the specified name.
-    int GetModuleID(const std::string & mod_name) const {
+    int GetModuleID(const emp::String & mod_name) const {
       return emp::FindEval(modules, [mod_name](const auto & m){ return m->GetName() == mod_name; });
     }
 
@@ -313,10 +335,10 @@ namespace mabe {
     ModuleBase & GetModule(int id) { return *modules[(size_t) id]; }
 
     /// Get a reference to a module with the specified name.
-    const ModuleBase & GetModule(const std::string & mod_name) const {
+    const ModuleBase & GetModule(const emp::String & mod_name) const {
       return *modules[(size_t) GetModuleID(mod_name)];
     }
-    ModuleBase & GetModule(const std::string & mod_name) {
+    ModuleBase & GetModule(const emp::String & mod_name) {
       return *modules[(size_t) GetModuleID(mod_name)];
     }
 
@@ -343,7 +365,7 @@ namespace mabe {
 
     /// Build a lambda function that takes an organism applied the provided equation to it.
     /// (The provided data layout must match that or the organisms.)
-    auto BuildTraitEquation(const emp::DataLayout & data_layout, const std::string & equation)
+    auto BuildTraitEquation(const emp::DataLayout & data_layout, const emp::String & equation)
     {
       return config_script.BuildTraitEquation(data_layout, equation);
     }
@@ -351,15 +373,22 @@ namespace mabe {
     void Setup_Traits();   ///< Load organism traits and test for module conflicts.    
 
     /// Build a trait equations for organisms in a given population.
-    auto BuildTraitEquation(const Population & pop, const std::string & equation) {
+    auto BuildTraitEquation(const Population & pop, const emp::String & equation) {
       return BuildTraitEquation(pop.GetDataLayout(), equation);
     }
 
-    const std::set<std::string> & GetEquationTraits(const std::string & equation) {
+    const std::set<emp::String> & GetEquationTraits(const emp::String & equation) {
       return config_script.GetEquationTraits(equation);
     }
 
-    MABEScript& GetConfigScript(){ return config_script; }
+    MABEScript& GetConfigScript() { return config_script; }
+
+    // Pass anything we want to load into the config script.
+    template <typename... Ts>
+    void Load(Ts &&... args) { config_script.Load(std::forward<Ts>(args)...); }
+
+    // Execute a single statement (and return a value-based result)
+    emp::Datum Execute(const emp::String & cmd) { return config_script.Execute(cmd); }
 
     bool OK();           ///< Sanity checks for debugging
 
@@ -407,8 +436,17 @@ namespace mabe {
       std::cout << "TOPIC: " << help_topic << std::endl;
       if (emp::Has(mod_map, help_topic)) {
         const auto & info = mod_map[help_topic];
-        std::cout << "--- MABE Module ---\n"
-                  << "Description: " << info.desc << "\n";
+        std::cout << "\n--- MABE Module ---\n\n"
+                  << "Description:\n";
+        for (const emp::String & line : info.full_desc) {
+          std::cout << "  " << line << "\n";
+        }
+        std::cout << "\nDefault Configuration:\n\n";
+
+        // Print a configuration template for the user.
+        emp::String config_code =info.name + " example_module;";
+        config_script.LoadStatements(config_code, "help_output");
+        config_script.WriteSymbol("example_module", std::cout, "  ");
       }
       else {
         std::cout << "Unknown keyword.\n";
@@ -427,7 +465,7 @@ namespace mabe {
     // }          
     std::cout << "Available modules:\n";
     for (auto & [type_name,mod] : GetModuleMap()) {
-      std::cout << "  " << type_name << " : " << mod.desc << "\n";
+      std::cout << "  " << type_name << " : " << mod.brief_desc << "\n";
     }          
     exit_now = true;;
   }
@@ -454,11 +492,11 @@ namespace mabe {
 
   void MABE::ProcessArgs() {
     arg_set.emplace_back("--batch", "-b",    "[filename]    ", "Process a full batch of runs",
-      [this](const emp::vector<std::string> & in){ config_filenames = in; RunBatch(); } );
+      [this](const emp::vector<emp::String> & in){ config_filenames = in; RunBatch(); } );    
     arg_set.emplace_back("--filename", "-f", "[filename...] ", "Filenames of configuration settings",
-      [this](const emp::vector<std::string> & in){ config_filenames = in; } );
+      [this](const emp::vector<emp::String> & in){ config_filenames = in; } );
     arg_set.emplace_back("--generate", "-g", "[filename]    ", "Generate a new output file",
-      [this](const emp::vector<std::string> & in) {
+      [this](const emp::vector<emp::String> & in) {
         if (in.size() != 1) {
           std::cout << "'--generate' must be followed by a single filename.\n";
           exit_now = true;
@@ -474,27 +512,27 @@ namespace mabe {
         }
       });
     arg_set.emplace_back("--help", "-h", "              ", "Help; print command-line options for MABE",
-      [this](const emp::vector<std::string> & in){
+      [this](const emp::vector<emp::String> & in){
         show_help = true;
         if (in.size()) help_topic = in[0];
       });
     arg_set.emplace_back("--modules", "-m", "              ", "Module list",
-      [this](const emp::vector<std::string> &){ ShowModules(); } );
+      [this](const emp::vector<emp::String> &){ ShowModules(); } );
     arg_set.emplace_back("--set", "-s", "[param=value] ", "Set specified parameter",
-      [this](const emp::vector<std::string> & in){
+      [this](const emp::vector<emp::String> & in){
         std::cout << "Adding command-line setting:";
-        for (const std::string & x : in) std::cout << " " << x;
+        for (const emp::String & x : in) std::cout << " " << x;
         std::cout << std::endl;
         emp::Append(config_settings, in);
         config_settings.push_back(";"); // Extra semi-colon so not needed on command line.
       });
     arg_set.emplace_back("--version", "-v", "              ", "Version ID of MABE",
-      [this](const emp::vector<std::string> &){
+      [this](const emp::vector<emp::String> &){
         std::cout << "MABE v" << VERSION << "\n";
         exit_now = true;
       });
     arg_set.emplace_back("--verbose", "-+", "              ", "Output extra setup info",
-      [this](const emp::vector<std::string> &){ verbose = true; } );
+      [this](const emp::vector<emp::String> &){ verbose = true; } );
 
     // Scan through all input argument positions.
     for (size_t pos = 1; pos < args.size(); pos++) {
@@ -504,7 +542,7 @@ namespace mabe {
         // If we have a match...
         if (args[pos] == cur_arg.name || args[pos] == cur_arg.flag) {
           // ...collect all of the options associated with this match.
-          emp::vector<std::string> option_args;
+          emp::vector<emp::String> option_args;
           // We want args until we run out or hit another option.
           while (pos+1 < args.size() && args[pos+1][0] != '-') {
             option_args.push_back(args[++pos]);
@@ -526,12 +564,41 @@ namespace mabe {
     if (show_help) ShowHelp();
   }
 
+  void MABE::Setup_CommandLine() {
+    ProcessArgs();         // Deal with command-line inputs.
+    if (exit_now) return;  // If command-line arguments require exit (e.g., after '--help')
+
+    // If filenames have been specified on command line, load each in order.
+    if (config_filenames.size()) {
+      std::cout << "Loading file(s): " << emp::MakeQuotedList(config_filenames) << std::endl;
+      config_script.Load(config_filenames);   // Load files
+    }
+
+    // If other variable settings have been specified, run them AFTER files are loaded.
+    if (config_settings.size()) {
+      std::cout << "Loading command-line settings." << std::endl;
+      config_script.LoadStatements(config_settings, "command-line settings");      
+    }
+
+    // If we are writing a file, do so and then exit.
+    if (gen_filename != "") {
+      std::cout << "Generating file '" << gen_filename << "'." << std::endl;
+      config_script.Write(gen_filename);
+      exit_now = true;
+    }    
+  }
+
   /// As part of the main Setup(), run SetupModule() method on each module we've loaded.
   void MABE::Setup_Modules() {
+    trait_man.Unlock(); // Allow traits to be linked.
+
     // Allow the user-defined module SetupModule() member functions run.  These are
     // typically used for any internal setup needed by modules are the configuration is
     // complete.
-    for (emp::Ptr<ModuleBase> mod_ptr : modules) mod_ptr->SetupModule();
+    for (emp::Ptr<ModuleBase> mod_ptr : modules) {
+      mod_ptr->SetupModule_Internal();
+      mod_ptr->SetupModule();
+    }
   }
 
   /// As part of the main Setup(), load in all of the organism traits that modules need to
@@ -545,7 +612,8 @@ namespace mabe {
 
     // Alert modules (especially org managers) to the final set of traits.
     for (emp::Ptr<ModuleBase> mod_ptr : modules) {
-      mod_ptr->SetupDataMap(org_data_map);
+      mod_ptr->SetupDataMap_Internal(org_data_map); // Internal indication that DataMap is locked in.
+      mod_ptr->SetupDataMap(org_data_map);    // User-available indication that DataMap is locked in.
     }
   }
 
@@ -562,7 +630,7 @@ namespace mabe {
       }
     }
 
-    // Now that we have scanned the signals, we can turn off the rescan flag.
+    // Now that we have scanned the signals, we can turn off the re-scan flag.
     rescan_signals = false;
   }
 
@@ -570,17 +638,15 @@ namespace mabe {
   // ---------------- PUBLIC MEMBER FUNCTIONS -----------------
 
 
-  MABE::MABE(int argc, char* argv[])
-    : args(emp::cl::args_to_strings(argc, argv))
-    , config_script(*this)
+  MABE::MABE() : config_script(*this)
   {
     // Updates to scripting language that require full controller functionality.
 
     // 'INJECT' allows a user to add an organism to a population; 
     //    returns collection of added orgs.
     emplode::TypeInfo & pop_type = config_script.GetType("Population");
-    std::function<Collection(Population &, const std::string &, size_t)> inject_fun =
-      [this](Population & pop, const std::string & org_type_name, size_t count) {
+    std::function<Collection(Population &, const emp::String &, size_t)> inject_fun =
+      [this](Population & pop, const emp::String & org_type_name, size_t count) {
         return Inject(pop, org_type_name, count);
       };
     pop_type.AddMemberFunction("INJECT", inject_fun,
@@ -588,17 +654,17 @@ namespace mabe {
       "Args: org_name, org_count; Return: OrgList of injected orgs.");
     // 'INJECT_GENOME' allows a user to add organisms with a specific genome to a population;
     //    returns collection of added orgs.
-    std::function<Collection(Population &, const std::string &, 
-        const std::string &, size_t)> inject_genome_fun =
-      [this](Population & pop, const std::string & org_type_name, 
-          const std::string & genome, size_t count) {
+    std::function<Collection(Population &, const emp::String &, 
+        const emp::String &, size_t)> inject_genome_fun =
+      [this](Population & pop, const emp::String & org_type_name, 
+          const emp::String & genome, size_t count) {
         return InjectGenome(pop, org_type_name, genome, count);
       };
     pop_type.AddMemberFunction("INJECT_GENOME", inject_genome_fun,
       "Inject organisms with a given genome into population.  "
       "Args: org_name, genome, org_count; Return: OrgList of injected orgs.");
     pop_type.AddMemberFunction("SAVE_TO_FILE", 
-        [this](Population & pop, const std::string& filename){
+        [this](Population & pop, const emp::String& filename){
           return SavePopulationToFile(pop, filename);
         }, 
         "Save the population to the given file. " 
@@ -606,8 +672,8 @@ namespace mabe {
     
     pop_type.AddMemberFunction("LOAD_FROM_FILE", 
         [this](Population & pop, 
-            const std::string& org_type_name, 
-            const std::string& filename){
+            const emp::String& org_type_name, 
+            const emp::String& filename){
           return LoadPopulationFromFile(pop, org_type_name, filename);
         }, 
         "Load the population from the given file. " 
@@ -622,43 +688,27 @@ namespace mabe {
 
     // Setup all known modules as available types in the config file.
     for (auto & [type_name,mod] : GetModuleMap()) {
-      auto mod_init_fun = [this,mod=&mod](const std::string & name) -> emp::Ptr<emplode::EmplodeType> {
+      auto mod_init_fun = [this,mod=&mod](const emp::String & name) -> emp::Ptr<emplode::EmplodeType> {
         return mod->obj_init_fun(*this,name);
       };
-      auto & type_info = config_script.AddType(type_name, mod.desc, mod_init_fun, nullptr, mod.type_id);
+      auto & type_info = config_script.AddType(type_name, mod.brief_desc, mod_init_fun, nullptr, mod.type_id);
       mod.type_init_fun(type_info);  // Setup functions for this module.
     }
+
+    // Default the list of arguments to the (likely) name of the executable.
+    args.push_back("MABE");
+  }
+
+  MABE::MABE(int argc, char* argv[]) : MABE()
+  {
+    args = emp::cl::ArgsToStrings(argc, argv);
   }
 
   bool MABE::Setup() {
-    ProcessArgs();                   // Deal with command-line inputs.
-
-    // Sometimes command-line arguments will require an immediate exit (such as after '--help')
-    if (exit_now) return false;
-
-    // If configuration filenames have been specified, load each of them in order.
-    if (config_filenames.size()) {
-      std::cout << "Loading file(s): " << emp::to_quoted_list(config_filenames) << std::endl;
-      config_script.Load(config_filenames);   // Load files
-    }
-
-    if (config_settings.size()) {
-      std::cout << "Loading command-line settings." << std::endl;
-      config_script.LoadStatements(config_settings, "command-line settings");      
-    }
-
-    // If we are writing a file, do so and then exit.
-    if (gen_filename != "") {
-      std::cout << "Generating file '" << gen_filename << "'." << std::endl;
-      config_script.Write(gen_filename);
-      exit_now = true;
-    }
-
-    // If any of the inital flags triggered an 'exit_now', do so.
-    if (exit_now) return false;
-
-    // Allow traits to be linked.
-    trait_man.Unlock();
+    // Read in command line arguments, respond to flags, load associated files, and deal with
+    // any other command-line settings.
+    Setup_CommandLine(); 
+    if (exit_now) return false;  // If any of the inital flags triggered an 'exit_now', do so.
 
     Setup_Modules();    // Run SetupModule() on each module for linking traits or other setup.
     Setup_Traits();     // Make sure module traits do not clash.
@@ -682,6 +732,19 @@ namespace mabe {
       config_script.Trigger("UPDATE", update);  // Trigger any updated-based events
     }
   }
+  
+  /// Update MABE world until a stop condition is met
+  void MABE::UpdateForever() {
+    if (update == 0) config_script.Trigger("START");
+    while (!exit_now) {
+      emp_assert(OK(), update);                 // In debug mode, keep checking MABE integrity
+      if (rescan_signals) UpdateSignals();      // If we have reason to, update module signals
+      before_update_sig.Trigger(update);        // Signal that a new update is about to begin
+      update++;                                 // Increment 'update' to start new update
+      on_update_sig.Trigger(update);            // Signal all modules about the new update
+      config_script.Trigger("UPDATE", update);  // Trigger any updated-based events
+    }
+  }
 
   /// Setup an organism as a placeholder for all "empty" positions in the population.
   template <typename EMPTY_MANAGER_T>
@@ -695,7 +758,7 @@ namespace mabe {
   }
 
   /// New populations must be given a name and an optional size.
-  Population & MABE::AddPopulation(const std::string & name, size_t pop_size) {
+  Population & MABE::AddPopulation(const emp::String & name, size_t pop_size) {
     int pop_id = (int) pops.size();
       emp::Ptr<Population> new_pop = emp::NewPtr<Population>(name, pop_id, pop_size, empty_org);
       pops.push_back(new_pop);
@@ -769,10 +832,10 @@ namespace mabe {
   }
   
 
-  /// Add an organsim of a specified type to the world (provide the type name and the
+  /// Add an organism of a specified type to the world (provide the type name and the
   /// MABE controller will create instances of it.)  Returns the position of the last
   /// organism placed.
-  Collection MABE::Inject(Population & pop, const std::string & type_name, size_t copy_count) {
+  Collection MABE::Inject(Population & pop, const emp::String & type_name, size_t copy_count) {
     Verbose("Injecting ", copy_count, " orgs of type '", type_name,
             "' into population ", pop.GetID());
 
@@ -790,8 +853,8 @@ namespace mabe {
   /// Add an organsim of a specified type and genome to the specific world location
   OrgPosition MABE::InjectGenomeAt(
       Population & pop, 
-      const std::string & type_name, 
-      const std::string& genome, 
+      const emp::String & type_name, 
+      const emp::String& genome, 
       OrgPosition pos) {
     auto & org_manager = GetModule(type_name);            // Look up type of organism.
     Collection placement_set;                             // Track set of positions placed.
@@ -805,8 +868,8 @@ namespace mabe {
   /// organism placed.
   Collection MABE::InjectGenome(
       Population & pop, 
-      const std::string & type_name, 
-      const std::string& genome, 
+      const emp::String & type_name, 
+      const emp::String& genome, 
       size_t copy_count) {
     Verbose("Injecting ", copy_count, " orgs of type '", type_name, 
             "' with genome '", genome,
@@ -827,8 +890,8 @@ namespace mabe {
 
   /// Add an organism of a specified type and population (provide names of both and they
   /// will be properly setup.)
-  Collection MABE::InjectByName(const std::string & pop_name,
-                                const std::string & type_name, 
+  Collection MABE::InjectByName(const emp::String & pop_name,
+                                const emp::String & type_name, 
                                 size_t copy_count) {      
     int pop_id = GetPopID(pop_name);
     if (pop_id == -1) {
@@ -854,8 +917,8 @@ namespace mabe {
   // Load a whole population from a file
   Collection MABE::LoadPopulationFromFile(
       Population & pop, 
-      const std::string& org_type_name,
-      const std::string& filename){
+      const emp::String& org_type_name,
+      const emp::String& filename){
     Collection placement_set;                             // Track set of positions placed.
     emp::File file(filename);
     for(size_t org_idx = 0; org_idx < file.GetNumLines(); ++org_idx){
@@ -933,7 +996,7 @@ namespace mabe {
     EmptyPop(from_pop, 0);
   }
 
-  /// Return a ramdom position from a desginated population with a living organism in it.
+  /// Return a random position from a designated population with a living organism in it.
   OrgPosition MABE::GetRandomOrgPos(Population & pop) {
     emp_assert(pop.GetNumOrgs() > 0, "GetRandomOrgPos cannot be called if there are no orgs.");
     OrgPosition pos = GetRandomPos(pop);
@@ -944,7 +1007,7 @@ namespace mabe {
 
   // --- Collection Management ---
 
-  Collection MABE::ToCollection(const std::string & load_str) {
+  Collection MABE::ToCollection(const emp::String & load_str) {
     Collection out;
     auto slices = emp::view_slices(load_str, ',');
     for (auto name : slices) {

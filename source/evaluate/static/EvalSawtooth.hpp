@@ -50,9 +50,9 @@ namespace mabe {
       int step = 1;
       int dist = 0;
       std::cout << "Sawtooth peaks: [";
-      for(int i = 0; i <= max_val; i++){
+      for(size_t i = 0; i <= max_val; i++){
         dist++;
-        if(i == next_val){
+        if(i == static_cast<size_t>(next_val)){
           old_val = next_val;
           next_val = old_val + step;
           step++;

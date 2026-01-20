@@ -1,7 +1,7 @@
 /**
  *  @note This file is part of MABE, https://github.com/mercere99/MABE2
  *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
- *  @date 2021-2022.
+ *  @date 2021-2024.
  *
  *  @file  EvalTaskAndnot.h
  *  @brief Tests organism output for bitwise ANDNOT operation
@@ -22,8 +22,8 @@ namespace mabe {
 
   public:
     EvalTaskAndnot(mabe::MABE & control,
-                  const std::string & name="EvalTaskAndnot",
-                  const std::string & desc="Evaluate organism on ANDNOT logic task")
+                  emp::String name="EvalTaskAndnot",
+                  emp::String desc="Evaluate organism on ANDNOT logic task")
       : EvalTaskBase(control, name, "andnot", desc){;}
 
     ~EvalTaskAndnot() { }

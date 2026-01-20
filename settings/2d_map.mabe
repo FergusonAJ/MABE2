@@ -1,0 +1,98 @@
+random_seed = 0;                // Seed for random number generator; use 0 to base on time.
+Var pop_size = 4096;
+Var num_gens = 200;
+Var num_vals = 2;
+Var print_step = 100;          // Interval for printing...
+Var max_val = 200;
+Var init_pos = "[ 12 14 ]";
+Var take_snapshots = 1;
+Var pop_to_load = "";
+
+Population main_pop;
+Population next_pop;
+
+IntsOrg ints_org {
+  N = num_vals;
+  mut_prob = 0.01;
+  min_val = 0;
+  max_val = max_val;
+  output_name = "ints";
+  init_random = 0;
+};
+
+Eval2DGrid  eval_grid {
+  N = num_vals;
+  ints_trait = "ints";
+  num_rows = 25;
+  num_cols = 25;
+  map_filename = "../settings/samples/Eval2DGrid/neutral.csv";
+};
+
+SelectTournament select_t {     // Replicate top fitness organisms from random subgroups.
+  tournament_size = 2;          // Number of orgs in each tournament
+  fitness_fun = "fitness";      // Which trait provides the fitness value to use?
+};
+
+DataFile fit_file { filename="fitness.csv"; };
+fit_file.ADD_COLUMN( "Average Fitness", "main_pop.CALC_MEAN('fitness')" );
+fit_file.ADD_COLUMN( "Maximum Fitness", "main_pop.CALC_MAX('fitness')" );
+fit_file.ADD_COLUMN( "Dominant Fitness", "main_pop.CALC_MODE('fitness')" );
+
+OrgList best_org;
+DataFile max_file { filename="max_org.csv"; };
+max_file.ADD_SETUP( "best_org = main_pop.FIND_MAX('fitness')" );
+max_file.ADD_COLUMN( "Fitness", "best_org.TRAIT('fitness')" );
+max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('ints')" );
+
+@START() {
+  PRINT("Beginning DIAGNOSTICS!\nMain config options:");
+  PRINT(" Num org values:   ", num_vals);
+  PRINT(" Mut Probability:  ", ints_org.mut_prob);
+  PRINT(" Population size:  ", pop_size);
+  PRINT(" Random seed:      ", random_seed, "\n");
+  PRINT(" Num Generations:  ", num_gens, "\n");
+ 
+  IF(pop_to_load == ""){
+    main_pop.INJECT_GENOME("ints_org", init_pos, pop_size);       // Inject starting population.
+  } 
+  ELSE{
+    main_pop.LOAD_FROM_FILE("ints_org", pop_to_load);
+  }
+}
+
+// Actions to perform every update.
+
+@UPDATE(Var ud) {
+
+  eval_grid.EVAL(main_pop);
+  
+  IF (ud == num_gens){
+    PRINT("UD:", GET_UPDATE(),
+          "  MainPopSize=", main_pop.SIZE(),
+          "  AveFitness=", main_pop.CALC_MEAN("fitness"),
+          "  MaxFitness=", main_pop.CALC_MAX("fitness"),
+    );
+    fit_file.WRITE();
+    max_file.WRITE();
+    main_pop.SAVE_TO_FILE("test_pop.txt");
+    PRINT("Finished!");
+    PRINT("Most common genotype: ", main_pop.CALC_MODE("ints"));
+    EXIT();
+  } 
+
+  IF (ud % print_step == 0 && ud < num_gens) {
+     PRINT("UD:", GET_UPDATE(),
+           "  MainPopSize=", main_pop.SIZE(),
+           "  AveFitness=", main_pop.CALC_MEAN("fitness"),
+           "  MaxFitness=", main_pop.CALC_MAX("fitness"),
+     );
+     fit_file.WRITE();
+     max_file.WRITE();
+  }
+  IF(take_snapshots){
+    main_pop.SAVE_TO_FILE("pop_snapshots/gen_" + ud + ".pop");
+  }
+
+  select_t.SELECT(main_pop, next_pop, pop_size);
+  main_pop.REPLACE_WITH(next_pop);
+}
