@@ -46,6 +46,7 @@
 #include "placement/NeighborPlacement.hpp"
 #include "placement/Spatial1DPlacement.hpp"
 #include "placement/AdjacencyPlacement.hpp"
+#include "placement/PatchPlacement.hpp"
 
 // Selection Modules
 #include "select/SelectElite.hpp"

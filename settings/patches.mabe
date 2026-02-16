@@ -1,0 +1,111 @@
+random_seed = 0;                // Seed for random number generator; use 0 to base on time.
+Var pop_size = 1000;            // Number of organisms to evaluate in the population.
+Var num_gens = 1000;
+
+OrgList patch_orgs;
+Population pop1;            // Temp. population while constructing the next generation.
+Population pop2;
+Population tmp_pop;
+
+
+EvalInterpolatedFitnessGraph eval_ifg {
+  genotype_trait = "genotype";
+  fitness_trait = "fitness";
+  graph_filename = "../settings/EvalIFG/bst_weighted.graph";
+  mut_prob = 0.0125;
+};
+
+GenericIntsOrg ints_org {
+  output_name = "genotype";
+  mut_prob = 0;
+  N = 3;
+  init_random = 0;
+  min_val = 0;
+  max_val = 100000;
+};
+
+SelectRoulette select_r {     // Replicate top fitness organisms via roulette selection
+  fitness_fun = "10**fitness";      // Which trait provides the fitness value to use?
+};
+
+IFGTracker ifg_tracker{
+  genotype_trait="genotype";  
+};
+
+
+PatchPlacement patch_placement{};
+DataFile fit_file { filename="fitness.csv"; };
+DataFile max_file { filename="max_org.csv"; };
+OrgList best_org;
+
+@START() {
+  PRINT("random_seed = ", random_seed, "\n");  // Print seed at run start.
+  patch_orgs = patch_placement.GET_COLLECTION();
+  pop1.INJECT("ints_org", 1);       // Inject starting population.
+  patch_placement.ADD_PATCH(pop1);
+  patch_placement.ADD_PATCH(pop2);
+  patch_placement.ADD_CONNECTION(pop1, pop2, 0.00001);
+  patch_placement.ADD_CONNECTION(pop2, pop1, 0.00001);
+
+  // Set up tracking .csv files
+  fit_file.ADD_COLUMN( "Average Fitness", "patch_orgs.CALC_MEAN('fitness')" );
+  fit_file.ADD_COLUMN( "Maximum Fitness", "patch_orgs.CALC_MAX('fitness')" );
+  fit_file.ADD_COLUMN( "Dominant Fitness", "patch_orgs.CALC_MODE('fitness')" );
+  max_file.ADD_SETUP( "best_org = patch_orgs.FIND_MAX('fitness')" );
+  max_file.ADD_COLUMN( "Fitness", "best_org.TRAIT('fitness')" );
+  max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('genotype')" );
+}
+
+
+// Actions to perform every update.
+@UPDATE(Var ud) {
+  // Check for termination
+  IF (ud == num_gens){
+    ifg_tracker.PRINT();
+    ifg_tracker.WRITE_TO_FILE("ifg_discoveries.csv");
+    EXIT();
+  }
+  
+  // Evaluate all populations
+  IF(pop1.SIZE() > 0){
+    eval_ifg.EVAL(pop1);
+    eval_ifg.DETECT_DISCOVERIES(pop1);
+    ifg_tracker.UPDATE(pop1, ud);
+  }
+  IF(pop2.SIZE() > 0){
+    eval_ifg.EVAL(pop2);
+    eval_ifg.DETECT_DISCOVERIES(pop2);
+    ifg_tracker.UPDATE(pop2, ud);
+  }
+
+  patch_orgs = patch_placement.GET_COLLECTION();
+  PRINT("UD:", GET_UPDATE(),
+        "  FullSize=", patch_orgs.SIZE(),
+        "  pop1Size=", pop1.SIZE(),
+        "  pop2Size=", pop2.SIZE(),
+        "  AveFitness=", patch_orgs.CALC_MEAN("fitness"),
+        "  MaxFitness=", patch_orgs.CALC_MAX("fitness")
+       );
+
+  fit_file.WRITE();
+  //max_file.WRITE();
+  pop1.SAVE_TO_FILE("snapshots/ud_" + ud + ".pop");
+
+  Var to_select;
+  
+  IF(pop1.SIZE() > 0){
+    to_select = pop1.SIZE() * 2;
+    IF(to_select > pop_size) to_select = pop_size;
+    select_r.SELECT(pop1, tmp_pop, to_select);
+    pop1.REPLACE_WITH(tmp_pop);
+  }
+  IF(pop2.SIZE() > 0){
+    to_select = pop2.SIZE() * 2;
+    IF(to_select > pop_size) to_select = pop_size;
+    select_r.SELECT(pop2, tmp_pop, to_select);
+    pop2.REPLACE_WITH(tmp_pop);
+  }
+  
+  Var num_migrations = patch_placement.UPDATE();
+}
+
