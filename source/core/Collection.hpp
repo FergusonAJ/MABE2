@@ -336,6 +336,11 @@ namespace mabe {
       return count;
     }
 
+    /// Get the number of populations tracked
+    size_t GetNumPops() const noexcept{
+      return pos_map.size();
+    }
+
     /// Determine if there are any (living) organisms in this collection.
     bool IsEmpty() const noexcept override {
       // If we find an organism in any population, return false; otherwise return true.
@@ -382,6 +387,32 @@ namespace mabe {
       return pos_map.begin()->first->At(0); // Return the first organism since out of range.
     }
 
+    Population & GetPopAt(size_t org_id) {
+      for (auto [pop_ptr, pop_info] : pos_map) {
+        if (org_id < pop_info.GetSize(pop_ptr)) {
+          size_t pop_id = pop_info.GetPos(org_id);
+          return *pop_ptr;
+        }
+        org_id -= pop_info.GetSize(pop_ptr);
+      }
+
+      emp::notify::Error("Trying to find org id out of range for a collection.");
+      return *(pos_map.begin()->first); // Return the first organism since out of range.
+    }
+    
+    OrgPosition GetPosAt(size_t org_id) {
+      for (auto [pop_ptr, pop_info] : pos_map) {
+        if (org_id < pop_info.GetSize(pop_ptr)) {
+          size_t pop_id = pop_info.GetPos(org_id);
+          return OrgPosition(pop_ptr, org_id);
+        }
+        org_id -= pop_info.GetSize(pop_ptr);
+      }
+
+      emp::notify::Error("Trying to find org id out of range for a collection.");
+      return OrgPosition();
+    }
+
     // Always return a constant organism.
     const Organism & ConstAt(size_t org_id) const { return At(org_id); }
 
@@ -426,6 +457,16 @@ namespace mabe {
       emp_assert(pos_map.begin()->second.is_mutable == true,
         "Cannot use GetFirstPop() for const Population in Collection; try ConstGetFirstPop().");
       return pos_map.begin()->first;
+    }
+
+    pop_ptr_t GetPop(size_t idx) {
+      emp_assert(pos_map.size() > idx, "GetPop index is out of range");
+      size_t counter = 0;
+      for(auto it = pos_map.begin(); it != pos_map.end(); it++){
+        if(counter == idx) return it->first;
+        counter++;
+      }
+      return nullptr;
     }
 
     const_pop_ptr_t GetFirstPop() const {

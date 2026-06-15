@@ -42,6 +42,8 @@ OrgList best_org;
   PRINT("random_seed = ", random_seed, "\n");  // Print seed at run start.
   patch_orgs = patch_placement.GET_COLLECTION();
   pop1.INJECT("ints_org", 1);       // Inject starting population.
+  pop2.INJECT("ints_org", 1);       // Inject starting population.
+  pop2.CLEAR();
   patch_placement.ADD_PATCH(pop1);
   patch_placement.ADD_PATCH(pop2);
   patch_placement.ADD_CONNECTION(pop1, pop2, 0.00001);
@@ -83,12 +85,15 @@ OrgList best_org;
         "  FullSize=", patch_orgs.SIZE(),
         "  pop1Size=", pop1.SIZE(),
         "  pop2Size=", pop2.SIZE(),
+        "  pop3Size=", pop3.SIZE(),
+        "  c1Size=", cluster1.SIZE(),
+        "  c2Size=", cluster2.SIZE(),
         "  AveFitness=", patch_orgs.CALC_MEAN("fitness"),
         "  MaxFitness=", patch_orgs.CALC_MAX("fitness")
        );
 
   fit_file.WRITE();
-  //max_file.WRITE();
+  ////max_file.WRITE();
   pop1.SAVE_TO_FILE("snapshots/ud_" + ud + ".pop");
 
   Var to_select;
