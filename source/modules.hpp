@@ -55,6 +55,7 @@
 #include "select/SchedulerProbabilistic.hpp"
 #include "select/SelectRoulette.hpp"
 #include "select/SelectTournament.hpp"
+#include "select/SelectRandom.hpp"
 
 // Organism Types
 #include "orgs/BitsOrg.hpp"
