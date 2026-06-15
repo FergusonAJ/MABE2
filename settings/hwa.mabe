@@ -1,0 +1,95 @@
+random_seed = 0;                // Seed for random number generator; use 0 to base on time.
+Var pop_size = 1000;            // Number of organisms to evaluate in the population.
+Var num_gens = 1000;
+Var num_bits = 100;
+
+OrgList patch_orgs;
+Population pop1;            // Temp. population while constructing the next generation.
+Population pop2;
+Population pop3;
+OrgList cluster1;
+OrgList cluster2;
+Population tmp_pop;
+
+BitsOrg bits_org {              // Organism consisting of a series of N bits.
+  output_name = "bits";         // Name of variable to contain bit sequence.
+  N = num_bits;                 // Number of bits in organism
+  mut_prob = 0.001;              // Probability of each bit mutating on reproduction.
+  init_random = 1;              // Should we randomize ancestor?  (0 = all zeros)
+};
+
+SelectRandom select_rand;      // Replicate organisms randomly
+
+
+PatchPlacement patch_placement{};
+
+@START() {
+  PRINT("random_seed = ", random_seed, "\n");  // Print seed at run start.
+  patch_orgs = patch_placement.GET_COLLECTION();
+  pop1.INJECT("bits_org", 1);       // Inject starting population.
+  // For populations that start empty, we need to tell them what orgs to expect
+  //  Easy (but silly) way to do that is to insert an org and then clear
+  pop2.INJECT("bits_org", 1);
+  pop2.CLEAR();
+  pop3.INJECT("bits_org", 1);  
+  pop3.CLEAR();
+  // Setup patches
+  patch_placement.ADD_PATCH(pop1);
+  patch_placement.ADD_PATCH(pop2);
+  patch_placement.ADD_PATCH(pop3);
+  patch_placement.ADD_CONNECTION(pop1, pop2, 0.00001);
+  patch_placement.ADD_CONNECTION(pop2, pop1, 0.00001);
+  patch_placement.ADD_COLLECTION(cluster1, "c1");
+  patch_placement.ADD_COLLECTION(cluster2, "c2");
+  patch_placement.ADD_POPULATION_TO_COLLECTION(pop1, "c1");
+  patch_placement.ADD_POPULATION_TO_COLLECTION(pop2, "c1");
+  patch_placement.ADD_POPULATION_TO_COLLECTION(pop3, "c2");
+  patch_placement.ADD_COLLECTION_CONNECTION("c1", "c2", 0.000001);
+
+}
+
+
+// Actions to perform every update.
+@UPDATE(Var ud) {
+  // Check for termination
+  IF (ud == num_gens){
+    EXIT();
+  }
+  
+  patch_orgs = patch_placement.GET_COLLECTION();
+  PRINT("UD:", GET_UPDATE(),
+        "  FullSize=", patch_orgs.SIZE(),
+        "  pop1Size=", pop1.SIZE(),
+        "  pop2Size=", pop2.SIZE(),
+        "  pop3Size=", pop3.SIZE(),
+        "  c1Size=", cluster1.SIZE(),
+        "  c2Size=", cluster2.SIZE()
+       );
+
+
+  Var to_select;
+  IF(pop1.SIZE() > 0){
+    pop1.SAVE_TO_FILE("snapshots/pop1_ud_" + ud + ".pop");
+    to_select = pop1.SIZE() * 2;
+    IF(to_select > pop_size) to_select = pop_size;
+    select_rand.SELECT(pop1, tmp_pop, to_select);
+    pop1.REPLACE_WITH(tmp_pop);
+  }
+  IF(pop2.SIZE() > 0){
+    pop2.SAVE_TO_FILE("snapshots/pop2_ud_" + ud + ".pop");
+    to_select = pop2.SIZE() * 2;
+    IF(to_select > pop_size) to_select = pop_size;
+    select_rand.SELECT(pop2, tmp_pop, to_select);
+    pop2.REPLACE_WITH(tmp_pop);
+  }
+  IF(pop3.SIZE() > 0){
+    pop3.SAVE_TO_FILE("snapshots/pop3_ud_" + ud + ".pop");
+    to_select = pop3.SIZE() * 2;
+    IF(to_select > pop_size) to_select = pop_size;
+    select_rand.SELECT(pop3, tmp_pop, to_select);
+    pop3.REPLACE_WITH(tmp_pop);
+  }
+  
+  Var num_migrations = patch_placement.UPDATE();
+}
+
