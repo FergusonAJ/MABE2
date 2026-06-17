@@ -21,8 +21,27 @@ MultiAlleleOrg multi_org {      // Organism consisting of a series of N symbols.
 
 SelectRandom select_rand;      // Replicate organisms randomly
 
-
 PatchPlacement patch_placement{};
+
+DataFile div_file { filename="diversity.csv"; };
+div_file.ADD_COLUMN( "pop1_size", "pop1.SIZE()" );
+div_file.ADD_COLUMN( "pop2_size", "pop2.SIZE()" );
+div_file.ADD_COLUMN( "pop3_size", "pop3.SIZE()" );
+div_file.ADD_COLUMN( "pop1_diversity", "pop1.CALC_ENTROPY('genome_str')" );
+div_file.ADD_COLUMN( "pop2_diversity", "pop2.CALC_ENTROPY('genome_str')" );
+div_file.ADD_COLUMN( "pop3_diversity", "pop3.CALC_ENTROPY('genome_str')" );
+div_file.ADD_COLUMN( "random_seed", "random_seed" );
+
+DataFile mut_file { filename="mutations.csv"; };
+mut_file.ADD_COLUMN( "pop1_mutations_avg", "pop1.CALC_MEAN('accumulated_mutations')" );
+mut_file.ADD_COLUMN( "pop1_mutations_min", "pop1.CALC_MIN('accumulated_mutations')" );
+mut_file.ADD_COLUMN( "pop1_mutations_max", "pop1.CALC_MAX('accumulated_mutations')" );
+mut_file.ADD_COLUMN( "pop2_mutations_avg", "pop2.CALC_MEAN('accumulated_mutations')" );
+mut_file.ADD_COLUMN( "pop2_mutations_min", "pop2.CALC_MIN('accumulated_mutations')" );
+mut_file.ADD_COLUMN( "pop2_mutations_max", "pop2.CALC_MAX('accumulated_mutations')" );
+mut_file.ADD_COLUMN( "pop3_mutations_avg", "pop3.CALC_MEAN('accumulated_mutations')" );
+mut_file.ADD_COLUMN( "pop3_mutations_min", "pop3.CALC_MIN('accumulated_mutations')" );
+mut_file.ADD_COLUMN( "pop3_mutations_max", "pop3.CALC_MAX('accumulated_mutations')" );
 
 @START() {
   PRINT("random_seed = ", random_seed, "\n");  // Print seed at run start.
@@ -66,7 +85,8 @@ PatchPlacement patch_placement{};
         "  c1Size=", cluster1.SIZE(),
         "  c2Size=", cluster2.SIZE()
        );
-
+  div_file.WRITE();
+  mut_file.WRITE();
 
   Var to_select;
   IF(pop1.SIZE() > 0){

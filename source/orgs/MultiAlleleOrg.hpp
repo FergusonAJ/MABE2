@@ -11,6 +11,8 @@
 #ifndef MABE_MULTIALLELE_ORGANISM_H
 #define MABE_MULTIALLELE_ORGANISM_H
 
+#include <sstream>
+
 #include "../core/MABE.hpp"
 #include "../core/Organism.hpp"
 #include "../core/OrganismManager.hpp"
@@ -26,6 +28,7 @@ namespace mabe {
     
   protected:
     genome_t genome;
+    size_t accumulated_mutations = 0;
 
   public:
     MultiAlleleOrg(OrganismManager<MultiAlleleOrg> & _manager)
@@ -48,7 +51,7 @@ namespace mabe {
     };
 
     /// Use "to_string" to convert.
-    std::string ToString() const override { return emp::to_string(genome); }
+    std::string ToString() const override { return GetTrait<std::string>("genome_str"); }
 
     size_t Mutate(emp::Random & random) override {
      const size_t num_muts = SharedData().mut_dist.PickRandom(random);
@@ -77,17 +80,41 @@ namespace mabe {
         }
         genome[pos] = allele;
       }
+      accumulated_mutations += num_muts;
+      SetTrait<size_t>("accumulated_mutations", accumulated_mutations);
+      BuildString();
       return num_muts;
+    }
+
+    void BuildString(){
+      std::stringstream sstr;
+      // If we have <= 10 alleles, we do not need spaces
+      if(SharedData().num_alleles <= 10){
+        for(size_t x : genome) sstr << x;
+      }
+      else{ // >10 alleles, we need spaces to tell alleles apart (eg, 10 could be 10 or 1 + 0)
+        for(size_t idx = 0; idx < genome.size(); idx++){
+          if(idx != genome.size() - 1) sstr << genome[idx] << " ";
+          else sstr << genome[idx];
+        }
+      }
+      std::string genome_str = sstr.str();
+      SetTrait<std::string>("genome_str", genome_str);   
     }
 
     void Randomize(emp::Random & random) override {
       const size_t min = 0;
       const size_t max = SharedData().num_alleles;
       emp::RandomizeVector(genome, random, min, max);  
+      BuildString();
+      SetTrait<size_t>("accumulated_mutations", accumulated_mutations);
     }
 
     void Initialize(emp::Random & random) override {
       if (SharedData().init_random) Randomize(random); 
+      BuildString();
+      accumulated_mutations = 0;
+      SetTrait<size_t>("accumulated_mutations", accumulated_mutations);
     }
 
     /// Put the bits in the correct output position.
@@ -122,8 +149,16 @@ namespace mabe {
 
       // Setup the output trait.
       GetManager().AddSharedTrait(SharedData().output_name,
-                                  "Bitset output from organism.",
+                                  "Multi-allele output from organism.",
                                   genome_t(0)); 
+      
+      GetManager().AddSharedTrait("genome_str",
+                                  "Genome as a string",
+                                  std::string()); 
+      
+      GetManager().AddSharedTrait<size_t>("accumulated_mutations",
+                                  "Number of mutations accumulated on this lineage",
+                                  accumulated_mutations); 
     }
   };
 
